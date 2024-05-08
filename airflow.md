@@ -58,9 +58,11 @@ source airflow_venv/bin/activate
 # pip 업그레이드
 pip install --upgrade pip
 
-# 환경 변수 설정
+# 환경 변수 설정 
 export AIRFLOW_HOME=/home/airflow
 export AIRFLOW_VERSION=2.9.1
+
+# 아래의 내용은 그냥 명시적으로 적어도 됩니다. ex) export PYTHON_VERSION=3.9
 export PYTHON_VERSION="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
 export CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
 
@@ -132,7 +134,8 @@ Docker 컨테이너에서 구축했을 경우, bash로 재접속 하면 환경 �
 
 위에서 export 하는 변수들을 container를 구축할 때 정해야 합니다. 이 방식은 airflow와 python의 버전을 특정했을때 사용가능합니다.
 
-    예시1) docker run -e AIRFLOW_HOME=/home/airflow -e AIRFLOW_VERSION=2.9.1 -e PYTHON_VERSION=3.9 -e CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-2.9.1/constraints-3.9.txt"
+    예시1) 
+    docker run -e AIRFLOW_HOME=/home/airflow -e AIRFLOW_VERSION=2.9.1 -e PYTHON_VERSION=3.9 -e CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-2.9.1/constraints-3.9.txt"
 
 ```
 예시 2)
