@@ -59,7 +59,7 @@ source airflow_venv/bin/activate
 pip install --upgrade pip
 
 # 환경 변수 설정 
-export AIRFLOW_HOME=/home/airflow
+export AIRFLOW_HOME=/volume1/tkw/airflow
 export AIRFLOW_VERSION=2.9.1
 
 # 아래의 내용은 그냥 명시적으로 적어도 됩니다. ex) export PYTHON_VERSION=3.9
@@ -120,6 +120,7 @@ tail -f webserver.log
 
 # scheduler 실행 및 확인
 nohup airflow scheduler > scheduler.log 2>&1 &
+tail -f webserver.log
 ```
 
 잘 접속 되면 설정한 Port로 접속하면 됩니다.
