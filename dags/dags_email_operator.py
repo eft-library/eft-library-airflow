@@ -5,7 +5,7 @@ import pendulum
 
 with DAG(
     dag_id="dags_email_operator",
-    schedule="0 10 * * *",
+    schedule="0 1 * * *",
     start_date=pendulum.datetime(2024, 1, 1, tz="Asia/Seoul"),
     catchup=False, # True이면 start_data부터 지금까지 누락된 날짜의 스케줄이 한 번에 돌게 된다.
     dagrun_timeout=datetime.timedelta(minutes=60),
