@@ -74,16 +74,15 @@ def weapon_data_check(item):
         if 'Single fire' in mode:
             weapon_modes_kr.append("단발")
         if 'Full auto' in mode:
-            weapon_modes_kr.append("2")
+            weapon_modes_kr.append("자동")
         if 'Burst Fire' in mode:
-            weapon_modes_kr.append("3")
+            weapon_modes_kr.append("점사")
         if 'Double-Tap' in mode:
-            weapon_modes_kr.append("4")
+            weapon_modes_kr.append("더블 탭")
         if 'Double action' in mode:
-            weapon_modes_kr.append("5")
+            weapon_modes_kr.append("더블 액션")
         if 'Semi-auto' in mode:
-            weapon_modes_kr.append("6")
-
+            weapon_modes_kr.append("반자동")
 
     values = (
         weapon_id,
@@ -102,4 +101,5 @@ def weapon_data_check(item):
         weapon_update_time,
         weapon_id
     )
+
     return values
