@@ -17,34 +17,43 @@ with DAG(
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
-        weapon_data= get_graphql(weapon_graphql)
+        try:
+            weapon_data = get_graphql(weapon_graphql)
 
-        with closing(postgres_hook.get_conn()) as conn:
-            with closing(conn.cursor()) as cursor:
-                # gun
-                gun_sql = read_sql('update_tkw_weapon.sql')
-                gun_original_data = check_category(weapon_data['data']['items'], 'Gun')
-                gun_image_data = check_category(weapon_data['data']['items'], 'Gun image')
-                gun_process_data = gun_image_change(gun_original_data, gun_image_data)
-                print(gun_sql)
-                for item in gun_process_data:
-                    cursor.execute(gun_sql, process_gun(item))
+            with closing(postgres_hook.get_conn()) as conn:
+                with closing(conn.cursor()) as cursor:
+                    # gun
+                    gun_sql = read_sql('update_tkw_weapon.sql')
+                    gun_original_data = check_category(weapon_data['data']['items'], 'Gun')
+                    gun_image_data = check_category(weapon_data['data']['items'], 'Gun image')
+                    gun_process_data = gun_image_change(gun_original_data, gun_image_data)
+                    print(gun_sql)
+                    for item in gun_process_data:
+                        cursor.execute(gun_sql, process_gun(item))
 
-                # knife
-                knife_sql = read_sql('update_tkw_knife.sql')
-                knife_data_list = check_category(weapon_data['data']['items'], 'Knife')
-                print(knife_sql)
-                for item in knife_data_list:
-                    cursor.execute(knife_sql, process_knife(item))
+                    # knife
+                    knife_sql = read_sql('update_tkw_knife.sql')
+                    knife_data_list = check_category(weapon_data['data']['items'], 'Knife')
+                    print(knife_sql)
+                    for item in knife_data_list:
+                        cursor.execute(knife_sql, process_knife(item))
 
-                # throwable
-                throwable_sql = read_sql('update_tkw_throwable.sql')
-                throwable_data_list = check_category(weapon_data['data']['items'], 'Throwable weapon')
-                print(throwable_sql)
-                for item in throwable_data_list:
-                    cursor.execute(throwable_sql, process_throwable(item))
+                    # throwable
+                    throwable_sql = read_sql('update_tkw_throwable.sql')
+                    throwable_data_list = check_category(weapon_data['data']['items'], 'Throwable weapon')
+                    print(throwable_sql)
+                    for item in throwable_data_list:
+                        cursor.execute(throwable_sql, process_throwable(item))
 
-                conn.commit()
+                    conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise
+
+        finally:
+            if conn:
+                conn.close()
 
 
     update_tkw_weapon = PythonOperator(
