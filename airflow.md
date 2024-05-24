@@ -71,6 +71,9 @@ pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}
 
 # 사용할 DB에 맞는 driver 설치 - 여기서는 postgresql을 사용
 pip install psycopg2-binary
+
+# postgresql connection
+pip install apache-airflow-providers-postgres
 ```
 
 ## Airflow 환경 설정
