@@ -1,7 +1,7 @@
 import pendulum
 
-special_weapons = ['SP-81', 'Green', 'Red', 'Flare', 'Yellow']
-weapon_graphql= """
+special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow"]
+weapon_graphql = """
 {
   items {
     id
@@ -44,62 +44,100 @@ weapon_graphql= """
 }
 """
 
+
 def check_category(weapon_list, weapon_category):
     """
     category 별 데이터 변경
     """
-    if weapon_category == 'Gun':
+    if weapon_category == "Gun":
         return [
-            item for item in weapon_list
-            if item['category']['parent']['name'] == "Weapon" and item['properties'] != {}
+            item
+            for item in weapon_list
+            if item["category"]["parent"]["name"] == "Weapon"
+            and item["properties"] != {}
         ]
     elif weapon_category == "Gun image":
         return [
-            item for item in weapon_list
-            if item['category']['parent']['name'] == "Weapon" and item['properties'] == {} and 'Default' in item['name']
+            item
+            for item in weapon_list
+            if item["category"]["parent"]["name"] == "Weapon"
+            and item["properties"] == {}
+            and (
+                "Default" in item["name"]
+                or "Lobaev Arms DVL-10 7.62x51 bolt-action sniper rifle Urbana"
+                in item["name"]
+                or "Colt M4A1 5.56x45 assault rifle Carbine" in item["name"]
+            )
         ]
     else:
         return [
-            item for item in weapon_list
-            if item['category']['name'] == weapon_category and item['properties'] != {}
+            item
+            for item in weapon_list
+            if item["category"]["name"] == weapon_category and item["properties"] != {}
         ]
+
 
 def gun_image_change(original_list, image_list):
     """
     총의 경우 이미지를 다른 데이터에서 써야해서 변환하는 과정을 거쳐야 함
     """
-    renewal_data = original_list
-    image_dict = {item['shortName'][:-8]: item['image512pxLink'] for item in image_list}
+    # 이미지 딕셔너리 생성
+    image_dict = {item["shortName"][:-8]: item["image512pxLink"] for item in image_list}
+    image_dvl_dict = {
+        item["shortName"][:-7]: item["image512pxLink"] for item in image_list
+    }
 
-    for original_item in renewal_data:
-        name = original_item['shortName']
+    # original_list 수정
+    for original_item in original_list:
+        name = original_item["shortName"]
         if name in image_dict:
-            original_item['image512pxLink'] = image_dict[name]
+            original_item["image512pxLink"] = image_dict[name]
+        elif name in image_dvl_dict:
+            original_item["image512pxLink"] = image_dvl_dict[name]
 
-    return renewal_data
+    return original_list
 
 
 def process_gun(item):
     """
     gun 데이터 가공
     """
-    weapon_id = item.get('id')
-    weapon_name = item.get('name')
-    weapon_short_name = item.get('shortName')
-    weapon_img = item.get('image512pxLink')
-    weapon_original_category = item['category'].get('name') if item.get('category') else None
+    weapon_id = item.get("id")
+    weapon_name = item.get("name")
+    weapon_short_name = item.get("shortName")
+    weapon_img = item.get("image512pxLink")
+    weapon_original_category = (
+        item["category"].get("name") if item.get("category") else None
+    )
     weapon_category = check_special_weapon(weapon_short_name, weapon_original_category)
-    weapon_carliber = item['properties'].get('caliber') if item.get('properties') else None
-    weapon_default_ammo = item['properties']['defaultAmmo'].get('name') if item.get('properties') and item[
-        'properties'].get('defaultAmmo') else None
-    weapon_modes_en = item['properties'].get('fireModes') if item.get('properties') else None
-    weapon_fire_rate = item['properties'].get('fireRate') if item.get('properties') else None
-    weapon_ergonomics = item['properties'].get('defaultErgonomics') if item.get('properties') else None
-    weapon_recoil_vertical = item['properties'].get('defaultRecoilVertical') if item.get(
-        'properties') else None
-    weapon_recoil_horizontal = item['properties'].get('defaultRecoilHorizontal') if item.get(
-        'properties') else None
-    weapon_update_time = pendulum.now('Asia/Seoul')
+    weapon_carliber = (
+        item["properties"].get("caliber") if item.get("properties") else None
+    )
+    weapon_default_ammo = (
+        item["properties"]["defaultAmmo"].get("name")
+        if item.get("properties") and item["properties"].get("defaultAmmo")
+        else None
+    )
+    weapon_modes_en = (
+        item["properties"].get("fireModes") if item.get("properties") else None
+    )
+    weapon_fire_rate = (
+        item["properties"].get("fireRate") if item.get("properties") else None
+    )
+    weapon_ergonomics = (
+        item["properties"].get("defaultErgonomics") if item.get("properties") else None
+    )
+    weapon_recoil_vertical = (
+        item["properties"].get("defaultRecoilVertical")
+        if item.get("properties")
+        else None
+    )
+    weapon_recoil_horizontal = (
+        item["properties"].get("defaultRecoilHorizontal")
+        if item.get("properties")
+        else None
+    )
+    weapon_update_time = pendulum.now("Asia/Seoul")
     weapon_modes_kr = gun_modes_kr(weapon_modes_en)
 
     return (
@@ -117,22 +155,29 @@ def process_gun(item):
         weapon_recoil_vertical,
         weapon_recoil_horizontal,
         weapon_update_time,
-        weapon_id
+        weapon_id,
     )
+
 
 def process_knife(item):
     """
     knife 데이터 가공
     """
-    knife_id = item.get('id')
-    knife_name = item.get('name')
-    knife_short_name = item.get('shortName')
-    knife_image = item.get('image512pxLink')
-    knife_category = item['category'].get('name') if item.get('category') else None
-    knife_slash_damage = item['properties'].get('slashDamage') if item.get('properties') else None
-    knife_stab_damage = item['properties'].get('stabDamage') if item.get('properties') else None
-    knife_hit_radius = item['properties'].get('hitRadius') if item.get('properties') else None
-    knife_update_time = pendulum.now('Asia/Seoul')
+    knife_id = item.get("id")
+    knife_name = item.get("name")
+    knife_short_name = item.get("shortName")
+    knife_image = item.get("image512pxLink")
+    knife_category = item["category"].get("name") if item.get("category") else None
+    knife_slash_damage = (
+        item["properties"].get("slashDamage") if item.get("properties") else None
+    )
+    knife_stab_damage = (
+        item["properties"].get("stabDamage") if item.get("properties") else None
+    )
+    knife_hit_radius = (
+        item["properties"].get("hitRadius") if item.get("properties") else None
+    )
+    knife_update_time = pendulum.now("Asia/Seoul")
 
     return (
         knife_id,
@@ -144,23 +189,34 @@ def process_knife(item):
         knife_stab_damage,
         knife_hit_radius,
         knife_update_time,
-        knife_id
+        knife_id,
     )
+
 
 def process_throwable(item):
     """
     throwable 데이터 가공
     """
-    throwable_id = item.get('id')
-    throwable_name = item.get('name')
-    throwable_short_name = item.get('shortName')
-    throwable_image = item.get('image512pxLink')
-    throwable_category = item['category'].get('name') if item.get('category') else None
-    throwable_fuse = item['properties'].get('fuse') if item.get('properties') else None
-    throwable_min_explosion_distance = item['properties'].get('minExplosionDistance') if item.get('properties') else None
-    throwable_max_explosion_distance = item['properties'].get('maxExplosionDistance') if item.get('properties') else None
-    throwable_fragments = item['properties'].get('fragments') if item.get('properties') else None
-    throwable_update_time = pendulum.now('Asia/Seoul')
+    throwable_id = item.get("id")
+    throwable_name = item.get("name")
+    throwable_short_name = item.get("shortName")
+    throwable_image = item.get("image512pxLink")
+    throwable_category = item["category"].get("name") if item.get("category") else None
+    throwable_fuse = item["properties"].get("fuse") if item.get("properties") else None
+    throwable_min_explosion_distance = (
+        item["properties"].get("minExplosionDistance")
+        if item.get("properties")
+        else None
+    )
+    throwable_max_explosion_distance = (
+        item["properties"].get("maxExplosionDistance")
+        if item.get("properties")
+        else None
+    )
+    throwable_fragments = (
+        item["properties"].get("fragments") if item.get("properties") else None
+    )
+    throwable_update_time = pendulum.now("Asia/Seoul")
 
     return (
         throwable_id,
@@ -173,8 +229,9 @@ def process_throwable(item):
         throwable_max_explosion_distance,
         throwable_fragments,
         throwable_update_time,
-        throwable_id
+        throwable_id,
     )
+
 
 def gun_modes_kr(weapon_modes_en):
     """
@@ -182,26 +239,27 @@ def gun_modes_kr(weapon_modes_en):
     """
     weapon_modes_kr = []
     for mode in weapon_modes_en:
-        if 'Single fire' in mode:
+        if "Single fire" in mode:
             weapon_modes_kr.append("단발")
-        if 'Full auto' in mode:
+        if "Full auto" in mode:
             weapon_modes_kr.append("자동")
-        if 'Burst Fire' in mode:
+        if "Burst Fire" in mode:
             weapon_modes_kr.append("점사")
-        if 'Double-Tap' in mode:
+        if "Double-Tap" in mode:
             weapon_modes_kr.append("더블 탭")
-        if 'Double action' in mode:
+        if "Double action" in mode:
             weapon_modes_kr.append("더블 액션")
-        if 'Semi-auto' in mode:
+        if "Semi-auto" in mode:
             weapon_modes_kr.append("반자동")
 
     return weapon_modes_kr
+
 
 def check_special_weapon(weapon_short_name, weapon_category):
     """
     grenade launcher 중 special weapon으로 변경해야 하는 경우
     """
     if weapon_short_name in special_weapons:
-        return 'Special weapons'
+        return "Special weapons"
     else:
         return weapon_category
