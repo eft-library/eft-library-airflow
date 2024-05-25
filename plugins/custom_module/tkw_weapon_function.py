@@ -270,10 +270,10 @@ def check_weapon_category(weapon_short_name, weapon_category):
         return "Special weapons"
     elif weapon_short_name in grenade_weapons:
         return "Grenade launcher"
-    elif weapon_category == "Revolver":
-        return "Handgun"
     elif weapon_short_name == "MTs-255-12":
         return "Shotgun"
+    elif weapon_category == "Revolver":
+        return "Handgun"
     else:
         return weapon_category
 
