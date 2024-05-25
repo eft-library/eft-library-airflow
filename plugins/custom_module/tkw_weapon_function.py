@@ -1,6 +1,7 @@
 import pendulum
 
 special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow"]
+grenade_weapons = ["MSGL"]
 weapon_graphql = """
 {
   items {
@@ -67,6 +68,7 @@ def check_category(weapon_list, weapon_category):
                 or "Lobaev Arms DVL-10 7.62x51 bolt-action sniper rifle Urbana"
                 in item["name"]
                 or "Colt M4A1 5.56x45 assault rifle Carbine" in item["name"]
+                or "Kalashnikov PKP 7.62x54R infantry machine gun Zenit" in item["name"]
             )
         ]
     else:
@@ -86,6 +88,9 @@ def gun_image_change(original_list, image_list):
     image_dvl_dict = {
         item["shortName"][:-7]: item["image512pxLink"] for item in image_list
     }
+    image_pkp_dict = {
+        item["shortName"][:-6]: item["image512pxLink"] for item in image_list
+    }
 
     # original_list 수정
     for original_item in original_list:
@@ -94,6 +99,8 @@ def gun_image_change(original_list, image_list):
             original_item["image512pxLink"] = image_dict[name]
         elif name in image_dvl_dict:
             original_item["image512pxLink"] = image_dvl_dict[name]
+        elif name in image_pkp_dict:
+            original_item["image512pxLink"] = image_pkp_dict[name]
 
     return original_list
 
@@ -104,12 +111,12 @@ def process_gun(item):
     """
     weapon_id = item.get("id")
     weapon_name = item.get("name")
-    weapon_short_name = item.get("shortName")
+    weapon_short_name = check_short_name(weapon_name, item.get("shortName"))
     weapon_img = item.get("image512pxLink")
     weapon_original_category = (
         item["category"].get("name") if item.get("category") else None
     )
-    weapon_category = check_special_weapon(weapon_short_name, weapon_original_category)
+    weapon_category = check_weapon_category(weapon_short_name, weapon_original_category)
     weapon_carliber = (
         item["properties"].get("caliber") if item.get("properties") else None
     )
@@ -255,11 +262,29 @@ def gun_modes_kr(weapon_modes_en):
     return weapon_modes_kr
 
 
-def check_special_weapon(weapon_short_name, weapon_category):
+def check_weapon_category(weapon_short_name, weapon_category):
     """
-    grenade launcher 중 special weapon으로 변경해야 하는 경우
+    weapon category 확인
     """
     if weapon_short_name in special_weapons:
         return "Special weapons"
+    elif weapon_short_name in grenade_weapons:
+        return "Grenade launcher"
     else:
         return weapon_category
+
+
+def check_short_name(weapon_name, weapon_short_name):
+    """
+    mk16, 17 무기 이름을 scar로 변경하기
+    """
+    if weapon_name == "FN SCAR-L 5.56x45 assault rifle":
+        return "FN SCAR-L"
+    elif weapon_name == "FN SCAR-L 5.56x45 assault rifle (FDE)":
+        return "FN SCAR-L FDE"
+    elif weapon_name == "FN SCAR-H 7.62x51 assault rifle":
+        return "FN SCAR-H"
+    elif weapon_name == "FN SCAR-H 7.62x51 assault rifle (FDE)":
+        return "FN SCAR-H FDE"
+    else:
+        return weapon_short_name
