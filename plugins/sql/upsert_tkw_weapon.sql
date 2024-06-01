@@ -1,4 +1,4 @@
-INSERT INTO tkw_weapon_info (
+INSERT INTO tkw_weapon (
     id,
     name,
     short_name,
