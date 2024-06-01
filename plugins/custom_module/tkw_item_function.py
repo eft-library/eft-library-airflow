@@ -162,7 +162,6 @@ def process_gun(item):
         weapon_recoil_vertical,
         weapon_recoil_horizontal,
         weapon_update_time,
-        weapon_id,
     )
 
 
@@ -196,7 +195,6 @@ def process_knife(item):
         knife_stab_damage,
         knife_hit_radius,
         knife_update_time,
-        knife_id,
     )
 
 
@@ -236,7 +234,6 @@ def process_throwable(item):
         throwable_max_explosion_distance,
         throwable_fragments,
         throwable_update_time,
-        throwable_id,
     )
 
 

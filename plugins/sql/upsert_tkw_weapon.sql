@@ -1,24 +1,32 @@
-INSERT INTO tkw_throwable_info (
-    throwable_id,
-    throwable_name,
-    throwable_short_name,
-    throwable_image,
-    throwable_category,
-    throwable_fuse,
-    throwable_min_explosion_distance,
-    throwable_max_explosion_distance,
-    throwable_fragments,
-    throwable_update_time
+INSERT INTO tkw_weapon_info (
+    weapon_id,
+    weapon_name,
+    weapon_short_name,
+    weapon_img,
+    weapon_category,
+    weapon_carliber,
+    weapon_default_ammo,
+    weapon_modes_en,
+    weapon_modes_kr,
+    weapon_fire_rate,
+    weapon_ergonomics,
+    weapon_recoil_vertical,
+    weapon_recoil_horizontal,
+    weapon_update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
-ON CONFLICT (throwable_id) DO UPDATE SET
-    throwable_name = EXCLUDED.throwable_name,
-    throwable_short_name = EXCLUDED.throwable_short_name,
-    throwable_image = EXCLUDED.throwable_image,
-    throwable_category = EXCLUDED.throwable_category,
-    throwable_fuse = EXCLUDED.throwable_fuse,
-    throwable_min_explosion_distance = EXCLUDED.throwable_min_explosion_distance,
-    throwable_max_explosion_distance = EXCLUDED.throwable_max_explosion_distance,
-    throwable_fragments = EXCLUDED.throwable_fragments,
-    throwable_update_time = EXCLUDED.throwable_update_time;
+ON CONFLICT (weapon_id) DO UPDATE SET
+    weapon_name = EXCLUDED.weapon_name,
+    weapon_short_name = EXCLUDED.weapon_short_name,
+    weapon_img = EXCLUDED.weapon_img,
+    weapon_category = EXCLUDED.weapon_category,
+    weapon_carliber = EXCLUDED.weapon_carliber,
+    weapon_default_ammo = EXCLUDED.weapon_default_ammo,
+    weapon_modes_en = EXCLUDED.weapon_modes_en,
+    weapon_modes_kr = EXCLUDED.weapon_modes_kr,
+    weapon_fire_rate = EXCLUDED.weapon_fire_rate,
+    weapon_ergonomics = EXCLUDED.weapon_ergonomics,
+    weapon_recoil_vertical = EXCLUDED.weapon_recoil_vertical,
+    weapon_recoil_horizontal = EXCLUDED.weapon_recoil_horizontal,
+    weapon_update_time = EXCLUDED.weapon_update_time;
