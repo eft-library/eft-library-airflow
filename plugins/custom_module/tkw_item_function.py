@@ -1,7 +1,5 @@
 import pendulum
 
-special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow"]
-grenade_weapons = ["MSGL"]
 weapon_graphql = """
 {
   items {
@@ -95,7 +93,12 @@ def gun_image_change(original_list, image_list):
     # original_list 수정
     for original_item in original_list:
         name = original_item["shortName"]
-        if name in image_dict:
+        # 하필이면 이름이 중복이라 방법이 없다.
+        if original_item["name"] == "Desert Tech MDR 5.56x45 assault rifle":
+            original_item["image512pxLink"] = (
+                "https://assets.tarkov.dev/5c98bd7386f7740cfb15654e-512.webp"
+            )
+        elif name in image_dict:
             original_item["image512pxLink"] = image_dict[name]
         elif name in image_dvl_dict:
             original_item["image512pxLink"] = image_dvl_dict[name]
@@ -263,6 +266,19 @@ def check_weapon_category(weapon_short_name, weapon_category):
     """
     weapon category 확인
     """
+    special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow"]
+    grenade_weapons = ["MSGL"]
+    carbine_weapons = [
+        "ADAR 2-15",
+        "TX-15 DML",
+        'VPO-136 "Vepr-KM"',
+        "VPO-209",
+        "AK-545",
+        "AK-545 Short",
+        "RFB ",
+    ]
+    rifle_weapons = ["AS VAL"]
+
     if weapon_short_name in special_weapons:
         return "Special weapons"
     elif weapon_short_name in grenade_weapons:
@@ -271,6 +287,10 @@ def check_weapon_category(weapon_short_name, weapon_category):
         return "Shotgun"
     elif weapon_category == "Revolver":
         return "Handgun"
+    elif weapon_short_name in carbine_weapons:
+        return "Assault carbine"
+    elif weapon_short_name in rifle_weapons:
+        return "Assault rifle"
     else:
         return weapon_category
 
@@ -287,5 +307,7 @@ def check_short_name(weapon_name, weapon_short_name):
         return "FN SCAR-H"
     elif weapon_name == "FN SCAR-H 7.62x51 assault rifle (FDE)":
         return "FN SCAR-H FDE"
+    elif weapon_name == "SWORD International Mk-18 .338 LM marksman rifle":
+        return "Mk-18"
     else:
         return weapon_short_name
