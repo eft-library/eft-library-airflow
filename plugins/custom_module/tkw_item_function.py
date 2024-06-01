@@ -275,7 +275,7 @@ def check_weapon_category(weapon_short_name, weapon_category):
         "VPO-209",
         "AK-545",
         "AK-545 Short",
-        "RFB ",
+        "RFB",
     ]
     rifle_weapons = ["AS VAL"]
 
