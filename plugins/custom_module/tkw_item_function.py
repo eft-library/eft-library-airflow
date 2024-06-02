@@ -5,6 +5,7 @@ weapon_graphql = """
   items {
     id
     name
+    weight
     shortName
     image512pxLink
     category {
@@ -38,6 +39,12 @@ weapon_graphql = """
         fragments
         contusionRadius
       }
+      ... on ItemPropertiesHelmet {
+        durability
+        class
+        headZones
+        ricochetY
+      }
     }
   }
 }
@@ -70,6 +77,10 @@ def check_category(weapon_list, weapon_category):
             )
         ]
     elif weapon_category == "Headphones":
+        return [
+            item for item in weapon_list if item["category"]["name"] == weapon_category
+        ]
+    elif weapon_category == "Headwear":
         return [
             item for item in weapon_list if item["category"]["name"] == weapon_category
         ]
@@ -263,6 +274,51 @@ def process_head_phone(item):
     )
 
 
+def process_head_wear(item):
+    """
+    head_wear 데이터 가공
+    """
+    head_wear_id = item.get("id")
+    head_wear_name = item.get("name")
+    head_wear_short_name = item.get("shortName")
+    head_wear_weight = item.get("weight")
+    head_wear_image = item.get("image512pxLink")
+    head_wear_update_time = pendulum.now("Asia/Seoul")
+    head_wear_class = None
+    head_wear_areas_en = None
+    head_wear_areas_kr = None
+    head_wear_durability = None
+    head_wear_ricochet_chance = None
+
+    if item["properties"] != {}:
+        head_wear_class = (
+            item["properties"].get("class") if item.get("properties") else None
+        )
+        head_wear_areas_en = modify_helmet_area(
+            item["properties"].get("headZones") if item.get("properties") else None
+        )
+        head_wear_areas_kr = check_helmet_area_kr(head_wear_areas_en)
+        head_wear_durability = (
+            item["properties"].get("durability") if item.get("properties") else None
+        )
+        head_wear_ricochet_chance = (
+            item["properties"].get("ricochetY") if item.get("properties") else None
+        )
+    return (
+        head_wear_id,
+        head_wear_name,
+        head_wear_short_name,
+        head_wear_class,
+        head_wear_areas_en,
+        head_wear_areas_kr,
+        head_wear_durability,
+        head_wear_ricochet_chance,
+        head_wear_weight,
+        head_wear_image,
+        head_wear_update_time,
+    )
+
+
 def gun_modes_kr(weapon_modes_en):
     """
     weapon 발사모드 한글로 변경
@@ -334,3 +390,44 @@ def check_short_name(weapon_name, weapon_short_name):
         return "Mk-18"
     else:
         return weapon_short_name
+
+
+def modify_helmet_area(area_list):
+    """
+    방탄모 명칭 변경
+    :param area:
+    :return:
+    """
+    result = []
+
+    for area in area_list:
+        if area == "Head, Neck":
+            result.append("Head, Back Neck")
+        else:
+            result.append(area)
+    return result
+
+
+def check_helmet_area_kr(area_list):
+    """
+    방탄모 보호 부위 한글로 번역
+    """
+    result = []
+    helmet_area_kr = {
+        "Head, Top of the head": "머리, 윗머리",
+        "Head, Nape": "머리, 뒷머리",
+        "Head, Ears": "머리, 귀",
+        "Head, Face": "머리, 얼굴",
+        "Head, Eyes": "머리, 눈",
+        "Head, Jaws": "머리, 턱",
+        "Head, Throat": "머리, 목 앞쪽",
+        "Head, Back Neck": "머리, 목 뒤쪽",
+    }
+
+    for area in area_list:
+        if area in helmet_area_kr:
+            result.append(helmet_area_kr[area])
+        else:
+            result.append("알 수 없는 부위")  # 사전에 없는 경우
+
+    return result
