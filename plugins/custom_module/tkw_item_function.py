@@ -69,6 +69,10 @@ def check_category(weapon_list, weapon_category):
                 or "Kalashnikov PKP 7.62x54R infantry machine gun Zenit" in item["name"]
             )
         ]
+    elif weapon_category == "Headphones":
+        return [
+            item for item in weapon_list if item["category"]["name"] == weapon_category
+        ]
     else:
         return [
             item
@@ -237,6 +241,25 @@ def process_throwable(item):
         throwable_max_explosion_distance,
         throwable_fragments,
         throwable_update_time,
+    )
+
+
+def process_head_phone(item):
+    """
+    head_phone 데이터 가공
+    """
+    head_phone_id = item.get("id")
+    head_phone_name = item.get("name")
+    head_phone_short_name = item.get("shortName")
+    head_phone_image = item.get("image512pxLink")
+    head_phone_update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        head_phone_id,
+        head_phone_name,
+        head_phone_short_name,
+        head_phone_image,
+        head_phone_update_time,
     )
 
 

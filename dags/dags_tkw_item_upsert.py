@@ -10,6 +10,7 @@ from custom_module.tkw_item_function import (
     process_gun,
     process_knife,
     process_throwable,
+    process_head_phone,
     weapon_graphql,
     gun_image_change,
 )
@@ -75,6 +76,21 @@ with DAG(
                     cursor.execute(throwable_sql, process_throwable(item))
             conn.commit()
 
+    def upsert_head_phone(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        head_phone_sql = read_sql("upsert_tkw_head_phone.sql")
+        head_phone_data_list = check_category(
+            weapon_data["data"]["items"], "Headphones"
+        )
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in head_phone_data_list:
+                    cursor.execute(head_phone_sql, process_head_phone(item))
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_weapon_data", python_callable=fetch_weapon_data
     )
@@ -100,4 +116,16 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> [upsert_gun_task, upsert_knife_task, upsert_throwable_task]
+    upsert_head_phone_task = PythonOperator(
+        task_id="upsert_head_phone",
+        python_callable=upsert_head_phone,
+        op_kwargs={"postgres_conn_id": "tkw_db"},
+        provide_context=True,
+    )
+
+    fetch_data >> [
+        upsert_gun_task,
+        upsert_knife_task,
+        upsert_throwable_task,
+        upsert_head_phone_task,
+    ]
