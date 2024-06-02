@@ -414,14 +414,14 @@ def check_helmet_area_kr(area_list):
     """
     result = []
     helmet_area_kr = {
-        "Head, Top of the head": "머리, 윗머리",
-        "Head, Nape": "머리, 뒷머리",
-        "Head, Ears": "머리, 귀",
-        "Head, Face": "머리, 얼굴",
-        "Head, Eyes": "머리, 눈",
-        "Head, Jaws": "머리, 턱",
-        "Head, Throat": "머리, 목 앞쪽",
-        "Head, Back Neck": "머리, 목 뒤쪽",
+        "Head, Top of the head": "윗머리",
+        "Head, Nape": "뒷머리",
+        "Head, Ears": "귀",
+        "Head, Face": "얼굴",
+        "Head, Eyes": "눈",
+        "Head, Jaws": "턱",
+        "Head, Throat": "목 앞쪽",
+        "Head, Back Neck": "목 뒤쪽",
     }
 
     for area in area_list:
