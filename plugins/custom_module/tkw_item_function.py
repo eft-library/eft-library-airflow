@@ -278,45 +278,91 @@ def process_head_wear(item):
     """
     head_wear 데이터 가공
     """
-    head_wear_id = item.get("id")
-    head_wear_name = item.get("name")
-    head_wear_short_name = item.get("shortName")
-    head_wear_weight = item.get("weight")
-    head_wear_image = item.get("image512pxLink")
-    head_wear_update_time = pendulum.now("Asia/Seoul")
-    head_wear_class = None
-    head_wear_areas_en = None
-    head_wear_areas_kr = None
-    head_wear_durability = None
-    head_wear_ricochet_chance = None
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    weight = item.get("weight")
+    image = item.get("image512pxLink")
+    update_time = pendulum.now("Asia/Seoul")
+    class_value = None
+    areas_en = None
+    areas_kr = None
+    durability = None
+    ricochet_chance = None
+    ricochet_str_en = None
+    ricochet_str_kr = None
 
     if item["properties"] != {}:
-        head_wear_class = (
+        class_value = (
             item["properties"].get("class") if item.get("properties") else None
         )
-        head_wear_areas_en = modify_helmet_area(
+        areas_en = modify_helmet_area(
             item["properties"].get("headZones") if item.get("properties") else None
         )
-        head_wear_areas_kr = check_helmet_area_kr(head_wear_areas_en)
-        head_wear_durability = (
+        areas_kr = check_helmet_area_kr(areas_en)
+        durability = (
             item["properties"].get("durability") if item.get("properties") else None
         )
-        head_wear_ricochet_chance = (
+        ricochet_chance = (
             item["properties"].get("ricochetY") if item.get("properties") else None
         )
+        ricochet_chance = ricochet_chance_edit(name, ricochet_chance)
+        ricochet_str_en = ricochet_chance_en(ricochet_chance)
+        ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
+
     return (
-        head_wear_id,
-        head_wear_name,
-        head_wear_short_name,
-        head_wear_class,
-        head_wear_areas_en,
-        head_wear_areas_kr,
-        head_wear_durability,
-        head_wear_ricochet_chance,
-        head_wear_weight,
-        head_wear_image,
-        head_wear_update_time,
+        id,
+        name,
+        short_name,
+        class_value,
+        areas_en,
+        areas_kr,
+        durability,
+        ricochet_chance,
+        weight,
+        image,
+        ricochet_str_en,
+        ricochet_str_kr,
+        update_time,
     )
+
+
+def ricochet_chance_edit(name, ricochet_chance):
+    """
+    도탄 기회 주입
+    """
+    if name == "Team Wendy EXFIL Ballistic Helmet (Black) ":
+        return 0.4
+    elif name == "Team Wendy EXFIL Ballistic Helmet (Coyote Brown)":
+        return 0.4
+    elif name == "DevTac Ronin ballistic helmet":
+        return 0.4
+    else:
+        return ricochet_chance
+
+
+def ricochet_chance_en(item):
+    """
+    head wear 도탄 기회 영문
+    """
+    if item < 0.2:
+        return "Low"
+    elif item < 0.4:
+        return "Medium"
+    else:
+        return "High"
+
+
+def ricochet_chance_kr(item):
+    """
+    head wear 도탄 기회 한글
+    """
+    if item < 0.2:
+        return "낮음"
+    elif item < 0.4:
+        return "중간"
+    else:
+        return "높음"
 
 
 def gun_modes_kr(weapon_modes_en):

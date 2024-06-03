@@ -9,9 +9,11 @@ INSERT INTO tkw_head_wear (
     ricochet_chance,
     weight,
     image,
+    ricochet_str_en,
+    ricochet_str_kr,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -23,4 +25,6 @@ ON CONFLICT (id) DO UPDATE SET
     ricochet_chance = EXCLUDED.ricochet_chance,
     weight = EXCLUDED.weight,
     image = EXCLUDED.image,
+    ricochet_str_en = EXCLUDED.ricochet_str_en,
+    ricochet_str_kr = EXCLUDED.ricochet_str_kr,
     update_time = EXCLUDED.update_time;
