@@ -83,6 +83,8 @@ def check_category(weapon_list, weapon_category):
     elif weapon_category == "Headwear":
         return [
             item for item in weapon_list if item["category"]["name"] == weapon_category
+                                            and item["shortName"] != "Maska-1SCh KE Default"
+                                            and item["shortName"] != "FAST MT RAC"
         ]
     else:
         return [
