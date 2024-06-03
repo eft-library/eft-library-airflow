@@ -45,6 +45,16 @@ weapon_graphql = """
         headZones
         ricochetY
       }
+      ... on ItemPropertiesArmor {
+        durability
+        class
+        zones
+      } 
+      ... on ItemPropertiesChestRig {
+        class
+        zones
+        capacity
+      }
     }
   }
 }
@@ -82,9 +92,24 @@ def check_category(weapon_list, weapon_category):
         ]
     elif weapon_category == "Headwear":
         return [
-            item for item in weapon_list if item["category"]["name"] == weapon_category
-                                            and item["shortName"] != "Maska-1SCh KE Default"
-                                            and item["shortName"] != "FAST MT RAC"
+            item
+            for item in weapon_list
+            if item["category"]["name"] == weapon_category
+            and item["name"] != "Maska-1SCh bulletproof helmet (Killa Edition) Default"
+            and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
+            and item["name"] != "Wilcox Skull Lock head mount PVS-14"
+        ]
+    elif weapon_category == "Armor":
+        return [
+            item
+            for item in weapon_list
+            if item["category"]["name"] == weapon_category and item["properties"] != {}
+        ]
+    elif weapon_category == "Chest rig":
+        return [
+            item
+            for item in weapon_list
+            if item["category"]["name"] == weapon_category and item["properties"] != {}
         ]
     else:
         return [
@@ -129,59 +154,51 @@ def process_gun(item):
     """
     gun 데이터 가공
     """
-    weapon_id = item.get("id")
-    weapon_name = item.get("name")
-    weapon_short_name = check_short_name(weapon_name, item.get("shortName"))
-    weapon_img = item.get("image512pxLink")
-    weapon_original_category = (
-        item["category"].get("name") if item.get("category") else None
-    )
-    weapon_category = check_weapon_category(weapon_short_name, weapon_original_category)
-    weapon_carliber = (
-        item["properties"].get("caliber") if item.get("properties") else None
-    )
-    weapon_default_ammo = (
+    id = item.get("id")
+    name = item.get("name")
+    short_name = check_short_name(name, item.get("shortName"))
+    img = item.get("image512pxLink")
+    original_category = item["category"].get("name") if item.get("category") else None
+    category = check_weapon_category(short_name, original_category)
+    carliber = item["properties"].get("caliber") if item.get("properties") else None
+    default_ammo = (
         item["properties"]["defaultAmmo"].get("name")
         if item.get("properties") and item["properties"].get("defaultAmmo")
         else None
     )
-    weapon_modes_en = (
-        item["properties"].get("fireModes") if item.get("properties") else None
-    )
-    weapon_fire_rate = (
-        item["properties"].get("fireRate") if item.get("properties") else None
-    )
-    weapon_ergonomics = (
+    modes_en = item["properties"].get("fireModes") if item.get("properties") else None
+    fire_rate = item["properties"].get("fireRate") if item.get("properties") else None
+    ergonomics = (
         item["properties"].get("defaultErgonomics") if item.get("properties") else None
     )
-    weapon_recoil_vertical = (
+    recoil_vertical = (
         item["properties"].get("defaultRecoilVertical")
         if item.get("properties")
         else None
     )
-    weapon_recoil_horizontal = (
+    recoil_horizontal = (
         item["properties"].get("defaultRecoilHorizontal")
         if item.get("properties")
         else None
     )
-    weapon_update_time = pendulum.now("Asia/Seoul")
-    weapon_modes_kr = gun_modes_kr(weapon_modes_en)
+    update_time = pendulum.now("Asia/Seoul")
+    modes_kr = gun_modes_kr(modes_en)
 
     return (
-        weapon_id,
-        weapon_name,
-        weapon_short_name,
-        weapon_img,
-        weapon_category,
-        weapon_carliber,
-        weapon_default_ammo,
-        weapon_modes_en,
-        weapon_modes_kr,
-        weapon_fire_rate,
-        weapon_ergonomics,
-        weapon_recoil_vertical,
-        weapon_recoil_horizontal,
-        weapon_update_time,
+        id,
+        name,
+        short_name,
+        img,
+        category,
+        carliber,
+        default_ammo,
+        modes_en,
+        modes_kr,
+        fire_rate,
+        ergonomics,
+        recoil_vertical,
+        recoil_horizontal,
+        update_time,
     )
 
 
@@ -189,32 +206,30 @@ def process_knife(item):
     """
     knife 데이터 가공
     """
-    knife_id = item.get("id")
-    knife_name = item.get("name")
-    knife_short_name = item.get("shortName")
-    knife_image = item.get("image512pxLink")
-    knife_category = item["category"].get("name") if item.get("category") else None
-    knife_slash_damage = (
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    image = item.get("image512pxLink")
+    category = item["category"].get("name") if item.get("category") else None
+    slash_damage = (
         item["properties"].get("slashDamage") if item.get("properties") else None
     )
-    knife_stab_damage = (
+    stab_damage = (
         item["properties"].get("stabDamage") if item.get("properties") else None
     )
-    knife_hit_radius = (
-        item["properties"].get("hitRadius") if item.get("properties") else None
-    )
-    knife_update_time = pendulum.now("Asia/Seoul")
+    hit_radius = item["properties"].get("hitRadius") if item.get("properties") else None
+    update_time = pendulum.now("Asia/Seoul")
 
     return (
-        knife_id,
-        knife_name,
-        knife_short_name,
-        knife_image,
-        knife_category,
-        knife_slash_damage,
-        knife_stab_damage,
-        knife_hit_radius,
-        knife_update_time,
+        id,
+        name,
+        short_name,
+        image,
+        category,
+        slash_damage,
+        stab_damage,
+        hit_radius,
+        update_time,
     )
 
 
@@ -222,38 +237,36 @@ def process_throwable(item):
     """
     throwable 데이터 가공
     """
-    throwable_id = item.get("id")
-    throwable_name = item.get("name")
-    throwable_short_name = item.get("shortName")
-    throwable_image = item.get("image512pxLink")
-    throwable_category = item["category"].get("name") if item.get("category") else None
-    throwable_fuse = item["properties"].get("fuse") if item.get("properties") else None
-    throwable_min_explosion_distance = (
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    image = item.get("image512pxLink")
+    category = item["category"].get("name") if item.get("category") else None
+    fuse = item["properties"].get("fuse") if item.get("properties") else None
+    min_explosion_distance = (
         item["properties"].get("minExplosionDistance")
         if item.get("properties")
         else None
     )
-    throwable_max_explosion_distance = (
+    max_explosion_distance = (
         item["properties"].get("maxExplosionDistance")
         if item.get("properties")
         else None
     )
-    throwable_fragments = (
-        item["properties"].get("fragments") if item.get("properties") else None
-    )
-    throwable_update_time = pendulum.now("Asia/Seoul")
+    fragments = item["properties"].get("fragments") if item.get("properties") else None
+    update_time = pendulum.now("Asia/Seoul")
 
     return (
-        throwable_id,
-        throwable_name,
-        throwable_short_name,
-        throwable_image,
-        throwable_category,
-        throwable_fuse,
-        throwable_min_explosion_distance,
-        throwable_max_explosion_distance,
-        throwable_fragments,
-        throwable_update_time,
+        id,
+        name,
+        short_name,
+        image,
+        category,
+        fuse,
+        min_explosion_distance,
+        max_explosion_distance,
+        fragments,
+        update_time,
     )
 
 
@@ -261,64 +274,331 @@ def process_head_phone(item):
     """
     head_phone 데이터 가공
     """
-    head_phone_id = item.get("id")
-    head_phone_name = item.get("name")
-    head_phone_short_name = item.get("shortName")
-    head_phone_image = item.get("image512pxLink")
-    head_phone_update_time = pendulum.now("Asia/Seoul")
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    image = item.get("image512pxLink")
+    update_time = pendulum.now("Asia/Seoul")
 
     return (
-        head_phone_id,
-        head_phone_name,
-        head_phone_short_name,
-        head_phone_image,
-        head_phone_update_time,
+        id,
+        name,
+        short_name,
+        image,
+        update_time,
     )
+
+
+def process_armor_vest(item):
+    """
+    armor vest 데이터 가공
+    """
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    weight = item.get("weight")
+    image = item.get("image512pxLink")
+    class_value = item["properties"].get("class")
+    areas_en = item["properties"].get("zones")
+    areas_kr = armor_vest_rig_areas_kr(areas_en)
+    durability = armor_vest_durability(name)
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        id,
+        name,
+        short_name,
+        weight,
+        image,
+        class_value,
+        areas_en,
+        areas_kr,
+        durability,
+        update_time,
+    )
+
+
+def process_rigs(item):
+    """
+    rig 데이터 가공
+    """
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    weight = item.get("weight")
+    image = item.get("image512pxLink")
+    class_value = None
+    areas_en = None
+    areas_kr = None
+    capacity = item["properties"].get("capacity")
+    durability = None
+    update_time = pendulum.now("Asia/Seoul")
+
+    if item["properties"]["class"] != None:
+        class_value = item["properties"].get("class")
+        areas_en = item["properties"].get("zones")
+        areas_kr = armor_vest_rig_areas_kr(areas_en)
+        durability = rig_durability_edit(name)
+
+    return (
+        id,
+        name,
+        short_name,
+        weight,
+        image,
+        class_value,
+        areas_en,
+        areas_kr,
+        durability,
+        capacity,
+        update_time,
+    )
+
+
+def rig_durability_edit(item):
+    """
+    전술조끼 내구성 주입
+    """
+    plate_carriers = {
+        "Eagle Allied Industries MBSS plate carrier (Coyote Brown)": 70,
+        "Tasmanian Tiger SK plate carrier (MultiCam Black)": 110,
+        "S&S Precision PlateFrame plate carrier (Goons Edition)": 120,
+        "WARTECH TV-115 plate carrier (Olive Drab)": 122,
+        "WARTECH TV-110 plate carrier (Coyote)": 160,
+        "Eagle Industries MMAC plate carrier (Ranger Green)": 144,
+        "Shellback Tactical Banshee plate carrier (A-TACS AU)": 152,
+        "Ars Arma A18 Skanda plate carrier (MultiCam)": 186,
+        "ANA Tactical M1 plate carrier (Olive Drab)": 194,
+        "FirstSpear Strandhogg plate carrier (Ranger Green)": 198,
+        "ECLiPSE RBAV-AF plate carrier (Ranger Green)": 218,
+        "CQC Osprey MK4A plate carrier (Assault, MTP)": 222,
+        "Crye Precision AVS plate carrier (Tagilla Edition)": 170,
+        "5.11 Tactical TacTec plate carrier (Ranger Green)": 170,
+        "Crye Precision CPC plate carrier (Goons Edition)": 230,
+        "Ars Arma CPC MOD.1 plate carrier (A-TACS FG)": 240,
+        "ANA Tactical M2 plate carrier (Digital Flora)": 206,
+        "Crye Precision AVS plate carrier (Ranger Green)": 212,
+        "NPP KlASS Bagariy plate carrier (Digital Flora)": 232,
+        "6B5-16 Zh-86 Uley armored rig (Khaki)": 160,
+        "CQC Osprey MK4A plate carrier (Protection, MTP)": 272,
+        "6B3TM-01 armored rig (Khaki)": 86,
+        "6B5-15 Zh-86 Uley armored rig (Flora)": 110,
+    }
+    return plate_carriers[item] if item in plate_carriers else 0
+
+
+def armor_vest_durability(item):
+    """
+    전술조끼 내구성 주입
+    """
+    body_armors_and_plate_carriers = {
+        "LBT-6094A Slick Plate Carrier (Olive Drab)": 200,
+        "LBT-6094A Slick Plate Carrier (Coyote Tan)": 200,
+        "LBT-6094A Slick Plate Carrier (Black)": 200,
+        "NPP KlASS Kora-Kulon body armor (Digital Flora)": 128,
+        "NPP KlASS Kora-Kulon body armor (Black)": 128,
+        "6B13 assault armor (Flora)": 203,
+        "6B13 assault armor (Digital Flora)": 203,
+        "Hexatac HPC Plate Carrier (MultiCam Black)": 90,
+        "5.11 Tactical Hexgrid plate carrier": 100,
+        "6B2 body armor (Flora)": 128,
+        "BNTI Module-3M body armor": 80,
+        "PACA Soft Armor": 100,
+        "PACA Soft Armor (Rivals Edition)": 100,
+        "Interceptor OTV body armor (UCP)": 222,
+        "BNTI Zhuk body armor (Press)": 185,
+        "BNTI Kirasa-N body armor": 240,
+        "6B23-1 body armor (Digital Flora)": 206,
+        "6B23-2 body armor (Mountain Flora)": 246,
+        "NPP KlASS Korund-VM body armor (Black)": 310,
+        "HighCom Trooper TFO body armor (MultiCam)": 180,
+        "NFM THOR Concealable Reinforced Vest body armor": 170,
+        "MF-UNTAR body armor": 100,
+        "DRD body armor": 120,
+        "BNTI Gzhel-K body armor": 259,
+        "BNTI Zhuk body armor (Digital Flora)": 305,
+        "FORT Defender-2 body armor": 320,
+        "6B13 M assault armor (Killa Edition)": 249,
+        "IOTV Gen4 body armor (Assault Kit, MultiCam)": 362,
+        "FORT Redut-M body armor": 350,
+        "IOTV Gen4 body armor (High Mobility Kit, MultiCam)": 320,
+        "NFM THOR Integrated Carrier body armor": 466,
+        "FORT Redut-T5 body armor (Smog)": 496,
+        "6B43 Zabralo-Sh body armor (Digital Flora)": 510,
+        "IOTV Gen4 body armor (Full Protection Kit, MultiCam)": 398,
+    }
+    return (
+        body_armors_and_plate_carriers[item]
+        if item in body_armors_and_plate_carriers
+        else 0
+    )
+
+
+def armor_vest_rig_areas_kr(areas_en):
+    """
+    방탄조끼, 전술조끼 보호 부위 한글
+    """
+    parts = {
+        "F. PLATE": "앞쪽 방탄판",
+        "FR. PLATE": "앞쪽 방탄판",
+        "BCK. PLATE": "뒤쪽 방탄판",
+        "L. PLATE": "왼쪽 방탄판",
+        "R. PLATE": "오른쪽 방탄판",
+        "Thorax": "흉부",
+        "Thorax, Upper back": "흉부 - 위쪽 등",
+        "Stomach": "복부",
+        "Stomach, Lower back": "복부 - 아래쪽 등",
+        "Stomach, Left Side": "복부 - 왼쪽 옆구리",
+        "Stomach, Right Side": "복부 - 오른쪽 옆구리",
+        "Stomach, Groin": "복부 - 골반",
+        "Stomach, Buttocks": "복부 - 엉덩이",
+        "Head, Throat": "머리 - 목 앞쪽",
+        "Head, Neck": "머리 - 목 뒤쪽",
+        "Left arm, Shoulder": "왼팔 - 어깨",
+        "Right arm, Shoulder": "오른팔 - 어깨",
+    }
+    result = []
+    for area in areas_en:
+        result.append(parts[area])
+    return result
 
 
 def process_head_wear(item):
     """
     head_wear 데이터 가공
     """
-    head_wear_id = item.get("id")
-    head_wear_name = item.get("name")
-    head_wear_short_name = item.get("shortName")
-    head_wear_weight = item.get("weight")
-    head_wear_image = item.get("image512pxLink")
-    head_wear_update_time = pendulum.now("Asia/Seoul")
-    head_wear_class = None
-    head_wear_areas_en = None
-    head_wear_areas_kr = None
-    head_wear_durability = None
-    head_wear_ricochet_chance = None
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    weight = item.get("weight")
+    image = item.get("image512pxLink")
+    update_time = pendulum.now("Asia/Seoul")
+    class_value = None
+    areas_en = None
+    areas_kr = None
+    durability = None
+    ricochet_chance = None
+    ricochet_str_en = None
+    ricochet_str_kr = None
 
     if item["properties"] != {}:
-        head_wear_class = (
+        class_value = (
             item["properties"].get("class") if item.get("properties") else None
         )
-        head_wear_areas_en = modify_helmet_area(
+        areas_en = modify_helmet_area(
             item["properties"].get("headZones") if item.get("properties") else None
         )
-        head_wear_areas_kr = check_helmet_area_kr(head_wear_areas_en)
-        head_wear_durability = (
-            item["properties"].get("durability") if item.get("properties") else None
-        )
-        head_wear_ricochet_chance = (
+        areas_kr = check_helmet_area_kr(areas_en)
+        durability = durability_edit(name)
+        ricochet_chance = (
             item["properties"].get("ricochetY") if item.get("properties") else None
         )
+        ricochet_chance = ricochet_chance_edit(name, ricochet_chance)
+        ricochet_str_en = ricochet_chance_en(ricochet_chance)
+        ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
+
     return (
-        head_wear_id,
-        head_wear_name,
-        head_wear_short_name,
-        head_wear_class,
-        head_wear_areas_en,
-        head_wear_areas_kr,
-        head_wear_durability,
-        head_wear_ricochet_chance,
-        head_wear_weight,
-        head_wear_image,
-        head_wear_update_time,
+        id,
+        name,
+        short_name,
+        class_value,
+        areas_en,
+        areas_kr,
+        durability,
+        ricochet_chance,
+        weight,
+        image,
+        ricochet_str_en,
+        ricochet_str_kr,
+        update_time,
     )
+
+
+def durability_edit(name):
+    """
+    내구성 주입
+    """
+    helmets = {
+        "Bomber beanie": 150,
+        "Tac-Kek FAST MT helmet (Replica)": 48,
+        "TSh-4M-L soft tank crew helmet": 105,
+        "Kolpak-1S riot helmet": 45,
+        "PSh-97 DJETA riot helmet": 156,
+        "ShPM Firefighter helmet": 96,
+        "Jack-o'-lantern tactical pumpkin helmet": 40,
+        "LShZ lightweight helmet (Olive Drab)": 36,
+        "Galvion Caiman Hybrid helmet (Grey)": 60,
+        "Diamond Age NeoSteel High Cut helmet (Black)": 72,
+        "NFM HJELM helmet (Hellhound Grey)": 78,
+        "UNTAR helmet": 45,
+        "6B47 Ratnik-BSh helmet (Olive Drab)": 45,
+        "6B47 Ratnik-BSh helmet (Digital Flora cover)": 45,
+        "SSh-68 steel helmet (Olive Drab)": 54,
+        "FORT Kiver-M bulletproof helmet": 63,
+        "NPP KlASS Tor-2 helmet (Olive Drab)": 81,
+        "SSSh-94 SFERA-S helmet": 135,
+        "DevTac Ronin ballistic helmet": 180,
+        "MSA ACH TC-2001 MICH Series helmet (Olive Drab)": 30,
+        "MSA ACH TC-2002 MICH Series helmet (Olive Drab)": 32,
+        "HighCom Striker ACHHC IIIA helmet (Olive Drab)": 36,
+        "HighCom Striker ACHHC IIIA helmet (Black)": 36,
+        "MSA Gallet TC 800 High Cut combat helmet (Black)": 36,
+        "Diamond Age Bastion helmet (Black)": 48,
+        "Ops-Core FAST MT Super High Cut helmet (Black)": 48,
+        "Ops-Core FAST MT Super High Cut helmet (Urban Tan)": 48,
+        "Crye Precision AirFrame helmet (Tan)": 48,
+        "Team Wendy EXFIL Ballistic Helmet (Coyote Brown)": 54,
+        "Team Wendy EXFIL Ballistic Helmet (Black)": 54,
+        "ZSh-1-2M helmet (Olive Drab)": 63,
+        "ZSh-1-2M helmet (Black cover)": 63,
+        "HighCom Striker ULACH IIIA helmet (Black)": 66,
+        "HighCom Striker ULACH IIIA helmet (Desert Tan)": 66,
+        "BNTI LShZ-2DTM helmet (Black)": 99,
+        "Maska-1SCh bulletproof helmet (Killa Edition)": 108,
+        "Maska-1SCh bulletproof helmet (Olive Drab)": 108,
+        "Altyn bulletproof helmet (Olive Drab)": 81,
+        "Rys-T bulletproof helmet (Black)": 90,
+        "Vulkan-5 LShZ-5 bulletproof helmet (Black)": 99,
+    }
+    return helmets[name] if name in helmets else None
+
+
+def ricochet_chance_edit(name, ricochet_chance):
+    """
+    도탄 기회 주입
+    """
+    if name == "Team Wendy EXFIL Ballistic Helmet (Black)":
+        return 0.4
+    elif name == "Team Wendy EXFIL Ballistic Helmet (Coyote Brown)":
+        return 0.4
+    elif name == "DevTac Ronin ballistic helmet":
+        return 0.4
+    else:
+        return ricochet_chance
+
+
+def ricochet_chance_en(item):
+    """
+    head wear 도탄 기회 영문
+    """
+    if item < 0.2:
+        return "Low"
+    elif item < 0.4:
+        return "Medium"
+    else:
+        return "High"
+
+
+def ricochet_chance_kr(item):
+    """
+    head wear 도탄 기회 한글
+    """
+    if item < 0.2:
+        return "낮음"
+    elif item < 0.4:
+        return "중간"
+    else:
+        return "높음"
 
 
 def gun_modes_kr(weapon_modes_en):

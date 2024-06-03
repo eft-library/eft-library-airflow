@@ -1,30 +1,26 @@
-INSERT INTO tkw_head_wear (
+INSERT INTO tkw_rig (
     id,
     name,
     short_name,
+    weight,
+    image,
     class_value,
     areas_en,
     areas_kr,
     durability,
-    ricochet_chance,
-    weight,
-    image,
-    ricochet_str_en,
-    ricochet_str_kr,
+    capacity,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     short_name = EXCLUDED.short_name,
+    weight = EXCLUDED.weight,
+    image = EXCLUDED.image,
     class_value = EXCLUDED.class_value,
     areas_en = EXCLUDED.areas_en,
     areas_kr = EXCLUDED.areas_kr,
     durability = EXCLUDED.durability,
-    ricochet_chance = EXCLUDED.ricochet_chance,
-    weight = EXCLUDED.weight,
-    image = EXCLUDED.image,
-    ricochet_str_en = EXCLUDED.ricochet_str_en,
-    ricochet_str_kr = EXCLUDED.ricochet_str_kr,
+    capacity = EXCLUDED.capacity,
     update_time = EXCLUDED.update_time;
