@@ -50,6 +50,11 @@ weapon_graphql = """
         class
         zones
       } 
+      ... on ItemPropertiesChestRig {
+        class
+        zones
+        capacity
+      }
     }
   }
 }
@@ -95,6 +100,12 @@ def check_category(weapon_list, weapon_category):
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
     elif weapon_category == "Armor":
+        return [
+            item
+            for item in weapon_list
+            if item["category"]["name"] == weapon_category and item["properties"] != {}
+        ]
+    elif weapon_category == "Chest rig":
         return [
             item
             for item in weapon_list
@@ -290,7 +301,7 @@ def process_armor_vest(item):
     class_value = item["properties"].get("class")
     areas_en = item["properties"].get("zones")
     areas_kr = armor_vest_rig_areas_kr(areas_en)
-    durability = item["properties"].get("durability")
+    durability = armor_vest_durability(name)
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -304,6 +315,122 @@ def process_armor_vest(item):
         areas_kr,
         durability,
         update_time,
+    )
+
+
+def process_rigs(item):
+    """
+    rig 데이터 가공
+    """
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    weight = item.get("weight")
+    image = item.get("image512pxLink")
+    class_value = None
+    areas_en = None
+    areas_kr = None
+    capacity = item["properties"].get("capacity")
+    durability = None
+    update_time = pendulum.now("Asia/Seoul")
+
+    if item["properties"]["class"] != None:
+        class_value = item["properties"].get("class")
+        areas_en = item["properties"].get("zones")
+        areas_kr = armor_vest_rig_areas_kr(areas_en)
+        durability = rig_durability_edit(name)
+
+    return (
+        id,
+        name,
+        short_name,
+        weight,
+        image,
+        class_value,
+        areas_en,
+        areas_kr,
+        durability,
+        capacity,
+        update_time,
+    )
+
+
+def rig_durability_edit(item):
+    """
+    전술조끼 내구성 주입
+    """
+    plate_carriers = {
+        "Eagle Allied Industries MBSS plate carrier (Coyote Brown)": 70,
+        "Tasmanian Tiger SK plate carrier (MultiCam Black)": 110,
+        "S&S Precision PlateFrame plate carrier (Goons Edition)": 120,
+        "WARTECH TV-115 plate carrier (Olive Drab)": 122,
+        "WARTECH TV-110 plate carrier (Coyote)": 160,
+        "Eagle Industries MMAC plate carrier (Ranger Green)": 144,
+        "Shellback Tactical Banshee plate carrier (A-TACS AU)": 152,
+        "Ars Arma A18 Skanda plate carrier (MultiCam)": 186,
+        "ANA Tactical M1 plate carrier (Olive Drab)": 194,
+        "FirstSpear Strandhogg plate carrier (Ranger Green)": 198,
+        "ECLiPSE RBAV-AF plate carrier (Ranger Green)": 218,
+        "CQC Osprey MK4A plate carrier (Assault, MTP)": 222,
+        "Crye Precision AVS plate carrier (Tagilla Edition)": 170,
+        "5.11 Tactical TacTec plate carrier (Ranger Green)": 170,
+        "Crye Precision CPC plate carrier (Goons Edition)": 230,
+        "Ars Arma CPC MOD.1 plate carrier (A-TACS FG)": 240,
+        "ANA Tactical M2 plate carrier (Digital Flora)": 206,
+        "Crye Precision AVS plate carrier (Ranger Green)": 212,
+        "NPP KlASS Bagariy plate carrier (Digital Flora)": 232,
+        "6B5-16 Zh-86 Uley armored rig (Khaki)": 160,
+        "CQC Osprey MK4A plate carrier (Protection, MTP)": 272,
+        "6B3TM-01 armored rig (Khaki)": 86,
+        "6B5-15 Zh-86 Uley armored rig (Flora)": 110,
+    }
+    return plate_carriers[item] if item in plate_carriers else 0
+
+
+def armor_vest_durability(item):
+    """
+    전술조끼 내구성 주입
+    """
+    body_armors_and_plate_carriers = {
+        "LBT-6094A Slick Plate Carrier (Olive Drab)": 200,
+        "LBT-6094A Slick Plate Carrier (Coyote Tan)": 200,
+        "LBT-6094A Slick Plate Carrier (Black)": 200,
+        "NPP KlASS Kora-Kulon body armor (Digital Flora)": 128,
+        "NPP KlASS Kora-Kulon body armor (Black)": 128,
+        "6B13 assault armor (Flora)": 203,
+        "6B13 assault armor (Digital Flora)": 203,
+        "Hexatac HPC Plate Carrier (MultiCam Black)": 90,
+        "5.11 Tactical Hexgrid plate carrier": 100,
+        "6B2 body armor (Flora)": 128,
+        "BNTI Module-3M body armor": 80,
+        "PACA Soft Armor": 100,
+        "PACA Soft Armor (Rivals Edition)": 100,
+        "Interceptor OTV body armor (UCP)": 222,
+        "BNTI Zhuk body armor (Press)": 185,
+        "BNTI Kirasa-N body armor": 240,
+        "6B23-1 body armor (Digital Flora)": 206,
+        "6B23-2 body armor (Mountain Flora)": 246,
+        "NPP KlASS Korund-VM body armor (Black)": 310,
+        "HighCom Trooper TFO body armor (MultiCam)": 180,
+        "NFM THOR Concealable Reinforced Vest body armor": 170,
+        "MF-UNTAR body armor": 100,
+        "DRD body armor": 120,
+        "BNTI Gzhel-K body armor": 259,
+        "BNTI Zhuk body armor (Digital Flora)": 305,
+        "FORT Defender-2 body armor": 320,
+        "6B13 M assault armor (Killa Edition)": 249,
+        "IOTV Gen4 body armor (Assault Kit, MultiCam)": 362,
+        "FORT Redut-M body armor": 350,
+        "IOTV Gen4 body armor (High Mobility Kit, MultiCam)": 320,
+        "NFM THOR Integrated Carrier body armor": 466,
+        "FORT Redut-T5 body armor (Smog)": 496,
+        "6B43 Zabralo-Sh body armor (Digital Flora)": 510,
+        "IOTV Gen4 body armor (Full Protection Kit, MultiCam)": 398,
+    }
+    return (
+        body_armors_and_plate_carriers[item]
+        if item in body_armors_and_plate_carriers
+        else 0
     )
 
 
