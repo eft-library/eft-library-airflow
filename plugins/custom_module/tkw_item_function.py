@@ -45,6 +45,11 @@ weapon_graphql = """
         headZones
         ricochetY
       }
+      ... on ItemPropertiesArmor {
+        durability
+        class
+        zones
+      } 
     }
   }
 }
@@ -89,6 +94,12 @@ def check_category(weapon_list, weapon_category):
             and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
+    elif weapon_category == "Armor":
+        return [
+            item
+            for item in weapon_list
+            if item["category"]["name"] == weapon_category and item["properties"] != {}
+        ]
     else:
         return [
             item
@@ -132,59 +143,51 @@ def process_gun(item):
     """
     gun 데이터 가공
     """
-    weapon_id = item.get("id")
-    weapon_name = item.get("name")
-    weapon_short_name = check_short_name(weapon_name, item.get("shortName"))
-    weapon_img = item.get("image512pxLink")
-    weapon_original_category = (
-        item["category"].get("name") if item.get("category") else None
-    )
-    weapon_category = check_weapon_category(weapon_short_name, weapon_original_category)
-    weapon_carliber = (
-        item["properties"].get("caliber") if item.get("properties") else None
-    )
-    weapon_default_ammo = (
+    id = item.get("id")
+    name = item.get("name")
+    short_name = check_short_name(name, item.get("shortName"))
+    img = item.get("image512pxLink")
+    original_category = item["category"].get("name") if item.get("category") else None
+    category = check_weapon_category(short_name, original_category)
+    carliber = item["properties"].get("caliber") if item.get("properties") else None
+    default_ammo = (
         item["properties"]["defaultAmmo"].get("name")
         if item.get("properties") and item["properties"].get("defaultAmmo")
         else None
     )
-    weapon_modes_en = (
-        item["properties"].get("fireModes") if item.get("properties") else None
-    )
-    weapon_fire_rate = (
-        item["properties"].get("fireRate") if item.get("properties") else None
-    )
-    weapon_ergonomics = (
+    modes_en = item["properties"].get("fireModes") if item.get("properties") else None
+    fire_rate = item["properties"].get("fireRate") if item.get("properties") else None
+    ergonomics = (
         item["properties"].get("defaultErgonomics") if item.get("properties") else None
     )
-    weapon_recoil_vertical = (
+    recoil_vertical = (
         item["properties"].get("defaultRecoilVertical")
         if item.get("properties")
         else None
     )
-    weapon_recoil_horizontal = (
+    recoil_horizontal = (
         item["properties"].get("defaultRecoilHorizontal")
         if item.get("properties")
         else None
     )
-    weapon_update_time = pendulum.now("Asia/Seoul")
-    weapon_modes_kr = gun_modes_kr(weapon_modes_en)
+    update_time = pendulum.now("Asia/Seoul")
+    modes_kr = gun_modes_kr(modes_en)
 
     return (
-        weapon_id,
-        weapon_name,
-        weapon_short_name,
-        weapon_img,
-        weapon_category,
-        weapon_carliber,
-        weapon_default_ammo,
-        weapon_modes_en,
-        weapon_modes_kr,
-        weapon_fire_rate,
-        weapon_ergonomics,
-        weapon_recoil_vertical,
-        weapon_recoil_horizontal,
-        weapon_update_time,
+        id,
+        name,
+        short_name,
+        img,
+        category,
+        carliber,
+        default_ammo,
+        modes_en,
+        modes_kr,
+        fire_rate,
+        ergonomics,
+        recoil_vertical,
+        recoil_horizontal,
+        update_time,
     )
 
 
@@ -192,32 +195,30 @@ def process_knife(item):
     """
     knife 데이터 가공
     """
-    knife_id = item.get("id")
-    knife_name = item.get("name")
-    knife_short_name = item.get("shortName")
-    knife_image = item.get("image512pxLink")
-    knife_category = item["category"].get("name") if item.get("category") else None
-    knife_slash_damage = (
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    image = item.get("image512pxLink")
+    category = item["category"].get("name") if item.get("category") else None
+    slash_damage = (
         item["properties"].get("slashDamage") if item.get("properties") else None
     )
-    knife_stab_damage = (
+    stab_damage = (
         item["properties"].get("stabDamage") if item.get("properties") else None
     )
-    knife_hit_radius = (
-        item["properties"].get("hitRadius") if item.get("properties") else None
-    )
-    knife_update_time = pendulum.now("Asia/Seoul")
+    hit_radius = item["properties"].get("hitRadius") if item.get("properties") else None
+    update_time = pendulum.now("Asia/Seoul")
 
     return (
-        knife_id,
-        knife_name,
-        knife_short_name,
-        knife_image,
-        knife_category,
-        knife_slash_damage,
-        knife_stab_damage,
-        knife_hit_radius,
-        knife_update_time,
+        id,
+        name,
+        short_name,
+        image,
+        category,
+        slash_damage,
+        stab_damage,
+        hit_radius,
+        update_time,
     )
 
 
@@ -225,38 +226,36 @@ def process_throwable(item):
     """
     throwable 데이터 가공
     """
-    throwable_id = item.get("id")
-    throwable_name = item.get("name")
-    throwable_short_name = item.get("shortName")
-    throwable_image = item.get("image512pxLink")
-    throwable_category = item["category"].get("name") if item.get("category") else None
-    throwable_fuse = item["properties"].get("fuse") if item.get("properties") else None
-    throwable_min_explosion_distance = (
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    image = item.get("image512pxLink")
+    category = item["category"].get("name") if item.get("category") else None
+    fuse = item["properties"].get("fuse") if item.get("properties") else None
+    min_explosion_distance = (
         item["properties"].get("minExplosionDistance")
         if item.get("properties")
         else None
     )
-    throwable_max_explosion_distance = (
+    max_explosion_distance = (
         item["properties"].get("maxExplosionDistance")
         if item.get("properties")
         else None
     )
-    throwable_fragments = (
-        item["properties"].get("fragments") if item.get("properties") else None
-    )
-    throwable_update_time = pendulum.now("Asia/Seoul")
+    fragments = item["properties"].get("fragments") if item.get("properties") else None
+    update_time = pendulum.now("Asia/Seoul")
 
     return (
-        throwable_id,
-        throwable_name,
-        throwable_short_name,
-        throwable_image,
-        throwable_category,
-        throwable_fuse,
-        throwable_min_explosion_distance,
-        throwable_max_explosion_distance,
-        throwable_fragments,
-        throwable_update_time,
+        id,
+        name,
+        short_name,
+        image,
+        category,
+        fuse,
+        min_explosion_distance,
+        max_explosion_distance,
+        fragments,
+        update_time,
     )
 
 
@@ -264,19 +263,77 @@ def process_head_phone(item):
     """
     head_phone 데이터 가공
     """
-    head_phone_id = item.get("id")
-    head_phone_name = item.get("name")
-    head_phone_short_name = item.get("shortName")
-    head_phone_image = item.get("image512pxLink")
-    head_phone_update_time = pendulum.now("Asia/Seoul")
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    image = item.get("image512pxLink")
+    update_time = pendulum.now("Asia/Seoul")
 
     return (
-        head_phone_id,
-        head_phone_name,
-        head_phone_short_name,
-        head_phone_image,
-        head_phone_update_time,
+        id,
+        name,
+        short_name,
+        image,
+        update_time,
     )
+
+
+def process_armor_vest(item):
+    """
+    armor vest 데이터 가공
+    """
+    id = item.get("id")
+    name = item.get("name")
+    short_name = item.get("shortName")
+    weight = item.get("weight")
+    image = item.get("image512pxLink")
+    class_value = item["properties"].get("class")
+    areas_en = item["properties"].get("zones")
+    areas_kr = armor_vest_rig_areas_kr(areas_en)
+    durability = item["properties"].get("durability")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        id,
+        name,
+        short_name,
+        weight,
+        image,
+        class_value,
+        areas_en,
+        areas_kr,
+        durability,
+        update_time,
+    )
+
+
+def armor_vest_rig_areas_kr(areas_en):
+    """
+    방탄조끼, 전술조끼 보호 부위 한글
+    """
+    parts = {
+        "F. PLATE": "앞쪽 방탄판",
+        "FR. PLATE": "앞쪽 방탄판",
+        "BCK. PLATE": "뒤쪽 방탄판",
+        "L. PLATE": "왼쪽 방탄판",
+        "R. PLATE": "오른쪽 방탄판",
+        "Thorax": "흉부",
+        "Thorax, Upper back": "흉부, 위쪽 등",
+        "Stomach": "복부",
+        "Stomach, Lower back": "복부, 아래쪽 등",
+        "Stomach, Left Side": "복부, 왼쪽 옆구리",
+        "Stomach, Right Side": "복부, 오른쪽 옆구리",
+        "Stomach, Groin": "복부, 골반",
+        "Stomach, Buttocks": "복부, 엉덩이",
+        "Head, Throat": "머리, 목 앞쪽",
+        "Head, Neck": "머리, 목 뒤쪽",
+        "Left arm, Shoulder": "왼팔, 어깨",
+        "Right arm, Shoulder": "오른팔, 어깨",
+    }
+    result = []
+    for area in areas_en:
+        result.append(parts[area])
+    return result
 
 
 def process_head_wear(item):
@@ -383,7 +440,7 @@ def ricochet_chance_edit(name, ricochet_chance):
     """
     도탄 기회 주입
     """
-    if name == "Team Wendy EXFIL Ballistic Helmet (Black) ":
+    if name == "Team Wendy EXFIL Ballistic Helmet (Black)":
         return 0.4
     elif name == "Team Wendy EXFIL Ballistic Helmet (Coyote Brown)":
         return 0.4
