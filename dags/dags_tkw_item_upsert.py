@@ -5,18 +5,14 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
-from custom_module.tkw_item_function import (
-    check_category,
-    process_gun,
-    process_knife,
-    process_throwable,
-    process_head_phone,
-    process_head_wear,
-    process_armor_vest,
-    process_rigs,
-    weapon_graphql,
-    gun_image_change,
-)
+from custom_module.tkw_item_function import check_category, weapon_graphql
+from custom_module.item.knife_function import process_knife
+from custom_module.item.throwable_function import process_throwable
+from custom_module.item.rig_function import process_rig
+from custom_module.item.armor_vest_function import process_armor_vest
+from custom_module.item.head_wear_function import process_head_wear
+from custom_module.item.head_phone_function import process_head_phone
+from custom_module.item.gun_function import  process_gun, gun_image_change
 
 default_args = {
     "owner": "airflow",
@@ -126,7 +122,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_rigs(item))
+                    cursor.execute(sql, process_rig(item))
             conn.commit()
 
     fetch_data = PythonOperator(
