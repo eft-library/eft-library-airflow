@@ -13,6 +13,7 @@ from custom_module.item.armor_vest_function import process_armor_vest
 from custom_module.item.head_wear_function import process_head_wear
 from custom_module.item.head_phone_function import process_head_phone
 from custom_module.item.gun_function import  process_gun, gun_image_change
+from custom_module.item.backpack_function import process_backpack
 
 default_args = {
     "owner": "airflow",
@@ -110,6 +111,19 @@ with DAG(
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
                     cursor.execute(sql, process_armor_vest(item))
+            conn.commit()
+
+    def upsert_backpack(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkw_backpack.sql")
+        data_list = check_category(weapon_data["data"]["items"], "Backpack")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in data_list:
+                    cursor.execute(sql, process_backpack(item))
             conn.commit()
 
     def upsert_rig(postgres_conn_id, **kwargs):

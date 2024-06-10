@@ -53,6 +53,10 @@ weapon_graphql = """
         zones
         capacity
       }
+      ... on ItemPropertiesBackpack {
+        grids{width, height}
+        capacity
+      }
     }
   }
 }
@@ -97,18 +101,24 @@ def check_category(weapon_list, weapon_category):
             and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
-    elif weapon_category == "Armor":
-        return [
-            item
-            for item in weapon_list
-            if item["category"]["name"] == weapon_category and item["properties"] != {}
-        ]
-    elif weapon_category == "Chest rig":
-        return [
-            item
-            for item in weapon_list
-            if item["category"]["name"] == weapon_category and item["properties"] != {}
-        ]
+    # elif weapon_category == "Armor":
+    #     return [
+    #         item
+    #         for item in weapon_list
+    #         if item["category"]["name"] == weapon_category and item["properties"] != {}
+    #     ]
+    # elif weapon_category == "Chest rig":
+    #     return [
+    #         item
+    #         for item in weapon_list
+    #         if item["category"]["name"] == weapon_category and item["properties"] != {}
+    #     ]
+    # elif weapon_category == "Backpack":
+    #     return [
+    #         item
+    #         for item in weapon_list
+    #         if item["category"]["name"] == weapon_category and item["properties"] != {}
+    #     ]
     else:
         return [
             item
