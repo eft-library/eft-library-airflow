@@ -1,3 +1,4 @@
+import json
 import pendulum
 
 def process_backpack(item):
@@ -9,7 +10,7 @@ def process_backpack(item):
     short_name = item.get("shortName")
     weight = item.get("weight")
     image = item.get("image512pxLink")
-    grids = item["properties"].get("grids")
+    grids = json.dumps(item["properties"].get("grids"))
     capacity = item["properties"].get("capacity")
     update_time = pendulum.now("Asia/Seoul")
 

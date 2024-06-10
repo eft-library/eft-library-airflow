@@ -192,6 +192,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_backpack_task = PythonOperator(
+        task_id="upsert_backpack",
+        python_callable=upsert_backpack,
+        op_kwargs={"postgres_conn_id": "tkw_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [
         upsert_gun_task,
         upsert_knife_task,
@@ -199,5 +206,6 @@ with DAG(
         upsert_head_phone_task,
         upsert_head_wear_task,
         upsert_armor_vest_task,
+        upsert_backpack_task,
         upsert_rig_task,
     ]
