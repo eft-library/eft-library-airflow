@@ -57,24 +57,28 @@ weapon_graphql = """
         grids{width, height}
         capacity
       }
+      ... on ItemPropertiesContainer {
+        capacity
+        grids{width, height}
+      }
     }
   }
 }
 """
 
 
-def check_category(weapon_list, weapon_category):
+def check_category(weapon_list, category):
     """
     category 별 데이터 변경
     """
-    if weapon_category == "Gun":
+    if category == "Gun":
         return [
             item
             for item in weapon_list
             if item["category"]["parent"]["name"] == "Weapon"
             and item["properties"] != {}
         ]
-    elif weapon_category == "Gun image":
+    elif category == "Gun image":
         return [
             item
             for item in weapon_list
@@ -88,15 +92,15 @@ def check_category(weapon_list, weapon_category):
                 or "Kalashnikov PKP 7.62x54R infantry machine gun Zenit" in item["name"]
             )
         ]
-    elif weapon_category == "Headphones":
+    elif category == "Headphones":
         return [
-            item for item in weapon_list if item["category"]["name"] == weapon_category
+            item for item in weapon_list if item["category"]["name"] == category
         ]
-    elif weapon_category == "Headwear":
+    elif category == "Headwear":
         return [
             item
             for item in weapon_list
-            if item["category"]["name"] == weapon_category
+            if item["category"]["name"] == category
             and item["name"] != "Maska-1SCh bulletproof helmet (Killa Edition) Default"
             and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
@@ -123,5 +127,5 @@ def check_category(weapon_list, weapon_category):
         return [
             item
             for item in weapon_list
-            if item["category"]["name"] == weapon_category and item["properties"] != {}
+            if item["category"]["name"] == category and item["properties"] != {}
         ]

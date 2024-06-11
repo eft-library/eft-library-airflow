@@ -14,6 +14,7 @@ from custom_module.item.head_wear_function import process_head_wear
 from custom_module.item.head_phone_function import process_head_phone
 from custom_module.item.gun_function import  process_gun, gun_image_change
 from custom_module.item.backpack_function import process_backpack
+from custom_module.item.container_function import process_container
 
 default_args = {
     "owner": "airflow",
@@ -126,6 +127,19 @@ with DAG(
                     cursor.execute(sql, process_backpack(item))
             conn.commit()
 
+    def upsert_container(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkw_container.sql")
+        data_list = check_category(weapon_data["data"]["items"], "Common container")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in data_list:
+                    cursor.execute(sql, process_container(item))
+            conn.commit()
+
     def upsert_rig(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
         weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
@@ -199,6 +213,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_container_task = PythonOperator(
+        task_id="upsert_container",
+        python_callable=upsert_container,
+        op_kwargs={"postgres_conn_id": "tkw_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [
         upsert_gun_task,
         upsert_knife_task,
@@ -208,4 +229,5 @@ with DAG(
         upsert_armor_vest_task,
         upsert_backpack_task,
         upsert_rig_task,
+        upsert_container_task
     ]
