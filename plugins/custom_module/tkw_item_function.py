@@ -61,27 +61,38 @@ weapon_graphql = """
         capacity
         grids{width, height}
       }
+      ... on ItemPropertiesKey {
+        uses
+      }
+    }
+  }
+  maps {
+    name
+    locks {
+      key {
+        name
+      }
     }
   }
 }
 """
 
 
-def check_category(weapon_list, category):
+def check_category(item_list, category):
     """
     category 별 데이터 변경
     """
     if category == "Gun":
         return [
             item
-            for item in weapon_list
+            for item in item_list
             if item["category"]["parent"]["name"] == "Weapon"
             and item["properties"] != {}
         ]
     elif category == "Gun image":
         return [
             item
-            for item in weapon_list
+            for item in item_list
             if item["category"]["parent"]["name"] == "Weapon"
             and item["properties"] == {}
             and (
@@ -94,12 +105,12 @@ def check_category(weapon_list, category):
         ]
     elif category == "Headphones":
         return [
-            item for item in weapon_list if item["category"]["name"] == category
+            item for item in item_list if item["category"]["name"] == category
         ]
     elif category == "Headwear":
         return [
             item
-            for item in weapon_list
+            for item in item_list
             if item["category"]["name"] == category
             and item["name"] != "Maska-1SCh bulletproof helmet (Killa Edition) Default"
             and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
@@ -108,24 +119,30 @@ def check_category(weapon_list, category):
     # elif weapon_category == "Armor":
     #     return [
     #         item
-    #         for item in weapon_list
+    #         for item in item_list
     #         if item["category"]["name"] == weapon_category and item["properties"] != {}
     #     ]
     # elif weapon_category == "Chest rig":
     #     return [
     #         item
-    #         for item in weapon_list
+    #         for item in item_list
     #         if item["category"]["name"] == weapon_category and item["properties"] != {}
     #     ]
     # elif weapon_category == "Backpack":
     #     return [
     #         item
-    #         for item in weapon_list
+    #         for item in item_list
     #         if item["category"]["name"] == weapon_category and item["properties"] != {}
     #     ]
+    elif category == "Key":
+        return [
+            item
+            for item in item_list
+            if item["category"]["parent"]["name"] == "Key" and item["properties"] != {}
+        ]
     else:
         return [
             item
-            for item in weapon_list
+            for item in item_list
             if item["category"]["name"] == category and item["properties"] != {}
         ]

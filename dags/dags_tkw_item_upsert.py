@@ -15,6 +15,7 @@ from custom_module.item.head_phone_function import process_head_phone
 from custom_module.item.gun_function import  process_gun, gun_image_change
 from custom_module.item.backpack_function import process_backpack
 from custom_module.item.container_function import process_container
+from custom_module.item.key_function import process_key, process_key_map
 
 default_args = {
     "owner": "airflow",
@@ -30,17 +31,17 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    def fetch_weapon_data(**kwargs):
-        weapon_data = get_graphql(weapon_graphql)
-        return weapon_data
+    def fetch_item_list(**kwargs):
+        item_list = get_graphql(weapon_graphql)
+        return item_list
 
     def upsert_gun(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_weapon.sql")
-        original_data = check_category(weapon_data["data"]["items"], "Gun")
-        image_data = check_category(weapon_data["data"]["items"], "Gun image")
+        original_data = check_category(item_list["data"]["items"], "Gun")
+        image_data = check_category(item_list["data"]["items"], "Gun image")
         data_list = gun_image_change(original_data, image_data)
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -51,10 +52,10 @@ with DAG(
 
     def upsert_knife(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_knife.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Knife")
+        data_list = check_category(item_list["data"]["items"], "Knife")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -64,10 +65,10 @@ with DAG(
 
     def upsert_throwable(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_throwable.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Throwable weapon")
+        data_list = check_category(item_list["data"]["items"], "Throwable weapon")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -77,10 +78,10 @@ with DAG(
 
     def upsert_head_phone(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_head_phone.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Headphones")
+        data_list = check_category(item_list["data"]["items"], "Headphones")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -90,10 +91,10 @@ with DAG(
 
     def upsert_head_wear(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_head_wear.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Headwear")
+        data_list = check_category(item_list["data"]["items"], "Headwear")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -103,10 +104,10 @@ with DAG(
 
     def upsert_armor_vest(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_armor_vest.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Armor")
+        data_list = check_category(item_list["data"]["items"], "Armor")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -116,10 +117,10 @@ with DAG(
 
     def upsert_backpack(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_backpack.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Backpack")
+        data_list = check_category(item_list["data"]["items"], "Backpack")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -129,10 +130,10 @@ with DAG(
 
     def upsert_container(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_container.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Common container")
+        data_list = check_category(item_list["data"]["items"], "Common container")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -140,12 +141,26 @@ with DAG(
                     cursor.execute(sql, process_container(item))
             conn.commit()
 
+    def upsert_key(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkw_key.sql")
+        data_list = check_category(item_list["data"]["items"], "Key")
+        key_map = process_key_map(item_list["data"]["maps"])
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in data_list:
+                    cursor.execute(sql, process_key(item, key_map))
+            conn.commit()
+
     def upsert_rig(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        weapon_data = ti.xcom_pull(task_ids="fetch_weapon_data")
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkw_rig.sql")
-        data_list = check_category(weapon_data["data"]["items"], "Chest rig")
+        data_list = check_category(item_list["data"]["items"], "Chest rig")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -154,7 +169,7 @@ with DAG(
             conn.commit()
 
     fetch_data = PythonOperator(
-        task_id="fetch_weapon_data", python_callable=fetch_weapon_data
+        task_id="fetch_item_list", python_callable=fetch_item_list
     )
 
     upsert_gun_task = PythonOperator(
@@ -220,6 +235,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_key_task = PythonOperator(
+        task_id="upsert_key",
+        python_callable=upsert_key,
+        op_kwargs={"postgres_conn_id": "tkw_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [
         upsert_gun_task,
         upsert_knife_task,
@@ -229,5 +251,6 @@ with DAG(
         upsert_armor_vest_task,
         upsert_backpack_task,
         upsert_rig_task,
-        upsert_container_task
+        upsert_container_task,
+        upsert_key_task
     ]
