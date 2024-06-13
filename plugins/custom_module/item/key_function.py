@@ -35,19 +35,20 @@ def process_key_map(item_list):
         이름을 DB랑 맞추기 위해 사용
         """
         db_value = {
-            "Factory": "FACTORY",
-            "Customs":"CUSTOM",
-            "Woods":"WOODS",
-            "Lighthouse":"LIGHT_HOUSE",
-            "Shoreline":"SHORELINE",
-            "Reserve":"RESERVE",
-            "Interchange":"INTERCHANGE",
-            "Streets of Tarkov":"STREET_OF_TARKOV",
-            "Night Factory":"FACTORY",
-            "The Lab":"THE_LAB",
-            "Ground Zero":"GROUND_ZERO",
-            "Ground Zero 21+":"GROUND_ZERO"
+            "Factory": ["FACTORY"],
+            "Customs":["CUSTOM"],
+            "Woods":["WOODS"],
+            "Lighthouse":["LIGHT_HOUSE"],
+            "Shoreline":["SHORELINE"],
+            "Reserve":["RESERVE"],
+            "Interchange":["INTERCHANGE"],
+            "Streets of Tarkov":["STREET_OF_TARKOV"],
+            "Night Factory":["FACTORY"],
+            "The Lab":["THE_LAB"],
+            "Ground Zero":["GROUND_ZERO"],
+            "Ground Zero 21+":["GROUND_ZERO"]
         }
+
         return db_value[name] if name in db_value else "N/A"
 
     key_map = {}
@@ -63,6 +64,28 @@ def get_map_for_key(key_map, name):
     """
     key_map 객체에서 맵 추출하여 키에 붙이기
     """
+
+    # 강제 지정
+    map_obj = {
+        "Factory emergency exit key": ["FACTORY", "CUSTOM", "INTERCHANGE", "SHORELINE"],
+        "USEC cottage second safe key": ["LIGHT_HOUSE", "STREET_OF_TARKOV"],
+        "Pinewood hotel room 206 key": ["STREET_OF_TARKOV"],
+        "Weather station safe key": ["SHORELINE"],
+        "Gas station safe key": ["SHORELINE"],
+        "Goshan cash register key": ["INTERCHANGE"]
+    }
+
+    if name in map_obj:
+        return map_obj[name]
+
+    # 해안 선 키 지정
+    if "Health Resort" in name:
+        return ["SHORELINE"]
+
+    # 연구소 키 지정
+    if "TerraGroup Labs" in name:
+        return ["THE_LAB"]
+
     return key_map[name] if name in key_map else "N/A"
 
 def get_use_map_en(map_value):
@@ -81,10 +104,17 @@ def get_use_map_en(map_value):
         "THE_LAB":"The Lab",
         "GROUND_ZERO":"Ground Zero"
     }
-    if map_value in value:
-        return value[map_value]
-    else:
-        return map_value
+
+    map_en_list = []
+
+    # N/A의 케이스가 있음
+    for map in map_value:
+        if map in value:
+            map_en_list.append(value[map])
+        else:
+            map_en_list.append(map)
+
+    return map_en_list
 
 def get_use_map_kr(map_value):
     """
@@ -102,7 +132,14 @@ def get_use_map_kr(map_value):
         "THE_LAB":"연구소",
         "GROUND_ZERO":"그라운드 제로"
     }
-    if map_value in value:
-        return value[map_value]
-    else:
-        return map_value
+
+    map_kr_list = []
+
+    # N/A의 케이스가 있음
+    for map in map_value:
+        if map in value:
+            map_kr_list.append(value[map])
+        else:
+            map_kr_list.append(map)
+
+    return map_kr_list
