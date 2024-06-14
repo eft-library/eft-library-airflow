@@ -49,7 +49,7 @@ def process_key_map(item_list):
             "Ground Zero 21+":["GROUND_ZERO"]
         }
 
-        return db_value[name] if name in db_value else "N/A"
+        return db_value[name] if name in db_value else ["N/A"]
 
     key_map = {}
 
@@ -86,7 +86,7 @@ def get_map_for_key(key_map, name):
     if "TerraGroup Labs" in name:
         return ["THE_LAB"]
 
-    return key_map[name] if name in key_map else "N/A"
+    return key_map[name] if name in key_map else ["N/A"]
 
 def get_use_map_en(map_value):
     """
