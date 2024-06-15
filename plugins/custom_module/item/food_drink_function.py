@@ -13,9 +13,11 @@ def process_food_drink(item):
     category = item["category"].get("name") if item.get("category") else None
     energy = item["properties"].get("energy") if item.get("properties") else None
     hydration = item["properties"].get("hydration") if item.get("properties") else None
-    stim_effects = json.dumps(
+    stim_effects = (
         item["properties"].get("stimEffects") if item.get("properties") else None
     )
+    # void 함수
+    process_stim_effect(stim_effects)
     image = item.get("image512pxLink")
     update_time = pendulum.now("Asia/Seoul")
 
@@ -27,7 +29,7 @@ def process_food_drink(item):
         category,
         energy,
         hydration,
-        stim_effects,
+        json.dumps(stim_effects),
         image,
         update_time,
     )
@@ -82,3 +84,38 @@ def food_drink_kr(name):
     }
 
     return all_kr[name] if name in all_kr else None
+
+
+def process_stim_effect(stim_effects):
+    """
+    stim effect 효과 추가
+    """
+    kr_skill = {
+        "Intellect": "지력",
+        "Attention": "주의력",
+        "Stress Resistance": "스트레스 저항력",
+        "Endurance": "지구력",
+        "Mag Drills": "탄창 훈련",
+        "Strength": "근력",
+        "Metabolism": "신진대사",
+        "Memory": "기억력",
+        "Health": "체력",
+        "Vitality": "활력",
+        "Immunity": "면역력",
+        "Perception": "인지능력",
+        "Charisma": "카리스마",
+    }
+
+    kr_type = {
+        "Energy recovery": "에너지 회복",
+        "Health regeneration": "체력 재생",
+        "Hands tremor": "손 떨림",
+        "Hydration recovery": "수분 회복",
+    }
+
+    for effects in stim_effects:
+        if effects["type"] == "Skill":
+            effects["krSkill"] = kr_skill[effects["skillName"]]
+        else:
+            if effects["type"] in kr_type:
+                effects["krSkill"] = kr_type[effects["type"]]
