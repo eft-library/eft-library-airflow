@@ -16,8 +16,8 @@ def process_food_drink(item):
     stim_effects = (
         item["properties"].get("stimEffects") if item.get("properties") else None
     )
-    # void 함수
-    process_stim_effect(stim_effects)
+    new_stim_effects = process_stim_effect(stim_effects)
+    result_stim_effects = json.dumps(add_painkiller(new_stim_effects, name_en))
     image = item.get("image512pxLink")
     update_time = pendulum.now("Asia/Seoul")
 
@@ -29,7 +29,7 @@ def process_food_drink(item):
         category,
         energy,
         hydration,
-        json.dumps(stim_effects),
+        result_stim_effects,
         image,
         update_time,
     )
@@ -90,6 +90,7 @@ def process_stim_effect(stim_effects):
     """
     stim effect 효과 추가
     """
+    new_effects = stim_effects
     kr_skill = {
         "Intellect": "지력",
         "Attention": "주의력",
@@ -113,9 +114,50 @@ def process_stim_effect(stim_effects):
         "Hydration recovery": "수분 회복",
     }
 
-    for effects in stim_effects:
+    for effects in new_effects:
         if effects["type"] == "Skill":
             effects["krSkill"] = kr_skill[effects["skillName"]]
         else:
             if effects["type"] in kr_type:
                 effects["krSkill"] = kr_type[effects["type"]]
+
+    return new_effects
+
+
+def add_painkiller(stim_effects, name):
+    """
+    진통제 추가
+    """
+    new_effects = stim_effects
+
+    painkiller = {
+        "Bottle of Dan Jackiel whiskey": {
+            "type": "Skill",
+            "delay": 1,
+            "value": 1,
+            "krSkill": "진통제",
+            "duration": 210,
+            "skillName": "Painkiller",
+        },
+        "Bottle of Tarkovskaya vodka": {
+            "type": "Skill",
+            "delay": 1,
+            "value": 1,
+            "krSkill": "진통제",
+            "duration": 250,
+            "skillName": "Painkiller",
+        },
+        "Bottle of Fierce Hatchling moonshine": {
+            "type": "Skill",
+            "delay": 1,
+            "value": 1,
+            "krSkill": "진통제",
+            "duration": 500,
+            "skillName": "Painkiller",
+        },
+    }
+
+    if name in painkiller:
+        new_effects.append(painkiller[name])
+
+    return new_effects
