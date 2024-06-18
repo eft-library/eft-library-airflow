@@ -64,6 +64,34 @@ weapon_graphql = """
       ... on ItemPropertiesKey {
         uses
       }
+      ... on ItemPropertiesMedKit {
+        cures
+        useTime
+        hitpoints
+      }
+      ... on ItemPropertiesMedicalItem {
+        cures
+        useTime
+        uses
+      }
+      ... on ItemPropertiesPainkiller {
+        cures
+        uses
+        useTime
+        energyImpact
+        hydrationImpact
+        painkillerDuration
+      }
+      ... on ItemPropertiesStim {
+        stimEffects {
+          duration
+          skillName
+          type
+          delay
+          value
+          chance
+        }
+      }
     }
   }
   maps {
