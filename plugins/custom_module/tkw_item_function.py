@@ -64,6 +64,17 @@ weapon_graphql = """
       ... on ItemPropertiesKey {
         uses
       }
+      ... on ItemPropertiesFoodDrink {
+        energy
+        hydration
+        stimEffects{
+          delay
+          value
+          type
+          skillName
+          duration
+        }
+      }
       ... on ItemPropertiesMedKit {
         cures
         useTime
@@ -132,9 +143,7 @@ def check_category(item_list, category):
             )
         ]
     elif category == "Headphones":
-        return [
-            item for item in item_list if item["category"]["name"] == category
-        ]
+        return [item for item in item_list if item["category"]["name"] == category]
     elif category == "Headwear":
         return [
             item
@@ -143,6 +152,16 @@ def check_category(item_list, category):
             and item["name"] != "Maska-1SCh bulletproof helmet (Killa Edition) Default"
             and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
+        ]
+    elif category == "Food Drink":
+        return [
+            item
+            for item in item_list
+            if (
+                item["category"]["name"] == "Food"
+                or item["category"]["name"] == "Drink"
+            )
+            and item["properties"] != {}
         ]
     # elif weapon_category == "Armor":
     #     return [

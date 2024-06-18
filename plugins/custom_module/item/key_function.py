@@ -1,5 +1,6 @@
 import pendulum
 
+
 def process_key(item, key_map):
     """
     key 데이터 가공
@@ -26,27 +27,29 @@ def process_key(item, key_map):
         update_time,
     )
 
+
 def process_key_map(item_list):
     """
     통신으로 가져온 map과 관련된 key 데이터 가공하기
     """
+
     def get_db_value(name):
         """
         이름을 DB랑 맞추기 위해 사용
         """
         db_value = {
             "Factory": ["FACTORY"],
-            "Customs":["CUSTOM"],
-            "Woods":["WOODS"],
-            "Lighthouse":["LIGHT_HOUSE"],
-            "Shoreline":["SHORELINE"],
-            "Reserve":["RESERVE"],
-            "Interchange":["INTERCHANGE"],
-            "Streets of Tarkov":["STREET_OF_TARKOV"],
-            "Night Factory":["FACTORY"],
-            "The Lab":["THE_LAB"],
-            "Ground Zero":["GROUND_ZERO"],
-            "Ground Zero 21+":["GROUND_ZERO"]
+            "Customs": ["CUSTOMS"],
+            "Woods": ["WOODS"],
+            "Lighthouse": ["LIGHT_HOUSE"],
+            "Shoreline": ["SHORELINE"],
+            "Reserve": ["RESERVE"],
+            "Interchange": ["INTERCHANGE"],
+            "Streets of Tarkov": ["STREET_OF_TARKOV"],
+            "Night Factory": ["FACTORY"],
+            "The Lab": ["THE_LAB"],
+            "Ground Zero": ["GROUND_ZERO"],
+            "Ground Zero 21+": ["GROUND_ZERO"],
         }
 
         return db_value[name] if name in db_value else ["N/A"]
@@ -60,6 +63,7 @@ def process_key_map(item_list):
 
     return key_map
 
+
 def get_map_for_key(key_map, name):
     """
     key_map 객체에서 맵 추출하여 키에 붙이기
@@ -67,12 +71,17 @@ def get_map_for_key(key_map, name):
 
     # 강제 지정
     map_obj = {
-        "Factory emergency exit key": ["FACTORY", "CUSTOM", "INTERCHANGE", "SHORELINE"],
+        "Factory emergency exit key": [
+            "FACTORY",
+            "CUSTOMS",
+            "INTERCHANGE",
+            "SHORELINE",
+        ],
         "USEC cottage second safe key": ["LIGHT_HOUSE", "STREET_OF_TARKOV"],
         "Pinewood hotel room 206 key": ["STREET_OF_TARKOV"],
         "Weather station safe key": ["SHORELINE"],
         "Gas station safe key": ["SHORELINE"],
-        "Goshan cash register key": ["INTERCHANGE"]
+        "Goshan cash register key": ["INTERCHANGE"],
     }
 
     if name in map_obj:
@@ -88,21 +97,22 @@ def get_map_for_key(key_map, name):
 
     return key_map[name] if name in key_map else ["N/A"]
 
+
 def get_use_map_en(map_value):
     """
     사용 맵 영어 이름 가공
     """
     value = {
         "FACTORY": "Factory",
-        "CUSTOM":"Custom",
-        "WOODS":"Woods",
-        "LIGHT_HOUSE":"Lighthouse",
-        "SHORELINE":"Shoreline",
-        "RESERVE":"Reserve",
-        "INTERCHANGE":"Interchange",
-        "STREET_OF_TARKOV":"Streets of Tarkov",
-        "THE_LAB":"The Lab",
-        "GROUND_ZERO":"Ground Zero"
+        "CUSTOMS": "Customs",
+        "WOODS": "Woods",
+        "LIGHT_HOUSE": "Lighthouse",
+        "SHORELINE": "Shoreline",
+        "RESERVE": "Reserve",
+        "INTERCHANGE": "Interchange",
+        "STREET_OF_TARKOV": "Streets of Tarkov",
+        "THE_LAB": "The Lab",
+        "GROUND_ZERO": "Ground Zero",
     }
 
     map_en_list = []
@@ -116,21 +126,22 @@ def get_use_map_en(map_value):
 
     return map_en_list
 
+
 def get_use_map_kr(map_value):
     """
     사용 맵 한글 이름 가공
     """
     value = {
         "FACTORY": "팩토리",
-        "CUSTOM":"세관",
-        "WOODS":"삼림",
-        "LIGHT_HOUSE":"등대",
-        "SHORELINE":"해안선",
-        "RESERVE":"리저브",
-        "INTERCHANGE":"인터체인지",
-        "STREET_OF_TARKOV":"타르코프 시내",
-        "THE_LAB":"연구소",
-        "GROUND_ZERO":"그라운드 제로"
+        "CUSTOMS": "세관",
+        "WOODS": "삼림",
+        "LIGHT_HOUSE": "등대",
+        "SHORELINE": "해안선",
+        "RESERVE": "리저브",
+        "INTERCHANGE": "인터체인지",
+        "STREET_OF_TARKOV": "타르코프 시내",
+        "THE_LAB": "연구소",
+        "GROUND_ZERO": "그라운드 제로",
     }
 
     map_kr_list = []
