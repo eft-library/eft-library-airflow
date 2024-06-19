@@ -17,6 +17,7 @@ from custom_module.item.backpack_function import process_backpack
 from custom_module.item.container_function import process_container
 from custom_module.item.key_function import process_key, process_key_map
 from custom_module.item.food_drink_function import process_food_drink
+from custom_module.item.medical_function import process_medical
 
 default_args = {
     "owner": "airflow",
@@ -182,6 +183,19 @@ with DAG(
                     cursor.execute(sql, process_food_drink(item))
             conn.commit()
 
+    def upsert_medical(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkw_medical.sql")
+        data_list = check_category(item_list["data"]["items"], "Meds")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in data_list:
+                    cursor.execute(sql, process_medical(item))
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_item_list", python_callable=fetch_item_list
     )
@@ -263,6 +277,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_medical_task = PythonOperator(
+        task_id="upsert_medical",
+        python_callable=upsert_medical,
+        op_kwargs={"postgres_conn_id": "tkw_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [
         upsert_gun_task,
         upsert_knife_task,
@@ -275,4 +296,5 @@ with DAG(
         upsert_container_task,
         upsert_key_task,
         upsert_food_drink_task,
+        upsert_medical_task,
     ]

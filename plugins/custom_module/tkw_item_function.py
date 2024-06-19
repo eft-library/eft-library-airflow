@@ -163,29 +163,11 @@ def check_category(item_list, category):
             )
             and item["properties"] != {}
         ]
-    # elif weapon_category == "Armor":
-    #     return [
-    #         item
-    #         for item in item_list
-    #         if item["category"]["name"] == weapon_category and item["properties"] != {}
-    #     ]
-    # elif weapon_category == "Chest rig":
-    #     return [
-    #         item
-    #         for item in item_list
-    #         if item["category"]["name"] == weapon_category and item["properties"] != {}
-    #     ]
-    # elif weapon_category == "Backpack":
-    #     return [
-    #         item
-    #         for item in item_list
-    #         if item["category"]["name"] == weapon_category and item["properties"] != {}
-    #     ]
-    elif category == "Key":
+    elif category == "Key" or category == "Meds":
         return [
             item
             for item in item_list
-            if item["category"]["parent"]["name"] == "Key" and item["properties"] != {}
+            if item["category"]["parent"]["name"] == category and item["properties"] != {}
         ]
     else:
         return [
