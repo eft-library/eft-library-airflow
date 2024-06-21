@@ -23,6 +23,7 @@ def process_medical(item):
     energy_impact = check_item["properties"].get("energyImpact")
     hydration_impact = check_item["properties"].get("hydrationImpact")
     painkiller_duration = check_item["properties"].get("painkillerDuration")
+    hitpoints = check_item["properties"].get("hitpoints")
     update_duration = None
     if painkiller_duration is not None:
         update_duration = update_painkiller_duration(painkiller_duration, name_en)
@@ -45,6 +46,7 @@ def process_medical(item):
         energy_impact,
         hydration_impact,
         update_duration,
+        hitpoints,
         image,
         update_time,
     )

@@ -13,10 +13,11 @@ INSERT INTO tkw_medical (
     energy_impact,
     hydration_impact,
     painkiller_duration,
+    hitpoints,
     image,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name_en = EXCLUDED.name_en,
@@ -32,5 +33,6 @@ ON CONFLICT (id) DO UPDATE SET
     energy_impact = EXCLUDED.energy_impact,
     hydration_impact = EXCLUDED.hydration_impact,
     painkiller_duration = EXCLUDED.painkiller_duration,
+    hitpoints = EXCLUDED.hitpoints,
     image = EXCLUDED.image,
     update_time = EXCLUDED.update_time;
