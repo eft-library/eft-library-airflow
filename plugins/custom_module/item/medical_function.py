@@ -21,8 +21,9 @@ def process_medical(item):
     buff = None
     debuff = None
     if stim_effect is not None:
-        buff = json.dumps(get_buff(check_item["properties"].get("stimEffects")))
-        debuff = json.dumps(get_debuff(check_item["properties"].get("stimEffects")))
+        new_stim_effect = process_stim_effect(stim_effect)
+        buff = json.dumps(get_buff(new_stim_effect))
+        debuff = json.dumps(get_debuff(new_stim_effect))
     image = check_item.get("image512pxLink")
     energy_impact = check_item["properties"].get("energyImpact")
     hydration_impact = check_item["properties"].get("hydrationImpact")
@@ -54,6 +55,57 @@ def process_medical(item):
         image,
         update_time,
     )
+
+
+def process_stim_effect(stim_effects):
+    """
+    stim effect 효과 추가
+    """
+    new_effects = stim_effects
+    kr_skill = {
+        "Intellect": "지력",
+        "Attention": "주의력",
+        "Recoil Control": "반동 제어",
+        "Stress Resistance": "스트레스 저항력",
+        "Endurance": "지구력",
+        "Mag Drills": "탄창 훈련",
+        "Strength": "근력",
+        "Metabolism": "신진대사",
+        "Memory": "기억력",
+        "Health": "체력",
+        "Vitality": "활력",
+        "Immunity": "면역력",
+        "Perception": "인지능력",
+        "Charisma": "카리스마",
+    }
+
+    kr_type = {
+        "Antidote": "해독제",
+        "Body temperature": "체온",
+        "Damage taken (except the head)": "받은 피해량 (머리 제외)",
+        "energyImpact": "에너지",
+        "hydrationImpact": "수분",
+        "Max stamina": "최대 스태미나",
+        "Pain": "고통",
+        "Stamina recovery": "스태미나 회복",
+        "Stops and prevents bleedings": "출혈 멈춤 & 추가 출혈 방지",
+        "Tunnel effect": "터널 효과",
+        "Weight limit": "무게 제한",
+        "painkillerDuration": "진통제",
+        "Energy recovery": "에너지 회복",
+        "Health regeneration": "체력 재생",
+        "Hands tremor": "손 떨림",
+        "Hydration recovery": "수분 회복",
+    }
+
+    for effects in new_effects:
+        if effects["type"] == "Skill" and effects["skillName"] in kr_skill:
+            effects["krSkill"] = kr_skill[effects["skillName"]]
+        else:
+            if effects["type"] in kr_type:
+                effects["krSkill"] = kr_type[effects["type"]]
+
+    return new_effects
 
 
 def get_name_kr(name):

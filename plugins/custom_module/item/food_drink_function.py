@@ -115,7 +115,7 @@ def process_stim_effect(stim_effects):
     }
 
     for effects in new_effects:
-        if effects["type"] == "Skill":
+        if effects["type"] == "Skill" and effects["skillName"] in kr_skill:
             effects["krSkill"] = kr_skill[effects["skillName"]]
         else:
             if effects["type"] in kr_type:
