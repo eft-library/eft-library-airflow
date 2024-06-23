@@ -18,6 +18,7 @@ def process_medical(item):
         cures_kr = get_cures_kr(cures_en)
     category = check_item["category"].get("name")
     stim_effect = check_item["properties"].get("stimEffects")
+    add_painkiller(item)
     buff = None
     debuff = None
     if stim_effect is not None:
@@ -317,6 +318,50 @@ def get_cures_kr(cures):
             kr_result.append(kr_list[heal])
 
     return kr_result
+
+
+def add_painkiller(item):
+    """
+    진통제 추가
+    """
+    pain_list = {
+        "L1 (Norepinephrine) injector": {
+            "duration": 120,
+            "skillName": None,
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+        "Trimadol stimulant injector": {
+            "duration": 185,
+            "skillName": None,
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+        "Adrenaline injector": {
+            "duration": 65,
+            "skillName": None,
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+        "Propital regenerative stimulant injector": {
+            "duration": 245,
+            "skillName": None,
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+    }
+
+    if item.get("name") in pain_list:
+
+        item["properties"].get("stimEffects").append(pain_list[item.get("name")])
 
 
 def update_painkiller_duration(duration, name):
