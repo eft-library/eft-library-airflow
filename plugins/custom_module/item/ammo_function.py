@@ -410,6 +410,18 @@ def get_category(name):
         "30x29mm VOG-30 E": "Stationary weapons",
         "12.7x108mm BZT-44M": "Stationary weapons",
         "12.7x108mm B-32 T": "Stationary weapons",
+        "20x1mm disk": "other",
+        "40x46mm M406 (HE) grenade": "40x46mm",
+        "40x46mm M441 (HE) grenade":"40x46mm",
+        "40x46mm M381 (HE) grenade": "40x46mm",
+        "40x46mm M386 (HE) grenade": "40x46mm",
+        "26x75mm flare cartridge (Green)": "other",
+        "26x75mm flare cartridge (Red)": "other",
+        "26x75mm flare cartridge (White)": "other",
+        "26x75mm flare cartridge (Yellow)": "other",
+        "40mm VOG-25 grenade": "other",
+        "26x75mm flare cartridge (Acid Green)": "other",
+        "40x46mm M433 (HEDP) grenade": "40x46mm",
     }
 
     if name in category:
