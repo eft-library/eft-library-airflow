@@ -103,6 +103,15 @@ weapon_graphql = """
           chance
         }
       }
+      ... on ItemPropertiesAmmo {
+        damage
+        penetrationPower
+        armorDamage
+        accuracyModifier
+        recoilModifier
+        lightBleedModifier
+        heavyBleedModifier
+      }
     }
   }
   maps {
@@ -167,7 +176,8 @@ def check_category(item_list, category):
         return [
             item
             for item in item_list
-            if item["category"]["parent"]["name"] == category and item["properties"] != {}
+            if item["category"]["parent"]["name"] == category
+            and item["properties"] != {}
         ]
     else:
         return [
