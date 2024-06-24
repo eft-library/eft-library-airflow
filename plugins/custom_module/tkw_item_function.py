@@ -179,6 +179,10 @@ def check_category(item_list, category):
             if item["category"]["parent"]["name"] == category
             and item["properties"] != {}
         ]
+    elif category == "Loot":
+        return [item
+            for item in item_list
+            if item["category"]["parent"]["name"] == "Barter item"]
     else:
         return [
             item
