@@ -599,6 +599,18 @@ def get_efficiency(name):
         "30x29mm VOG-30 E": [0, 0, 0, 0, 0, 0],
         "12.7x108mm BZT-44M": [6, 6, 6, 6, 6, 6],
         "12.7x108mm B-32": [6, 6, 6, 6, 6, 6],
+        "20x1mm disk": [0, 0, 0, 0, 0, 0],
+        "40x46mm M406 (HE) grenade": [5,3,3,3,3,3],
+        "40x46mm M441 (HE) grenade": [5,3,3,3,3,3],
+        "40x46mm M381 (HE) grenade": [5,3,3,3,3,3],
+        "40x46mm M386 (HE) grenade": [5,3,3,3,3,3],
+        "26x75mm flare cartridge (Green)": [0, 0, 0, 0, 0, 0],
+        "26x75mm flare cartridge (Red)": [0, 0, 0, 0, 0, 0],
+        "26x75mm flare cartridge (White)": [0, 0, 0, 0, 0, 0],
+        "26x75mm flare cartridge (Yellow)": [0, 0, 0, 0, 0, 0],
+        "40mm VOG-25 grenade": [0, 0, 0, 0, 0, 0],
+        "26x75mm flare cartridge (Acid Green)": [0, 0, 0, 0, 0, 0],
+        "40x46mm M433 (HEDP) grenade": [5,3,3,3,3,3],
     }
 
     if name in efficiency:
