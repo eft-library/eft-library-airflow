@@ -176,4 +176,11 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+# airflow
+airflow.cfg
+airflow_venv/
+logs/
+webserver_config.py
+airflow-webserver.pid
+
 # End of https://www.toptal.com/developers/gitignore/api/python
