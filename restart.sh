@@ -1,5 +1,7 @@
 #!/bin/bash
 
+git pull origin main
+
 source airflow_venv/bin/activate
 
 # Airflow Web Server 종료
