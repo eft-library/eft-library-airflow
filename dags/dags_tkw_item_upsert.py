@@ -231,98 +231,98 @@ with DAG(
     upsert_gun_task = PythonOperator(
         task_id="upsert_gun",
         python_callable=upsert_gun,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_knife_task = PythonOperator(
         task_id="upsert_knife",
         python_callable=upsert_knife,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_throwable_task = PythonOperator(
         task_id="upsert_throwable",
         python_callable=upsert_throwable,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_head_phone_task = PythonOperator(
         task_id="upsert_head_phone",
         python_callable=upsert_head_phone,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_head_wear_task = PythonOperator(
         task_id="upsert_head_wear",
         python_callable=upsert_head_wear,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_armor_vest_task = PythonOperator(
         task_id="upsert_armor_vest",
         python_callable=upsert_armor_vest,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_rig_task = PythonOperator(
         task_id="upsert_rig",
         python_callable=upsert_rig,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_backpack_task = PythonOperator(
         task_id="upsert_backpack",
         python_callable=upsert_backpack,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_container_task = PythonOperator(
         task_id="upsert_container",
         python_callable=upsert_container,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_key_task = PythonOperator(
         task_id="upsert_key",
         python_callable=upsert_key,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_food_drink_task = PythonOperator(
         task_id="upsert_food_drink",
         python_callable=upsert_food_drink,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_medical_task = PythonOperator(
         task_id="upsert_medical",
         python_callable=upsert_medical,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_ammo_task = PythonOperator(
         task_id="upsert_ammo",
         python_callable=upsert_ammo,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
     upsert_loot_task = PythonOperator(
         task_id="upsert_loot",
         python_callable=upsert_loot,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
