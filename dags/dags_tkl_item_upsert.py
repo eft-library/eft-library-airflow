@@ -32,6 +32,7 @@ with DAG(
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
     schedule_interval="5 0 * * *",
+    tags=['postgresql', "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
