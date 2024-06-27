@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 import datetime
 import pendulum
-from custom_module.data_cump_function import return_script
+from custom_module.data_dump_function import return_script
 
 with DAG(
     dag_id="dags_data_dump",
