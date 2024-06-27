@@ -1,4 +1,4 @@
-INSERT INTO tkw_ammo (
+INSERT INTO tkl_ammo (
     id,
     name,
     short_name,

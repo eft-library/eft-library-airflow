@@ -1,12 +1,12 @@
-INSERT INTO tkw_knife (
+INSERT INTO tkl_key (
     id,
     name,
     short_name,
     image,
-    category,
-    slash_damage,
-    stab_damage,
-    hit_radius,
+    uses,
+    use_map_en,
+    use_map_kr,
+    map_value,
     update_time
 ) VALUES (
     %s, %s, %s, %s, %s, %s, %s, %s, %s
@@ -15,8 +15,8 @@ ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     short_name = EXCLUDED.short_name,
     image = EXCLUDED.image,
-    category = EXCLUDED.category,
-    slash_damage = EXCLUDED.slash_damage,
-    stab_damage = EXCLUDED.stab_damage,
-    hit_radius = EXCLUDED.hit_radius,
+    uses = EXCLUDED.uses,
+    use_map_en = EXCLUDED.use_map_en,
+    use_map_kr = EXCLUDED.use_map_kr,
+    map_value = EXCLUDED.map_value,
     update_time = EXCLUDED.update_time;

@@ -1,4 +1,4 @@
-INSERT INTO tkw_throwable (
+INSERT INTO tkl_throwable (
     id,
     name,
     short_name,

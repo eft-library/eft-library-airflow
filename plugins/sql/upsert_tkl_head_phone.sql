@@ -1,18 +1,14 @@
-INSERT INTO tkw_container (
+INSERT INTO tkl_head_phone (
     id,
     name,
     short_name,
     image,
-    grids,
-    capacity,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     short_name = EXCLUDED.short_name,
     image = EXCLUDED.image,
-    grids = EXCLUDED.grids,
-    capacity = EXCLUDED.capacity,
     update_time = EXCLUDED.update_time;

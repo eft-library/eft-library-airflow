@@ -1,4 +1,4 @@
-INSERT INTO tkw_medical (
+INSERT INTO tkl_medical (
     id,
     name_en,
     name_kr,

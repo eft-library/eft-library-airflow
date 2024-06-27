@@ -5,7 +5,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
-from custom_module.tkw_quest_function import quest_graphql, process_quest
+from custom_module.tkl_quest_function import quest_graphql, process_quest
 
 default_args = {
     "owner": "airflow",
@@ -14,7 +14,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id="dags_tkw_quest_upsert",
+    dag_id="dags_tkl_quest_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
     schedule_interval="10 0 * * *",
@@ -29,7 +29,7 @@ with DAG(
         ti = kwargs["ti"]
         quest_list = ti.xcom_pull(task_ids="fetch_quest_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkw_new_quest.sql")
+        sql = read_sql("upsert_tkl_new_quest.sql")
         data_list = quest_list["data"]["tasks"]
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -45,7 +45,7 @@ with DAG(
     upsert_quest_task = PythonOperator(
         task_id="upsert_quest",
         python_callable=upsert_quest,
-        op_kwargs={"postgres_conn_id": "tkw_db"},
+        op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 

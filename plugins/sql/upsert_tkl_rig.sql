@@ -1,4 +1,4 @@
-INSERT INTO tkw_armor_vest (
+INSERT INTO tkl_rig (
     id,
     name,
     short_name,
@@ -8,9 +8,10 @@ INSERT INTO tkw_armor_vest (
     areas_en,
     areas_kr,
     durability,
+    capacity,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -21,4 +22,5 @@ ON CONFLICT (id) DO UPDATE SET
     areas_en = EXCLUDED.areas_en,
     areas_kr = EXCLUDED.areas_kr,
     durability = EXCLUDED.durability,
+    capacity = EXCLUDED.capacity,
     update_time = EXCLUDED.update_time;

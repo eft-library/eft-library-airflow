@@ -59,7 +59,7 @@ source airflow_venv/bin/activate
 pip install --upgrade pip
 
 # 환경 변수 설정 
-export AIRFLOW_HOME=/volume1/tkw/airflow
+export AIRFLOW_HOME=/volume1/tkl/airflow
 export AIRFLOW_VERSION=2.9.1
 
 # 아래의 내용은 그냥 명시적으로 적어도 됩니다. ex) export PYTHON_VERSION=3.9

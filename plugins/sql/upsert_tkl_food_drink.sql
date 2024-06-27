@@ -1,4 +1,4 @@
-INSERT INTO tkw_food_drink (
+INSERT INTO tkl_food_drink (
     id,
     name_en,
     name_kr,
