@@ -18,5 +18,5 @@ def return_script():
     return f"""
         source ~/.bashrc
         echo "Executing PostgreSQL Command - pg_dump"
-        pg_dump -h 172.17.0.2 -U tkl tkl > /home/latest_data/{today}_backup.sql
+        pg_dump -h $DB -U tkl tkl > /home/latest_data/{today}_backup.sql
         """

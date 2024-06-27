@@ -9,7 +9,11 @@ from custom_module.data_dump_function import return_script
 # xcom으로 data_dump_task 성공 여부를 가져옴
 def choose_branch(**kwargs):
     task_instance = kwargs['ti']
-    return 'success_task' if task_instance.xcom_pull(task_ids='data_dump') == 0 else 'failure_task'
+    bash_return_code = task_instance.xcom_pull(task_ids='data_dump')
+    if bash_return_code == '0':
+        return 'success_task'
+    else:
+        return 'failure_task'
 
 
 with DAG(
@@ -22,7 +26,8 @@ with DAG(
 ) as dag:
     data_dump_task = BashOperator(
         task_id="data_dump",
-        bash_command=return_script(),
+        bash_command=f"{return_script()} && echo 0 || echo $?",
+        do_xcom_push=True,
     )
 
     branch_task = BranchPythonOperator(
