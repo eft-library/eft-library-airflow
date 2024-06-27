@@ -1,14 +1,22 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
+from airflow.operators.python import BranchPythonOperator
+from airflow.operators.dummy import DummyOperator
 import datetime
 import pendulum
 from custom_module.data_dump_function import return_script
+
+# xcom으로 data_dump_task 성공 여부를 가져옴
+def choose_branch(**kwargs):
+    task_instance = kwargs['ti']
+    return 'success_task' if task_instance.xcom_pull(task_ids='data_dump') == 0 else 'failure_task'
+
 
 with DAG(
     dag_id="dags_data_dump",
     schedule="0 15 * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="Asia/Seoul"),
-    catchup=False, # True이면 start_data부터 지금까지 누락된 날짜의 스케줄이 한 번에 돌게 된다.
+    catchup=False,
     dagrun_timeout=datetime.timedelta(minutes=60),
     tags=['postgresql', "data_dump"],
 ) as dag:
@@ -17,4 +25,18 @@ with DAG(
         bash_command=return_script(),
     )
 
-    data_dump_task
+    branch_task = BranchPythonOperator(
+        task_id='branch_task',
+        python_callable=choose_branch,
+        provide_context=True,
+    )
+
+    success_task = DummyOperator(
+        task_id='success_task',
+    )
+
+    failure_task = DummyOperator(
+        task_id='failure_task',
+    )
+
+    data_dump_task >> branch_task >> [success_task, failure_task]
