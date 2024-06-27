@@ -14,7 +14,7 @@ with DAG(
 ) as dag:
     data_dump_task = BashOperator(
         task_id="data_dump",
-        bash_command="whoami",
+        bash_command=return_script(),
     )
 
     data_dump_task
