@@ -4,7 +4,7 @@ from airflow.operators.python import BranchPythonOperator
 from airflow.operators.dummy import DummyOperator
 import datetime
 import pendulum
-from custom_module.data_dump_function import return_script
+from custom_module.data_dump_function import dump_script, remove_old_file_script
 
 # xcom으로 data_dump_task 성공 여부를 가져옴
 def choose_branch(**kwargs):
@@ -26,7 +26,7 @@ with DAG(
 ) as dag:
     data_dump_task = BashOperator(
         task_id="data_dump",
-        bash_command=return_script(),
+        bash_command=dump_script(),
         do_xcom_push=True,
     )
 
@@ -36,8 +36,9 @@ with DAG(
         provide_context=True,
     )
 
-    success_task = DummyOperator(
+    success_task = BashOperator(
         task_id='success_task',
+        bash_command=remove_old_file_script(),
     )
 
     failure_task = DummyOperator(
