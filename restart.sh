@@ -2,6 +2,8 @@
 
 git pull origin main
 
+sleep 5
+
 source airflow_venv/bin/activate
 
 # Airflow Web Server 종료

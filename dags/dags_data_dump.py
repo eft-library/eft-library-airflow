@@ -26,7 +26,7 @@ with DAG(
 ) as dag:
     data_dump_task = BashOperator(
         task_id="data_dump",
-        bash_command=f"{return_script()}; if [ $? -eq 0 ]; then echo 'SUCCESS'; else echo 'FAILURE'; fi",
+        bash_command=return_script(),
         do_xcom_push=True,
     )
 
