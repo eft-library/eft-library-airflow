@@ -14,7 +14,7 @@ with DAG(
 ) as dag:
     data_dump_task = BashOperator(
         task_id="data_dump",
-        bash_command="echo $PGPASSWORD",
+        bash_command="whoami",
     )
 
     data_dump_task
