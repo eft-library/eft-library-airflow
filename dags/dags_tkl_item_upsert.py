@@ -81,11 +81,11 @@ with DAG(
                     cursor.execute(sql, process_throwable(item))
             conn.commit()
 
-    def upsert_head_phone(postgres_conn_id, **kwargs):
+    def upsert_headset(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_head_phone.sql")
+        sql = read_sql("upsert_tkl_headset.sql")
         data_list = check_category(item_list["data"]["items"], "Headphones")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -94,11 +94,11 @@ with DAG(
                     cursor.execute(sql, process_head_phone(item))
             conn.commit()
 
-    def upsert_head_wear(postgres_conn_id, **kwargs):
+    def upsert_headwear(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_head_wear.sql")
+        sql = read_sql("upsert_tkl_headwear.sql")
         data_list = check_category(item_list["data"]["items"], "Headwear")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -173,12 +173,12 @@ with DAG(
                     cursor.execute(sql, process_rig(item))
             conn.commit()
 
-    def upsert_food_drink(postgres_conn_id, **kwargs):
+    def upsert_provisions(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_food_drink.sql")
-        data_list = check_category(item_list["data"]["items"], "Food Drink")
+        sql = read_sql("upsert_tkl_provisions.sql")
+        data_list = check_category(item_list["data"]["items"], "Provisions")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -250,16 +250,16 @@ with DAG(
         provide_context=True,
     )
 
-    upsert_head_phone_task = PythonOperator(
-        task_id="upsert_head_phone",
-        python_callable=upsert_head_phone,
+    upsert_headset_task = PythonOperator(
+        task_id="upsert_headset",
+        python_callable=upsert_headset,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
 
-    upsert_head_wear_task = PythonOperator(
-        task_id="upsert_head_wear",
-        python_callable=upsert_head_wear,
+    upsert_headwear_task = PythonOperator(
+        task_id="upsert_headwear",
+        python_callable=upsert_headwear,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
@@ -299,9 +299,9 @@ with DAG(
         provide_context=True,
     )
 
-    upsert_food_drink_task = PythonOperator(
-        task_id="upsert_food_drink",
-        python_callable=upsert_food_drink,
+    upsert_provisions_task = PythonOperator(
+        task_id="upsert_provisions",
+        python_callable=upsert_provisions,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
@@ -331,14 +331,14 @@ with DAG(
         upsert_gun_task,
         upsert_knife_task,
         upsert_throwable_task,
-        upsert_head_phone_task,
-        upsert_head_wear_task,
+        upsert_headset_task,
+        upsert_headwear_task,
         upsert_armor_vest_task,
         upsert_backpack_task,
         upsert_rig_task,
         upsert_container_task,
         upsert_key_task,
-        upsert_food_drink_task,
+        upsert_provisions_task,
         upsert_medical_task,
         upsert_ammo_task,
         upsert_loot_task,

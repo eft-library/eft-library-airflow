@@ -162,7 +162,7 @@ def check_category(item_list, category):
             and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
-    elif category == "Food Drink":
+    elif category == "Provisions":
         return [
             item
             for item in item_list

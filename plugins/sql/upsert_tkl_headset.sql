@@ -1,4 +1,4 @@
-INSERT INTO tkl_head_phone (
+INSERT INTO tkl_headset (
     id,
     name,
     short_name,

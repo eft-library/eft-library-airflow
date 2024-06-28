@@ -1,4 +1,4 @@
-INSERT INTO tkl_new_quest (
+INSERT INTO tkl_api_quest (
     id,
     name,
     npc_name,

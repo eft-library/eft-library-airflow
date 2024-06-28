@@ -1,4 +1,4 @@
-INSERT INTO tkl_head_wear (
+INSERT INTO tkl_headwear (
     id,
     name,
     short_name,
