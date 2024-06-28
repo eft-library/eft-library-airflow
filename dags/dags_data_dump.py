@@ -18,7 +18,7 @@ def choose_branch(**kwargs):
 
 with DAG(
     dag_id="dags_data_dump",
-    schedule="0 15 * * *",
+    schedule="20 0 * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="Asia/Seoul"),
     catchup=False,
     dagrun_timeout=datetime.timedelta(minutes=60),
