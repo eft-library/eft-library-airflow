@@ -2,13 +2,13 @@ import json
 import pendulum
 
 
-def process_food_drink(item):
+def process_provisions(item):
     """
-    food drink 데이터 가공
+    provisions 데이터 가공
     """
     id = item.get("id")
     name_en = item.get("name")
-    name_kr = food_drink_kr(name_en)
+    name_kr = provisions_kr(name_en)
     short_name = item.get("shortName")
     category = item["category"].get("name") if item.get("category") else None
     energy = item["properties"].get("energy") if item.get("properties") else None
@@ -35,7 +35,7 @@ def process_food_drink(item):
     )
 
 
-def food_drink_kr(name):
+def provisions_kr(name):
     """
     한글 이름 매핑
     """

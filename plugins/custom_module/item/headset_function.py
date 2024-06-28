@@ -1,9 +1,9 @@
 import pendulum
 
 
-def process_head_phone(item):
+def process_headset(item):
     """
-    head_phone 데이터 가공
+    headset 데이터 가공
     """
     id = item.get("id")
     name = item.get("name")

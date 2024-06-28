@@ -1,9 +1,9 @@
 import pendulum
 
 
-def process_head_wear(item):
+def process_headwear(item):
     """
-    head_wear 데이터 가공
+    headwear 데이터 가공
     """
     id = item.get("id")
     name = item.get("name")

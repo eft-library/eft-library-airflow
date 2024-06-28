@@ -10,13 +10,13 @@ from custom_module.item.knife_function import process_knife
 from custom_module.item.throwable_function import process_throwable
 from custom_module.item.rig_function import process_rig
 from custom_module.item.armor_vest_function import process_armor_vest
-from custom_module.item.head_wear_function import process_head_wear
-from custom_module.item.head_phone_function import process_head_phone
+from custom_module.item.headwear_function import process_headwear
+from custom_module.item.headset_function import process_headset
 from custom_module.item.gun_function import process_gun, gun_image_change
 from custom_module.item.backpack_function import process_backpack
 from custom_module.item.container_function import process_container
 from custom_module.item.key_function import process_key, process_key_map
-from custom_module.item.food_drink_function import process_food_drink
+from custom_module.item.provisions_function import process_provisions
 from custom_module.item.medical_function import process_medical
 from custom_module.item.ammo_function import process_ammo
 from custom_module.item.loot_function import process_loot
@@ -91,7 +91,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_head_phone(item))
+                    cursor.execute(sql, process_headset(item))
             conn.commit()
 
     def upsert_headwear(postgres_conn_id, **kwargs):
@@ -104,7 +104,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_head_wear(item))
+                    cursor.execute(sql, process_headwear(item))
             conn.commit()
 
     def upsert_armor_vest(postgres_conn_id, **kwargs):
@@ -183,7 +183,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_food_drink(item))
+                    cursor.execute(sql, process_provisions(item))
             conn.commit()
 
     def upsert_medical(postgres_conn_id, **kwargs):
