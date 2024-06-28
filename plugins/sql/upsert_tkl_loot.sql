@@ -4,17 +4,15 @@ INSERT INTO tkl_loot (
     name_kr,
     short_name,
     image,
-    category_en,
-    category_kr,
+    category,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name_en = EXCLUDED.name_en,
     name_kr = EXCLUDED.name_kr,
     short_name = EXCLUDED.short_name,
     image = EXCLUDED.image,
-    category_en = EXCLUDED.category_en,
-    category_kr = EXCLUDED.category_kr,
+    category = EXCLUDED.category,
     update_time = EXCLUDED.update_time;
