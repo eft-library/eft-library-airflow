@@ -21,7 +21,7 @@ def get_level_ids(levels):
     level id list 추출
     """
     level_ids = []
-
+    print(levels)
     for level in levels:
         print(level)
         level_ids.append(level.get("id"))
