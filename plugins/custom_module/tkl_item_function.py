@@ -182,10 +182,10 @@ def check_category(item_list, category):
     elif category == "Loot":
         return [item
             for item in item_list
-            if item["category"]["parent"]["name"] == "Barter item"
+            if (item["category"]["parent"]["name"] == "Barter item"
                 or item["category"]["parent"]["name"] == "Special item"
                 or item["category"]["parent"]["name"] == "Lubricant"
-                or item["category"]["name"] == "Info"
+                or item["category"]["name"] == "Info")
                 and item['name'] != "Dogtag BEAR"
                 and item['name'] != "Dogtag USEC"
                 and item['name'] != "Decrypted flash drive"
