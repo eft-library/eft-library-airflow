@@ -52,7 +52,10 @@ def process_key_map(item_list):
             "Ground Zero 21+": ["GROUND_ZERO"],
         }
 
-        return db_value[name] if name in db_value else ["N/A"]
+        if name in db_value:
+            return db_value[name]
+
+        return ["N/A"]
 
     key_map = {}
 

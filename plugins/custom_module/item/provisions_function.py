@@ -39,7 +39,7 @@ def provisions_kr(name):
     """
     한글 이름 매핑
     """
-    all_kr = {
+    provision_kr = {
         "Bottle of water (0.6L)": "Water 0.6L 물병",
         "Army crackers": "Crackers 군용 크래커",
         "Pack of Russian Army pineapple juice": "Pineapple 러시아군 파인애플 주스",
@@ -83,7 +83,9 @@ def provisions_kr(name):
         "Pack of Tarker dried meat": "Pack of Tarker dried meat",
     }
 
-    return all_kr[name] if name in all_kr else None
+    if name in provision_kr:
+        return provision_kr[name]
+    return name
 
 
 def process_stim_effect(stim_effects):

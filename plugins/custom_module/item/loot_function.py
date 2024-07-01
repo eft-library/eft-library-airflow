@@ -39,8 +39,19 @@ def change_category(category):
         "Cultist Amulet",
     ]
 
+    jewelry_list = [
+        "Battered antique book",
+        "Loot Lord plushie",
+        'Gunpowder "Eagle"',
+        'Gunpowder "Hawk"',
+        'Gunpowder "Kite"'
+        'Old firesteel'
+    ]
+
     if category in special_list:
         return "Special equipment"
+    elif category in jewelry_list:
+        return "Jewelry"
 
     return category
 

@@ -30,7 +30,7 @@ def process_armor_vest(item):
     )
 
 
-def armor_vest_durability(item):
+def armor_vest_durability(name):
     """
     전술조끼 내구성 주입
     """
@@ -70,11 +70,11 @@ def armor_vest_durability(item):
         "6B43 Zabralo-Sh body armor (Digital Flora)": 510,
         "IOTV Gen4 body armor (Full Protection Kit, MultiCam)": 398,
     }
-    return (
-        body_armors_and_plate_carriers[item]
-        if item in body_armors_and_plate_carriers
-        else 0
-    )
+
+    if name in body_armors_and_plate_carriers:
+        return body_armors_and_plate_carriers[name]
+
+    return 0
 
 
 def armor_vest_areas_kr(areas_en):

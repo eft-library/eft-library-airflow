@@ -360,7 +360,6 @@ def add_painkiller(item):
     }
 
     if item.get("name") in pain_list:
-
         item["properties"].get("stimEffects").append(pain_list[item.get("name")])
 
 

@@ -98,7 +98,11 @@ def durability_edit(name):
         "Rys-T bulletproof helmet (Black)": 90,
         "Vulkan-5 LShZ-5 bulletproof helmet (Black)": 99,
     }
-    return helmets[name] if name in helmets else None
+
+    if name in helmets:
+        return helmets[name]
+
+    return None
 
 
 def ricochet_chance_edit(name, ricochet_chance):

@@ -182,7 +182,20 @@ def check_category(item_list, category):
     elif category == "Loot":
         return [item
             for item in item_list
-            if item["category"]["parent"]["name"] == "Barter item" or item["category"]["parent"]["name"] == "Special item" or item["category"]["name"] == "Info"]
+            if item["category"]["parent"]["name"] == "Barter item"
+                or item["category"]["parent"]["name"] == "Special item"
+                or item["category"]["parent"]["name"] == "Lubricant"
+                or item["category"]["name"] == "Info"
+                and item['name'] != "Dogtag BEAR"
+                and item['name'] != "Dogtag USEC"
+                and item['name'] != "Decrypted flash drive"
+                and item['name'] != "Documents with decrypted data"
+                and item['name'] != "Encrypted flash drive"
+                and item['name'] != "Killa figurine"
+                and item['name'] != "Reshala figurine"
+                and item['name'] != "Tagilla figurine"
+                and 'Locked' not in item['name']
+                ]
     else:
         return [
             item

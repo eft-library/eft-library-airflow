@@ -38,7 +38,7 @@ def process_rig(item):
     )
 
 
-def rig_durability_edit(item):
+def rig_durability_edit(name):
     """
     전술조끼 내구성 주입
     """
@@ -67,7 +67,11 @@ def rig_durability_edit(item):
         "6B3TM-01 armored rig (Khaki)": 86,
         "6B5-15 Zh-86 Uley armored rig (Flora)": 110,
     }
-    return plate_carriers[item] if item in plate_carriers else 0
+
+    if name in plate_carriers:
+        return plate_carriers[name]
+
+    return 0
 
 
 def rig_areas_kr(areas_en):
