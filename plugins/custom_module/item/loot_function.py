@@ -12,7 +12,7 @@ def process_loot(item):
     short_name = item.get("shortName")
     image = item.get("image512pxLink")
     category = (
-        change_category(item["category"].get("name")) if item.get("category") else None
+        change_category(item["category"].get("name"), name_en) if item.get("category") else None
     )
     update_time = pendulum.now("Asia/Seoul")
 
@@ -27,7 +27,7 @@ def process_loot(item):
     )
 
 
-def change_category(category):
+def change_category(category, name):
     """
     카테고리 변경
     """
@@ -50,7 +50,7 @@ def change_category(category):
 
     if category in special_list:
         return "Special equipment"
-    elif category in jewelry_list:
+    elif name in jewelry_list:
         return "Jewelry"
 
     return category
