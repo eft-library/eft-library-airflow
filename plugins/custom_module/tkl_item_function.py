@@ -1,4 +1,4 @@
-weapon_graphql = """
+item_graphql = """
 {
   items {
     id

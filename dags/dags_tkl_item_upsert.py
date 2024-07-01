@@ -5,7 +5,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
-from custom_module.tkl_item_function import check_category, weapon_graphql
+from custom_module.tkl_item_function import check_category, item_graphql
 from custom_module.item.knife_function import process_knife
 from custom_module.item.throwable_function import process_throwable
 from custom_module.item.rig_function import process_rig
@@ -37,7 +37,7 @@ with DAG(
 ) as dag:
 
     def fetch_item_list(**kwargs):
-        item_list = get_graphql(weapon_graphql)
+        item_list = get_graphql(item_graphql)
         return item_list
 
     def upsert_gun(postgres_conn_id, **kwargs):
