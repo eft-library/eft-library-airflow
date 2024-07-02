@@ -8,11 +8,10 @@ def process_master(item):
     id = item.get("id")
     name_en = item.get('name')
     image = item.get("imageLink")
-    construction_time = item.get("constructionTime")
     level_ids = get_level_ids(item.get("levels"))
     update_time = pendulum.now("Asia/Seoul")
     return (
-        id, name_en, image, construction_time, level_ids, update_time
+        id, name_en, image, level_ids, update_time
     )
 
 
