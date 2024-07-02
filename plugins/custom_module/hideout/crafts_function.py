@@ -11,7 +11,7 @@ def process_crafts(item):
     name_en = get_name_list(item.get("rewardItems"))
 
     return (
-        id, station_id, level, name_en, update_time
+        id, f"{station_id}-{level}", level, name_en, update_time
     )
 
 
