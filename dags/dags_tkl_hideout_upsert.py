@@ -10,6 +10,9 @@ from custom_module.hideout.master_function import process_master
 from custom_module.hideout.level_function import process_level
 from custom_module.hideout.item_require_function import process_item_require
 from custom_module.hideout.trader_require_function import process_trader_require
+from custom_module.hideout.station_require_function import process_station_require
+from custom_module.hideout.skill_require_function import process_skill_require
+from custom_module.hideout.bonus_function import process_bonus
 
 default_args = {
     "owner": "airflow",
@@ -87,6 +90,51 @@ with DAG(
                             cursor.execute(sql, process_trader_require(level.get("id"), require))
             conn.commit()
 
+    def upsert_hideout_station_require(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkl_hideout_station_require.sql")
+        data_list = hideout_list["data"]["hideoutStations"]
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for hideout in data_list:
+                    for level in hideout['levels']:
+                        for require in level['stationLevelRequirements']:
+                            cursor.execute(sql, process_station_require(level.get("id"), require))
+            conn.commit()
+
+    def upsert_hideout_skill_require(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkl_hideout_skill_require.sql")
+        data_list = hideout_list["data"]["hideoutStations"]
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for hideout in data_list:
+                    for level in hideout['levels']:
+                        for require in level['skillRequirements']:
+                            cursor.execute(sql, process_skill_require(level.get("id"), require))
+            conn.commit()
+
+    def upsert_hideout_bonus(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkl_hideout_bonus.sql")
+        data_list = hideout_list["data"]["hideoutStations"]
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for hideout in data_list:
+                    for level in hideout['levels']:
+                        for require in level['bonuses']:
+                            cursor.execute(sql, process_bonus(level.get("id"), require))
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_hideout_list", python_callable=fetch_hideout_list
     )
@@ -119,7 +167,31 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_hideout_station_require_task = PythonOperator(
+        task_id="upsert_hideout_station_require",
+        python_callable=upsert_hideout_station_require,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    upsert_hideout_skill_require_task = PythonOperator(
+        task_id="upsert_hideout_skill_require",
+        python_callable=upsert_hideout_skill_require,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    upsert_hideout_bonus_task = PythonOperator(
+        task_id="upsert_hideout_bonus",
+        python_callable=upsert_hideout_bonus,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [upsert_hideout_master_task,
                    upsert_hideout_level_task,
                    upsert_hideout_item_require_task,
-                   upsert_hideout_trader_require_task]
+                   upsert_hideout_trader_require_task,
+                   upsert_hideout_station_require_task,
+                   upsert_hideout_skill_require_task,
+                   upsert_hideout_bonus_task]

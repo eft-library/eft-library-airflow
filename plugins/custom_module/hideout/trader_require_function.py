@@ -10,7 +10,7 @@ def process_trader_require(level_id, item):
     value = item.get("value")
     compare = item.get("compareMethod")
     require_type = item.get("requirementType")
-    name_en = item['item'].get('name') if item.get("item") else None
+    name_en = item['trader'].get('name') if item.get("trader") else None
     return (
         id, level_id, name_en, value, require_type, compare, update_time
     )
