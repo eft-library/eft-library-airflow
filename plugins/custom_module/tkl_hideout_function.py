@@ -9,6 +9,7 @@ hideout_graphql = """
         id
         item {
           name
+          image512pxLink
         }
         quantity
         count
@@ -28,6 +29,7 @@ hideout_graphql = """
         value
         trader {
           name
+          imageLink
         }
         compareMethod
       }
@@ -36,6 +38,7 @@ hideout_graphql = """
         level
         station {
           name
+          imageLink
         }
       }
       id
@@ -44,12 +47,7 @@ hideout_graphql = """
         type
         name
         value
-        passive
-        slotItems {
-          name
-        }
         skillName
-        production
       }
       constructionTime
     }
