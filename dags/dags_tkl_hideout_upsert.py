@@ -133,7 +133,6 @@ with DAG(
                 for hideout in data_list:
                     for level in hideout['levels']:
                         for require in level['bonuses']:
-                            print(require)
                             cursor.execute(sql, process_bonus(level.get("id"), require))
             conn.commit()
 
