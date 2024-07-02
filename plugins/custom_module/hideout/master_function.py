@@ -22,8 +22,9 @@ def get_level_ids(levels):
     """
     level_ids = []
     print(levels)
+    print(len(levels))
     for level in levels:
-        print(level)
-        level_ids.append(level.get("id"))
+        print(level["id"], level)
+        level_ids.append(level["id"])
 
     return level_ids
