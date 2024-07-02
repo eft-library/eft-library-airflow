@@ -6,7 +6,7 @@ INSERT INTO tkl_hideout_master (
     level_ids,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name_en = EXCLUDED.name_en,
