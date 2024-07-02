@@ -146,7 +146,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for hideout in data_list:
-                    cursor.execute(sql, process_bonus(hideout))
+                    cursor.execute(sql, process_crafts(hideout))
             conn.commit()
 
     fetch_data = PythonOperator(
