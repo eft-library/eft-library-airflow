@@ -42,16 +42,23 @@ def change_category(category, name):
     jewelry_list = [
         "Battered antique book",
         "Loot Lord plushie",
+        'Old firesteel'
+    ]
+
+    lubricant_list = [
         'Gunpowder "Eagle"',
         'Gunpowder "Hawk"',
-        'Gunpowder "Kite"'
-        'Old firesteel'
+        'Gunpowder "Kite"',
+        "Metal fuel tank",
+        "Expeditionary fuel tank"
     ]
 
     if category in special_list:
         return "Special equipment"
     elif name in jewelry_list:
         return "Jewelry"
+    elif name in lubricant_list:
+        return "Lubricant"
 
     return category
 
