@@ -84,7 +84,7 @@ with DAG(
                 for hideout in data_list:
                     for level in hideout['levels']:
                         for require in level['traderRequirements']:
-                            cursor.execute(sql, process_item_require(level.get("id"), require))
+                            cursor.execute(sql, process_trader_require(level.get("id"), require))
             conn.commit()
 
     fetch_data = PythonOperator(
