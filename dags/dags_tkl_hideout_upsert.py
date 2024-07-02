@@ -135,6 +135,7 @@ with DAG(
                         for require in level['bonuses']:
                             cursor.execute(sql, process_bonus(level.get("id"), require))
             conn.commit()
+
     def upsert_hideout_crafts(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
         hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
@@ -215,5 +216,5 @@ with DAG(
                    upsert_hideout_trader_require_task,
                    upsert_hideout_station_require_task,
                    upsert_hideout_skill_require_task,
-                   upsert_hideout_bonus,
+                   upsert_hideout_bonus_task,
                    upsert_hideout_crafts_task]
