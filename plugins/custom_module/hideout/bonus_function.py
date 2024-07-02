@@ -9,8 +9,8 @@ def process_bonus(level_id, item):
     type = item.get("type")
     name_en = item.get("name")
     value = item.get("value")
-    skill_name_en = item.get("skillName")
-    print(item)
+    skill_name_en = item.get("skillName") if item.get("skillName") else None
+
     return (
         id, level_id, type, name_en, value, skill_name_en, update_time
     )
