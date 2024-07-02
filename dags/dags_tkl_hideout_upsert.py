@@ -7,6 +7,7 @@ from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
 from custom_module.tkl_hideout_function import hideout_graphql
 from custom_module.hideout.master_function import process_master
+from custom_module.hideout.level_function import process_level
 
 default_args = {
     "owner": "airflow",
@@ -40,6 +41,20 @@ with DAG(
                     cursor.execute(sql, process_master(hideout))
             conn.commit()
 
+    def upsert_hideout_level(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkl_hideout_level.sql")
+        data_list = hideout_list["data"]["hideoutStations"]
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for hideout in data_list:
+                    for level in hideout['levels']:
+                        cursor.execute(sql, process_level(level))
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_hideout_list", python_callable=fetch_hideout_list
     )
@@ -51,4 +66,11 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> [upsert_hideout_master_task]
+    upsert_hideout_level_task = PythonOperator(
+        task_id="upsert_hideout_level",
+        python_callable=upsert_hideout_level,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    fetch_data >> [upsert_hideout_master_task, upsert_hideout_level_task]
