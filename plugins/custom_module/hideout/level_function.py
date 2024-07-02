@@ -6,8 +6,8 @@ def process_level(item):
     hideout level 가공
     """
     id = item.get("id")
-    level = 0
-    construction_time = 0
+    level = item.get("level")
+    construction_time = item.get("constructionTime")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
