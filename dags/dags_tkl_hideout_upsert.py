@@ -13,6 +13,7 @@ from custom_module.hideout.trader_require_function import process_trader_require
 from custom_module.hideout.station_require_function import process_station_require
 from custom_module.hideout.skill_require_function import process_skill_require
 from custom_module.hideout.bonus_function import process_bonus
+from custom_module.hideout.crafts_function import process_crafts
 
 default_args = {
     "owner": "airflow",
@@ -135,6 +136,19 @@ with DAG(
                             cursor.execute(sql, process_bonus(level.get("id"), require))
             conn.commit()
 
+    def upsert_hideout_crafts(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkl_hideout_crafts.sql")
+        data_list = hideout_list["data"]["hideoutStations"]
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for hideout in data_list:
+                    cursor.execute(sql, process_bonus(hideout))
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_hideout_list", python_callable=fetch_hideout_list
     )
@@ -188,10 +202,18 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_hideout_crafts_task = PythonOperator(
+        task_id="upsert_hideout_crafts",
+        python_callable=upsert_hideout_crafts,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [upsert_hideout_master_task,
                    upsert_hideout_level_task,
                    upsert_hideout_item_require_task,
                    upsert_hideout_trader_require_task,
                    upsert_hideout_station_require_task,
                    upsert_hideout_skill_require_task,
-                   upsert_hideout_bonus_task]
+                   upsert_hideout_bonus_task,
+                   upsert_hideout_crafts_task]
