@@ -13,7 +13,7 @@ def process_armor_vest(item):
     class_value = item["properties"].get("class")
     areas_en = item["properties"].get("zones")
     areas_kr = armor_vest_areas_kr(areas_en)
-    durability = armor_vest_durability(name)
+    # durability = armor_vest_durability(name)
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -25,7 +25,7 @@ def process_armor_vest(item):
         class_value,
         areas_en,
         areas_kr,
-        durability,
+        # durability,
         update_time,
     )
 
@@ -101,6 +101,8 @@ def armor_vest_areas_kr(areas_en):
         "Right arm, Shoulder": "오른팔 - 어깨",
     }
     result = []
+
     for area in areas_en:
-        result.append(parts[area])
+        if area in parts:
+            result.append(parts[area])
     return result

@@ -8,8 +8,8 @@ def process_ammo(item):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    category = get_category(name)
-    round = get_round(name)
+    # category = get_category(name)
+    # round = get_round(name)
     damage = item["properties"].get("damage") if item.get("properties") else None
     penetration_power = (
         item["properties"].get("penetrationPower") if item.get("properties") else None
@@ -29,7 +29,7 @@ def process_ammo(item):
     heavy_bleed_modifier = (
         item["properties"].get("heavyBleedModifier") if item.get("properties") else None
     )
-    efficiency = get_efficiency(name)
+    # efficiency = get_efficiency(name)
     image = item.get("image512pxLink")
     update_time = pendulum.now("Asia/Seoul")
 
@@ -37,8 +37,8 @@ def process_ammo(item):
         id,
         name,
         short_name,
-        category,
-        round,
+        # category,
+        # round,
         damage,
         penetration_power,
         armor_damage,
@@ -46,7 +46,7 @@ def process_ammo(item):
         recoil_modifier,
         light_bleed_modifier,
         heavy_bleed_modifier,
-        efficiency,
+        # efficiency,
         image,
         update_time,
     )

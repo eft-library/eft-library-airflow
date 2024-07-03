@@ -7,10 +7,10 @@ INSERT INTO tkl_armor_vest (
     class_value,
     areas_en,
     areas_kr,
-    durability,
+--     durability,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -20,5 +20,5 @@ ON CONFLICT (id) DO UPDATE SET
     class_value = EXCLUDED.class_value,
     areas_en = EXCLUDED.areas_en,
     areas_kr = EXCLUDED.areas_kr,
-    durability = EXCLUDED.durability,
+--     durability = EXCLUDED.durability,
     update_time = EXCLUDED.update_time;

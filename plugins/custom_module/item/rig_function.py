@@ -14,14 +14,14 @@ def process_rig(item):
     areas_en = None
     areas_kr = None
     capacity = item["properties"].get("capacity")
-    durability = None
+    # durability = None
     update_time = pendulum.now("Asia/Seoul")
 
     if item["properties"]["class"] != None:
         class_value = item["properties"].get("class")
         areas_en = item["properties"].get("zones")
         areas_kr = rig_areas_kr(areas_en)
-        durability = rig_durability_edit(name)
+        # durability = rig_durability_edit(name)
 
     return (
         id,
@@ -32,7 +32,7 @@ def process_rig(item):
         class_value,
         areas_en,
         areas_kr,
-        durability,
+        # durability,
         capacity,
         update_time,
     )
@@ -99,5 +99,6 @@ def rig_areas_kr(areas_en):
     }
     result = []
     for area in areas_en:
-        result.append(parts[area])
+        if area in parts:
+            result.append(parts[area])
     return result

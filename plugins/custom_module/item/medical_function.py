@@ -10,7 +10,7 @@ def process_medical(item):
 
     id = check_item.get("id")
     name_en = check_item.get("name")
-    name_kr = get_name_kr(name_en)
+    # name_kr = get_name_kr(name_en)
     short_name = check_item.get("shortName")
     cures_en = check_item["properties"].get("cures")
     cures_kr = None
@@ -40,7 +40,7 @@ def process_medical(item):
     return (
         id,
         name_en,
-        name_kr,
+        # name_kr,
         short_name,
         cures_en,
         cures_kr,

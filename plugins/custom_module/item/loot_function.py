@@ -8,7 +8,7 @@ def process_loot(item):
 
     id = item.get("id")
     name_en = item.get("name")
-    name_kr = get_loot_kr(name_en)
+    # name_kr = get_loot_kr(name_en)
     short_name = item.get("shortName")
     image = item.get("image512pxLink")
     category = (
@@ -19,7 +19,7 @@ def process_loot(item):
     return (
         id,
         name_en,
-        name_kr,
+        # name_kr,
         short_name,
         image,
         category,

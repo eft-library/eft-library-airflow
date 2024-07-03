@@ -14,7 +14,7 @@ def process_headwear(item):
     class_value = None
     areas_en = None
     areas_kr = None
-    durability = None
+    # durability = None
     ricochet_chance = None
     ricochet_str_en = None
     ricochet_str_kr = None
@@ -27,7 +27,7 @@ def process_headwear(item):
             item["properties"].get("headZones") if item.get("properties") else None
         )
         areas_kr = check_helmet_area_kr(areas_en)
-        durability = durability_edit(name)
+        # durability = durability_edit(name)
         ricochet_chance = (
             item["properties"].get("ricochetY") if item.get("properties") else None
         )
@@ -42,7 +42,7 @@ def process_headwear(item):
         class_value,
         areas_en,
         areas_kr,
-        durability,
+        # durability,
         ricochet_chance,
         weight,
         image,

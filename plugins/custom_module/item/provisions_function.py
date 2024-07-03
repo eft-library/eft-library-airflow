@@ -8,7 +8,7 @@ def process_provisions(item):
     """
     id = item.get("id")
     name_en = item.get("name")
-    name_kr = provisions_kr(name_en)
+    # name_kr = provisions_kr(name_en)
     short_name = item.get("shortName")
     category = item["category"].get("name") if item.get("category") else None
     energy = item["properties"].get("energy") if item.get("properties") else None
@@ -24,7 +24,7 @@ def process_provisions(item):
     return (
         id,
         name_en,
-        name_kr,
+        # name_kr,
         short_name,
         category,
         energy,
