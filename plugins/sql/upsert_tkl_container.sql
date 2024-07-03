@@ -10,7 +10,7 @@ INSERT INTO tkl_container (
     %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
-    name_en = EXCLUDED.name,
+    name_en = EXCLUDED.name_en,
     short_name = EXCLUDED.short_name,
     image = EXCLUDED.image,
     grids = EXCLUDED.grids,
