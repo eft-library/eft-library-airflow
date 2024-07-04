@@ -18,8 +18,8 @@ def process_crafts(item):
 def get_name(rewards):
     """
     보상 뽑기
-    리스트 형태이지만 하나 밖에 없음
+    리스트지만 데이터 하나임
     """
-    if len(rewards) > 1:
-        return rewards[0]["item"].get("name")
+    for reward in rewards:
+        return reward["item"].get("name")
     return None
