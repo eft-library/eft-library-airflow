@@ -343,7 +343,7 @@ with DAG(
 
     upsert_face_cover_task = PythonOperator(
         task_id="upsert_face_cover",
-        python_callable=upsert_face_cover(),
+        python_callable=upsert_face_cover,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
