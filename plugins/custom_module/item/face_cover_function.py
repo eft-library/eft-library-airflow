@@ -18,7 +18,7 @@ def process_face_cover(item):
     ricochet_str_en = None
     ricochet_str_kr = None
 
-    if item["properties"] != {}:
+    if item["properties"] is not {} and item["properties"] is not None:
         class_value = (
             item["properties"].get("class") if item.get("properties") else None
         )
