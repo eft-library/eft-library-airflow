@@ -1,6 +1,7 @@
 import pendulum
 
 def process_face_cover(item):
+    print(item)
     """
     face cover 데이터 가공
     """
@@ -21,14 +22,13 @@ def process_face_cover(item):
         class_value = (
             item["properties"].get("class") if item.get("properties") else None
         )
-        areas_en = modify_helmet_area(
+        areas_en = modify_face_cover_area(
             item["properties"].get("headZones") if item.get("properties") else None
         )
-        areas_kr = check_helmet_area_kr(areas_en)
+        areas_kr = check_face_cover_area_kr(areas_en)
         ricochet_chance = (
             item["properties"].get("ricochetY") if item.get("properties") else None
         )
-        ricochet_chance = ricochet_chance_edit(name, ricochet_chance)
         ricochet_str_en = ricochet_chance_en(ricochet_chance)
         ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
 
@@ -48,23 +48,9 @@ def process_face_cover(item):
     )
 
 
-def ricochet_chance_edit(name, ricochet_chance):
-    """
-    도탄 기회 주입
-    """
-    if name == "Team Wendy EXFIL Ballistic Helmet (Black)":
-        return 0.4
-    elif name == "Team Wendy EXFIL Ballistic Helmet (Coyote Brown)":
-        return 0.4
-    elif name == "DevTac Ronin ballistic helmet":
-        return 0.4
-    else:
-        return ricochet_chance
-
-
 def ricochet_chance_en(item):
     """
-    head wear 도탄 기회 영문
+    face cover 도탄 기회 영문
     """
     if item < 0.2:
         return "Low"
@@ -76,7 +62,7 @@ def ricochet_chance_en(item):
 
 def ricochet_chance_kr(item):
     """
-    head wear 도탄 기회 한글
+    face cover 도탄 기회 한글
     """
     if item < 0.2:
         return "낮음"
@@ -86,9 +72,9 @@ def ricochet_chance_kr(item):
         return "높음"
 
 
-def check_helmet_area_kr(area_list):
+def check_face_cover_area_kr(area_list):
     """
-    방탄모 보호 부위 한글로 번역
+    face cover 보호 부위 한글로 번역
     """
     result = []
     helmet_area_kr = {
@@ -111,9 +97,9 @@ def check_helmet_area_kr(area_list):
     return result
 
 
-def modify_helmet_area(area_list):
+def modify_face_cover_area(area_list):
     """
-    방탄모 명칭 변경
+    face cover 명칭 변경
     :param area:
     :return:
     """
