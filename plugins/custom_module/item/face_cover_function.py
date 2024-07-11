@@ -1,7 +1,6 @@
 import pendulum
 
 def process_face_cover(item):
-    print(item)
     """
     face cover 데이터 가공
     """
