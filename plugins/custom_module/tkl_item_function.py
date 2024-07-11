@@ -196,6 +196,12 @@ def check_category(item_list, category):
                 and item['name'] != "Tagilla figurine"
                 and 'Locked' not in item['name']
                 ]
+    elif category == "Face Cover":
+        return [
+            item
+            for item in item_list
+            if item["category"]["name"] == category
+        ]
     else:
         return [
             item
