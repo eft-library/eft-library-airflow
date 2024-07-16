@@ -191,9 +191,6 @@ def check_category(item_list, category):
                 and item['name'] != "Decrypted flash drive"
                 and item['name'] != "Documents with decrypted data"
                 and item['name'] != "Encrypted flash drive"
-                and item['name'] != "Killa figurine"
-                and item['name'] != "Reshala figurine"
-                and item['name'] != "Tagilla figurine"
                 and 'Locked' not in item['name']
                 ]
     elif category == "Face Cover":
