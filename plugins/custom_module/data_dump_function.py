@@ -24,7 +24,7 @@ def dump_script():
     return f"""
         source ~/.bashrc
         echo "Executing PostgreSQL Command - pg_dump"
-        pg_dump -h $DB -U tkl tkl > /home/latest_data/{today}_backup.sql
+        pg_dump --data-only --inserts $DB -U tkl tkl > /home/latest_data/{today}_backup.sql
         echo $?
         """
 
