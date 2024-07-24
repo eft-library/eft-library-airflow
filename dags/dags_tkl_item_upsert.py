@@ -364,7 +364,7 @@ with DAG(
 
     upsert_arm_band_task = PythonOperator(
         task_id="upsert_arm_band",
-        python_callable=upsert_arm_band(),
+        python_callable=upsert_arm_band,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
