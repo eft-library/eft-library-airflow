@@ -12,5 +12,5 @@ ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     short_name = EXCLUDED.short_name,
     image = EXCLUDED.image,
-    weight = EXCLUDEC.weight
+    weight = EXCLUDEC.weight,
     update_time = EXCLUDED.update_time;
