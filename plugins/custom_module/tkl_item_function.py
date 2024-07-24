@@ -199,6 +199,12 @@ def check_category(item_list, category):
             for item in item_list
             if item["category"]["name"] == category
         ]
+    elif category == "Arm Band":
+        return [
+            item
+            for item in item_list
+            if item["category"]["name"] == category
+        ]
     else:
         return [
             item
