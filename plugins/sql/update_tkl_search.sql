@@ -12,6 +12,9 @@ insert into tkl_search (value, link, page_value, type, "order")
            select '하이드아웃 : ' || name_en, '/hideout', id, 'HIDEOUT'
            from tkl_hideout_master
            union all
+           select '하이드아웃 : ' || name_kr, '/hideout', id, 'HIDEOUT'
+           from tkl_hideout_master
+           union all
            select '퀘스트 : ' || name_kr, '/quest/detail/' || id, id, 'QUEST'
            from tkl_quest
            union all
