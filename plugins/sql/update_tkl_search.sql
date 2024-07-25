@@ -61,4 +61,6 @@ insert into tkl_search (value, link, page_value, type, "order")
            from tkl_loot
            union all
            select '얼굴 커버 : ' || name, '/face-cover?id=' || id, id, 'FACE_COVER'
+           union all
+           select '완장 : ' || name, '/arm-band?id=' || id, id, 'ARM_BAND'
            from tkl_face_cover) as a)
