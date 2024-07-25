@@ -15,6 +15,9 @@ insert into tkl_search (value, link, page_value, type, "order")
            select '퀘스트 : ' || name_kr, '/quest/detail/' || id, id, 'QUEST'
            from tkl_quest
            union all
+           select '퀘스트 : ' || name_en, '/quest/detail/' || id, id, 'QUEST'
+           from tkl_quest
+           union all
            select '상인 : ' || tkl_npc.name_kr, '/quest', id, 'TRADER'
            from tkl_npc
            union all
