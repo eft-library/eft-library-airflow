@@ -22,6 +22,7 @@ from custom_module.item.ammo_function import process_ammo
 from custom_module.item.loot_function import process_loot
 from custom_module.item.face_cover_function import process_face_cover
 from custom_module.item.arm_band_function import process_arm_band
+from custom_module.item.glasses_function import process_glasses
 
 default_args = {
     "owner": "airflow",
@@ -253,6 +254,19 @@ with DAG(
                     cursor.execute(sql, process_arm_band(item))
             conn.commit()
 
+    def upsert_glasses(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_tkl_glasses.sql")
+        data_list = check_category(item_list["data"]["items"], "Vis. observ. device")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in data_list:
+                    cursor.execute(sql, process_glasses(item))
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_item_list", python_callable=fetch_item_list
     )
@@ -369,6 +383,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_glasses_task = PythonOperator(
+        task_id="upsert_glasses",
+        python_callable=upsert_glasses,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [
         upsert_gun_task,
         upsert_knife_task,
@@ -386,4 +407,5 @@ with DAG(
         upsert_loot_task,
         upsert_face_cover_task,
         upsert_arm_band_task,
+        upsert_glasses_task,
     ]

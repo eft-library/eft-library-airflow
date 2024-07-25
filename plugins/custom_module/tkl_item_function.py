@@ -112,6 +112,11 @@ item_graphql = """
         lightBleedModifier
         heavyBleedModifier
       }
+      ... on ItemPropertiesGlasses {
+        class
+        durability
+        blindnessProtection
+      }
     }
   }
   maps {
@@ -193,13 +198,7 @@ def check_category(item_list, category):
                 and item['name'] != "Encrypted flash drive"
                 and 'Locked' not in item['name']
                 ]
-    elif category == "Face Cover":
-        return [
-            item
-            for item in item_list
-            if item["category"]["name"] == category
-        ]
-    elif category == "Arm Band":
+    elif category == "Face Cover" or category == "Arm Band" or category == "Vis. observ. device":
         return [
             item
             for item in item_list

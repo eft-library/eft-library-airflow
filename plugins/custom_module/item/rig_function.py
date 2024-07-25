@@ -17,7 +17,7 @@ def process_rig(item):
     # durability = None
     update_time = pendulum.now("Asia/Seoul")
 
-    if item["properties"]["class"] != None:
+    if item["properties"]["class"] is not None:
         class_value = item["properties"].get("class")
         areas_en = item["properties"].get("zones")
         areas_kr = rig_areas_kr(areas_en)
