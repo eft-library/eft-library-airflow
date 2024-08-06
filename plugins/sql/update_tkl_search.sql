@@ -6,7 +6,7 @@ insert into tkl_search (value, link, page_value, type, "order")
            select '대화형 지도 : ' || name_kr, '/map/' || id, id, 'MAP'
            from tkl_map_parent
            union all
-           select '보스 : ' || tkl_boss.name_kr, '/boss', id, 'BOSS'
+           select '보스 : ' || tkl_boss.name_kr, '/boss/' || id, id, 'BOSS'
            from tkl_boss
            union all
            select '하이드아웃 : ' || name_en, '/hideout', id, 'HIDEOUT'
