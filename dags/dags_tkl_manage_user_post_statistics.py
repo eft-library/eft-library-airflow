@@ -29,6 +29,15 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
+    def update_user_grade(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("update_user_grade.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     upsert_user_post_statistics_task = PythonOperator(
         task_id="upsert_user_post_statistics",
         python_callable=upsert_user_post_statistics,
@@ -36,5 +45,12 @@ with DAG(
         provide_context=True,
     )
 
+    update_user_grade_task = PythonOperator(
+        task_id="update_user_grade",
+        python_callable=update_user_grade,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
 
-    upsert_user_post_statistics_task
+
+    upsert_user_post_statistics_task >> update_user_grade_task
