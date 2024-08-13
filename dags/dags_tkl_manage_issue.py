@@ -29,6 +29,15 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
+    def delete_not_exist_issue(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("delete_not_exist_issue.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     def upsert_issue(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_issue.sql")
@@ -45,6 +54,13 @@ with DAG(
         provide_context=True,
     )
 
+    delete_not_exist_issue_task = PythonOperator(
+        task_id="delete_not_exist_issue",
+        python_callable=delete_not_exist_issue,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     upsert_issue_task = PythonOperator(
         task_id="upsert_issue",
         python_callable=upsert_issue,
@@ -52,4 +68,4 @@ with DAG(
         provide_context=True,
     )
 
-    delete_issue_task >> upsert_issue_task
+    delete_issue_task >> delete_not_exist_issue >> upsert_issue_task
