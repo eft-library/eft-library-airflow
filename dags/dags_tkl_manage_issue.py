@@ -68,4 +68,4 @@ with DAG(
         provide_context=True,
     )
 
-    delete_issue_task >> delete_not_exist_issue >> upsert_issue_task
+    delete_issue_task >> delete_not_exist_issue_task >> upsert_issue_task
