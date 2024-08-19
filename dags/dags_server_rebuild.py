@@ -20,7 +20,7 @@ with DAG(
     server_rebuild_task = SimpleHttpOperator(
         task_id='server_rebuild',
         http_conn_id='tkl_web',
-        endpoint='/server/rebuild',
+        endpoint='server/rebuild',
         method='POST',
         data=json.dumps({"rebuild_key": rebuild_key}),
         headers={"Content-Type": "application/json"},
