@@ -15,7 +15,6 @@ with DAG(
     tags=['server'],
 ) as dag:
 
-    api_url = Variable.get('api_url')
     rebuild_key = Variable.get('rebuild_key', default_var='')
 
     server_rebuild_task = SimpleHttpOperator(
