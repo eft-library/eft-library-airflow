@@ -24,6 +24,7 @@ with DAG(
         method='POST',
         data=json.dumps({"rebuild_key": rebuild_key}),
         headers={"Content-Type": "application/json"},
+        timeout=900,
         dag=dag,
     )
 
