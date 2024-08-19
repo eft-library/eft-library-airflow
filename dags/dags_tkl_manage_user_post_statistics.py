@@ -15,7 +15,7 @@ with DAG(
     dag_id="dags_tkl_manage_user_post_statistics",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="0 10 * * *",
+    schedule_interval="10 */1 * * *",
     tags=['postgresql', "tarkov-dev-api"],
     catchup=False,
 ) as dag:
