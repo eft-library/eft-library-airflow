@@ -28,10 +28,10 @@ with DAG(
 
     def upsert_quest_item(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        quest_list = ti.xcom_pull(task_ids="fetch_quest_list")
+        quest_item_list = ti.xcom_pull(task_ids="fetch_quest_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_quest_item_tkl_loot.sql")
-        data_list = quest_list["data"]["tasks"]
+        data_list = quest_item_list["data"]["questItems"]
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
