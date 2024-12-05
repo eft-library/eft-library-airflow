@@ -191,8 +191,6 @@ def check_category(item_list, category):
                 or item["category"]["parent"]["name"] == "Special item"
                 or item["category"]["parent"]["name"] == "Lubricant"
                 or item["category"]["name"] == "Info")
-                and item['name'] != "Dogtag BEAR"
-                and item['name'] != "Dogtag USEC"
                 and item['name'] != "Decrypted flash drive"
                 and item['name'] != "Documents with decrypted data"
                 and item['name'] != "Encrypted flash drive"
