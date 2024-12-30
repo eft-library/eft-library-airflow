@@ -15,10 +15,10 @@ insert into tkl_search (value, link, page_value, type, "order")
       select '하이드아웃 : ' || name_kr, '/hideout', id, 'HIDEOUT'
       from tkl_hideout_master
       union all
-      select '퀘스트 : ' || name_kr, '/quest/detail/' || id, id, 'QUEST'
+      select '퀘스트 : ' || name_kr, '/quest/detail/' || url_mapping, url_mapping, 'QUEST'
       from tkl_quest
       union all
-      select '퀘스트 : ' || name_en, '/quest/detail/' || id, id, 'QUEST'
+      select '퀘스트 : ' || name_en, '/quest/detail/' || url_mapping, url_mapping, 'QUEST'
       from tkl_quest
       union all
       select '상인 : ' || tkl_npc.name_kr, '/quest', id, 'TRADER'
