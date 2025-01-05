@@ -57,7 +57,7 @@ insert into tkl_search (value, link, page_value, type, "order")
       select '컨테이너 : ' || COALESCE(name_kr, name_en), '/container?id=' || id, id, 'CONTAINER'
       from tkl_container
       union all
-      select '키 : ' || name, '/key?id=' || id, id, 'KEY'
+      select '열쇠 : ' || name, '/key?id=' || id, id, 'KEY'
       from tkl_key
       union all
       select '식량 : ' || COALESCE(name_kr, name_en), '/provisions?id=' || id, id, 'PROVISIONS'
