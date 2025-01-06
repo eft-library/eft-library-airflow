@@ -309,6 +309,10 @@ def get_cures_kr(cures):
         "LightBleeding": "가벼운 출혈 제거",
         "HeavyBleeding": "깊은 출혈 제거",
         "Fracture": "골절 제거",
+        "EnergyRate": "에너지 회복",
+        "HydrationRate": "수분 회복",
+        "HealthRate": "체력 재생",
+        "Hands tremor": "손 떨림"
     }
 
     kr_result = []
