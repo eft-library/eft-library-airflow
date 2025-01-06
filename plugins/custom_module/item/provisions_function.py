@@ -114,6 +114,9 @@ def process_stim_effect(stim_effects):
         "Health regeneration": "체력 재생",
         "Hands tremor": "손 떨림",
         "Hydration recovery": "수분 회복",
+        "EnergyRate": "에너지 회복",
+        "HydrationRate": "수분 회복",
+        "HealthRate": "체력 재생",
     }
 
     for effects in new_effects:
