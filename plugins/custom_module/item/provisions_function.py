@@ -112,7 +112,7 @@ def process_stim_effect(stim_effects):
     kr_type = {
         "Energy recovery": "에너지 회복",
         "Health regeneration": "체력 재생",
-        "Hands tremor": "손 떨림",
+        "HandsTremor": "손 떨림",
         "Hydration recovery": "수분 회복",
         "EnergyRate": "에너지 회복",
         "HydrationRate": "수분 회복",

@@ -312,7 +312,7 @@ def get_cures_kr(cures):
         "EnergyRate": "에너지 회복",
         "HydrationRate": "수분 회복",
         "HealthRate": "체력 재생",
-        "Hands tremor": "손 떨림"
+        "HandsTremor": "손 떨림"
     }
 
     kr_result = []
