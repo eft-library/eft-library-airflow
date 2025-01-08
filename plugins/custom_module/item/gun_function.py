@@ -109,7 +109,7 @@ def check_weapon_category(weapon_short_name, weapon_category):
     """
     weapon category 확인
     """
-    special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow"]
+    special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow", "RSP-30 reactive signal cartridge (Blue)", "RSP-30 reactive signal cartridge (Special Yellow)", "RSP-30 reactive signal cartridge (Firework)"]
     grenade_weapons = ["MSGL"]
     carbine_weapons = [
         "ADAR 2-15",
