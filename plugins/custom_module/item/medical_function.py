@@ -94,7 +94,7 @@ def process_stim_effect(stim_effects):
         "WeightLimit": "무게 제한",
         "painkillerDuration": "진통제",
         "EnergyRate": "에너지 회복",
-        "Health regeneration": "체력 재생",
+        "HealthRate": "체력 재생",
         "HandsTremor": "손 떨림",
         "HydrationRate": "수분 회복",
     }
@@ -174,19 +174,19 @@ def get_buff(stim_effect):
     for effect in stim_effect:
         if effect.get("type") == "Antidote":
             buff_list.append(effect)
-        elif effect.get("type") == "Body temperature" and effect.get("value") < 0:
+        elif effect.get("type") == "BodyTemperature" and effect.get("value") < 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Energy recovery" and effect.get("value") > 0:
+        elif effect.get("type") == "EnergyRate" and effect.get("value") > 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Health regeneration" and effect.get("value") > 0:
+        elif effect.get("type") == "HealthRate" and effect.get("value") > 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Hydration recovery" and effect.get("value") > 0:
+        elif effect.get("type") == "HydrationRate" and effect.get("value") > 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Max stamina" and effect.get("value") > 0:
+        elif effect.get("type") == "MaxStamina" and effect.get("value") > 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Stamina recovery" and effect.get("value") > 0:
+        elif effect.get("type") == "StaminaRate" and effect.get("value") > 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Weight limit" and effect.get("value") > 0:
+        elif effect.get("type") == "WeightLimit" and effect.get("value") > 0:
             buff_list.append(effect)
         elif effect.get("type") == "energyImpact" and effect.get("value") > 0:
             buff_list.append(effect)
@@ -194,7 +194,7 @@ def get_buff(stim_effect):
             buff_list.append(effect)
         elif effect.get("type") == "painkillerDuration" and effect.get("duration") > 0:
             buff_list.append(effect)
-        elif effect.get("type") == "Stops and prevents bleedings":
+        elif effect.get("type") == "Removeallbloodlosses":
             buff_list.append(effect)
         elif effect.get("type") == "Skill":
             if effect.get("skillName") == "Health" and effect.get("value") > 0:
@@ -238,25 +238,27 @@ def get_debuff(stim_effect):
     debuff_list = []
 
     for effect in stim_effect:
-        if effect.get("type") == "Body temperature" and effect.get("value") > 0:
+        if effect.get("type") == "BodyTemperature" and effect.get("value") > 0:
             debuff_list.append(effect)
-        elif effect.get("type") == "Hands tremor":
+        elif effect.get("type") == "DamageModifier":
+            debuff_list.append(effect)
+        elif effect.get("type") == "HandsTremor":
             debuff_list.append(effect)
         elif effect.get("type") == "Pain":
             debuff_list.append(effect)
-        elif effect.get("type") == "Tunnel effect":
+        elif effect.get("type") == "QuantumTunnelling":
             debuff_list.append(effect)
-        elif effect.get("type") == "Energy recovery" and effect.get("value") < 0:
+        elif effect.get("type") == "EnergyRate" and effect.get("value") < 0:
             debuff_list.append(effect)
-        elif effect.get("type") == "Health regeneration" and effect.get("value") < 0:
+        elif effect.get("type") == "HealthRate" and effect.get("value") < 0:
             debuff_list.append(effect)
-        elif effect.get("type") == "Hydration recovery" and effect.get("value") < 0:
+        elif effect.get("type") == "HydrationRate" and effect.get("value") < 0:
             debuff_list.append(effect)
-        elif effect.get("type") == "Max stamina" and effect.get("value") < 0:
+        elif effect.get("type") == "MaxStamina" and effect.get("value") < 0:
             debuff_list.append(effect)
-        elif effect.get("type") == "Stamina recovery" and effect.get("value") < 0:
+        elif effect.get("type") == "StaminaRate" and effect.get("value") < 0:
             debuff_list.append(effect)
-        elif effect.get("type") == "Weight limit" and effect.get("value") < 0:
+        elif effect.get("type") == "WeightLimit" and effect.get("value") < 0:
             debuff_list.append(effect)
         elif effect.get("type") == "energyImpact" and effect.get("value") < 0:
             debuff_list.append(effect)
