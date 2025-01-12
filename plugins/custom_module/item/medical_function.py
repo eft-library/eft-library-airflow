@@ -64,20 +64,20 @@ def process_stim_effect(stim_effects):
     """
     new_effects = stim_effects
     kr_skill = {
-        "Skill-Intellect": "지력",
-        "Skill-Attention": "주의력",
-        "Skill-Recoil Control": "반동 제어",
-        "Skill-Stress Resistance": "스트레스 저항력",
-        "Skill-Endurance": "지구력",
+        "Intellect": "지력",
+        "Attention": "주의력",
+        "Recoil Control": "반동 제어",
+        "Stress Resistance": "스트레스 저항력",
+        "Endurance": "지구력",
         "Mag Drills": "탄창 훈련",
-        "Skill-Strength": "근력",
-        "Skill-Metabolism": "신진대사",
+        "Strength": "근력",
+        "Metabolism": "신진대사",
         "Memory": "기억력",
-        "Skill-Health": "체력",
-        "Skill-Vitality": "활력",
-        "Skill-Immunity": "면역력",
-        "Skill-Perception": "인지능력",
-        "Skill-Charisma": "카리스마",
+        "Health": "체력",
+        "Vitality": "활력",
+        "Immunity": "면역력",
+        "Perception": "인지능력",
+        "Charisma": "카리스마",
     }
 
     kr_type = {
@@ -94,7 +94,7 @@ def process_stim_effect(stim_effects):
         "WeightLimit": "무게 제한",
         "painkillerDuration": "진통제",
         "EnergyRate": "에너지 회복",
-        "HealthRate": "체력 재생",
+        "Health regeneration": "체력 재생",
         "HandsTremor": "손 떨림",
         "HydrationRate": "수분 회복",
     }
