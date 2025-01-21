@@ -6,6 +6,7 @@ from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
 from custom_module.tkl_boss_function import process_boss_spawn, boss_graphql
+import json
 
 default_args = {
     "owner": "airflow",
@@ -36,7 +37,9 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for boss in boss_spawn_data:
-                    cursor.execute(sql, (boss['location_spawn_chance_en'], boss['location_spawn_chance_kr'], boss['id']))
+                    location_spawn_chance_en = json.dumps(boss['location_spawn_chance_en'])
+                    location_spawn_chance_kr = json.dumps(boss['location_spawn_chance_kr'])
+                    cursor.execute(sql, (location_spawn_chance_en, location_spawn_chance_kr, boss['id']))
             conn.commit()
 
     fetch_data = PythonOperator(
