@@ -16,7 +16,6 @@ def process_boss_spawn(map_list):
     """
     boss location chance 가공
     """
-    print(map_list)
     result = [{'id': "RESHALA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Reshala', 'name_kr': '르샬라'},
         {'id': "KOLLONTAY", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Kollontay', 'name_kr': '콜론테이'},
         {'id': "KILLA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Killa', 'name_kr': '킬라'},
@@ -54,6 +53,16 @@ def process_boss_spawn(map_list):
             boss_name = boss_data["boss"]["name"]
             spawn_chance = boss_data["spawnChance"] * 100
 
+            if boss_name == "Cultist Priest":
+                result[10]["location_spawn_chance_en"].append({
+                    "chance": spawn_chance,
+                    "location": map_name_en
+                })
+                result[10]["location_spawn_chance_kr"].append({
+                    "chance": spawn_chance,
+                    "location": map_name_en
+                })
+
             for boss in result:
                 if boss["name_en"].lower() in boss_name.lower():  # 이름 매칭 (대소문자 무시)
                     # EN 데이터 추가
@@ -66,5 +75,6 @@ def process_boss_spawn(map_list):
                         "chance": spawn_chance,
                         "location": map_name_kr
                     })
+
 
     return result
