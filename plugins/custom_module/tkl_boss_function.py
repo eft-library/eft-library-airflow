@@ -16,6 +16,7 @@ def process_boss_spawn(map_list):
     """
     boss location chance 가공
     """
+    print(map_list)
     result = [{'id': "RESHALA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Reshala', 'name_kr': '르샬라'},
         {'id': "KOLLONTAY", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Kollontay', 'name_kr': '콜론테이'},
         {'id': "KILLA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Killa', 'name_kr': '킬라'},

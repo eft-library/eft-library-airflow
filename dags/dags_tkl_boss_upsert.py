@@ -31,7 +31,7 @@ with DAG(
         map_list = ti.xcom_pull(task_ids="fetch_map_list")
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkl_boss_spawn.sql")
-        boss_spawn_data = process_boss_spawn(map_list)
+        boss_spawn_data = process_boss_spawn(map_list['data'])
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
