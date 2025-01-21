@@ -60,7 +60,7 @@ def process_boss_spawn(map_list):
                 })
                 result[10]["location_spawn_chance_kr"].append({
                     "chance": spawn_chance,
-                    "location": map_name_en
+                    "location": map_name_kr
                 })
 
             for boss in result:
