@@ -21,7 +21,7 @@ def trigger_server_rebuild(**kwargs):
 
 with DAG(
     dag_id="dags_server_rebuild",
-    schedule="0 6 * * *",
+    schedule="0 8 * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="Asia/Seoul"),
     catchup=False,
     dagrun_timeout=datetime.timedelta(minutes=60),
