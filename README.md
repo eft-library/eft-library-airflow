@@ -1,7 +1,5 @@
 # EFT Library의 Airflow 운영 방식
 
----
-
 EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데이터를 가져와 업데이트 한다.
 
 이 페이지는 Airflow에 대하여 설명한다.
@@ -12,8 +10,6 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 ## 주요 사항
 
----
-
 - Tarkov Dev **API는 GraphQL 형식**이며, **Airflow에서 JSON 데이터를 요청**하여 가져온 후 **DB에 적재**한다.
 - 수작업을 최소화하기 위해, Tarkov Dev에서 데이터를 가져온 후 **필요한 부분만 수정**하는 방식을 채택했다.
 - 데이터는 모두 영어이므로, **한글로 자동 변환**한다. 예: 회복 아이템의 버프 및 디버프 정의
@@ -23,15 +19,11 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 ## 환경
 
----
-
 - Rocky Linux 8
 - Python 3.9
 - Airflow 2.9.1
 
 ## 구조
-
----
 
 - **dags**
   - **data dump** : DB Dump
@@ -51,8 +43,6 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 ## 흐름
 
----
-
 현재 Dag는 2가지 흐름으로 되어 있다.
 
 대부분의 DAG는 GraphQL **API를 통해 데이터를 요청한 후**, 여러 개의 **Task로 분리하여 처리한 후 DB에 적재**하는 방식을 따른다.
@@ -67,10 +57,7 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 
 **첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump 할 때만 사용하고 있다.
 
-
 ## 운영 중 발생한 문제 및 해결 과정
-
----
 
 ### 1. 데이터 불일치 문제  
 
@@ -82,16 +69,12 @@ Tarkov Dev **API에서 반환하는 데이터와 게임내의 데이터가 일�
 - ![스크린샷 2025-01-31 오전 10 54 00](https://github.com/user-attachments/assets/a49fed2f-4a83-424e-a82c-db3dc54e5d55)
 
 
----
-
 ### 2. 1일 단위 Upsert 문제  
 
 DB에서 수작업으로 데이터를 변경해도, 다음 Upsert 실행 시 다시 덮어써지는 문제가 발생.  
 
 **✔ 해결:**  
 - Upsert 과정에서 기존 데이터를 유지할 수 있도록 Task 내부 함수에서 수정
-
----
 
 ### 3. 데이터 매핑 문제  
 
@@ -101,11 +84,7 @@ DB에서 수작업으로 데이터를 변경해도, 다음 Upsert 실행 시 다
 **✔ 해결:**  
 - 데이터 매핑 자동화를 적용하여 해결했으나, 좀 더 효율적인 방법이 필요
 - ![스크린샷 2025-01-31 오전 10 51 54](https://github.com/user-attachments/assets/5775d0b7-981d-4b2a-8d64-d5f25d05a66f)
-
 - ![스크린샷 2025-01-31 오전 10 52 33](https://github.com/user-attachments/assets/6e900826-9e74-4096-88f7-addc4d213fe3)
-
-
----
 
 ### 4. 한글 변환 작업의 어려움  
 
