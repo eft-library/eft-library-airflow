@@ -6,7 +6,8 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 이 페이지는 Airflow에 대하여 설명한다.
 
-사진
+![airflow](https://github.com/user-attachments/assets/057cc175-fe78-4974-8e2a-c40e9a4ce604)
+
 
 ## 주요 사항
 
@@ -55,11 +56,13 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 대부분의 DAG는 GraphQL API를 통해 데이터를 요청한 후, 여러 개의 Task로 분리하여 처리한 후 DB에 적재하는 방식을 따른다.
 
-사진
+![flow1](https://github.com/user-attachments/assets/36c56423-a362-4266-a3cc-a9838f2bfa07)
+
 
 DB 덤프와 같은 일부 DAG는 BranchOperator를 사용하여 실행할 Task를 동적으로 선택하는 방식을 사용한다.
 
-사진
+![flow2](https://github.com/user-attachments/assets/b25d9ebe-6b87-49dc-be4c-267700580694)
+
 
 첫번째 방식이 거의 모든 Dag의 흐름이며, 두번째는 DB Data를 Dump 할 때만 사용하고 있다.
 
