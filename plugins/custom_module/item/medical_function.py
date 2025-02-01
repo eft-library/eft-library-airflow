@@ -232,7 +232,7 @@ def get_buff(stim_effect):
 
 def get_debuff(stim_effect):
     """
-    buff 분류
+    debuff 분류
     """
 
     debuff_list = []
