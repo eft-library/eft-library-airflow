@@ -30,8 +30,6 @@ def merge_item_price_data(pvp_data, pve_data):
 
     for pvp_item in pvp_data:
         pve_item = pve_items.get(pvp_item['id'])
-        print('pvp', pvp_item)
-        print('pve',pve_item)
         # 가격 정보 통합
         merged_item = {
             "id": pvp_item["id"],
