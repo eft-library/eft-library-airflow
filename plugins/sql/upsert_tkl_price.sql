@@ -8,7 +8,6 @@ INSERT INTO tkl_item_price (
     %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
     item_name_en = EXCLUDED.item_name_en,
     item_image = EXCLUDED.item_image,
     trader = EXCLUDED.trader,
