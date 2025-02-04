@@ -46,7 +46,6 @@ def merge_item_price_data(pvp_data, pve_data):
         }
 
         merged_data.append(merged_item)
-        print(merged_item)
 
     return merged_data
 
