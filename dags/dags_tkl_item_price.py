@@ -26,7 +26,7 @@ with DAG(
     def fetch_price_list(**kwargs):
         pvp_list = get_graphql(pvp_item_price_graphql)
         pve_list = get_graphql(pve_item_price_graphql)
-        merged_data = merge_item_price_data(pvp_list['data'], pve_list['data'])
+        merged_data = merge_item_price_data(pvp_list['data']['items'], pve_list['data']['items'])
         return merged_data
 
     def upsert_price(postgres_conn_id, **kwargs):
