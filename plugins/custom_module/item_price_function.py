@@ -4,7 +4,6 @@ pvp_item_price_graphql = """
   items {
     id
     name
-    shortName
     image512pxLink
     sellFor {
       priceRUB
@@ -25,7 +24,6 @@ pve_item_price_graphql = """
   items(gameMode: pve) {
     id
     name
-    shortName
     image512pxLink
     sellFor {
       priceRUB
