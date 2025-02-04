@@ -25,13 +25,13 @@ def merge_item_price_data(pvp_data, pve_data):
     pvp, pve 데이터 가공
     """
     merged_data = []
-    print(pve_data)
     # 두 데이터 리스트를 병합 (ID로 매칭)
     pve_items = {item['id']: item for item in pve_data}
 
     for pvp_item in pvp_data:
         pve_item = pve_items.get(pvp_item['id'])
-
+        print('pvp', pvp_item)
+        print('pve',pve_item)
         # 가격 정보 통합
         merged_item = {
             "id": pvp_item["id"],
@@ -43,8 +43,8 @@ def merge_item_price_data(pvp_data, pve_data):
                 "pvp_trader": mapping_trader(pvp_item["sellFor"]["vendor"]["name"]) if pvp_item["sellFor"] else None,
                 "pve_trader": mapping_trader(pve_item["sellFor"]["vendor"]["name"]) if pve_item["sellFor"] else None
             },
-            "pvpHistoricalPrices": [{"price_type": "pvp", **price} for price in pvp_item["historicalPrices"]],
-            "pveHistoricalPrices": [{"price_type": "pve", **price} for price in pve_item["historicalPrices"]]
+            # "pvpHistoricalPrices": [{"price_type": "pvp", **price} for price in pvp_item["historicalPrices"]],
+            # "pveHistoricalPrices": [{"price_type": "pve", **price} for price in pve_item["historicalPrices"]]
         }
 
         merged_data.append(merged_item)

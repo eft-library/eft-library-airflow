@@ -11,10 +11,6 @@ pvp_item_price_graphql = """
         name
       }
     }
-    historicalPrices {
-      price
-      timestamp
-    }
   }
 }
 """
@@ -30,10 +26,6 @@ pve_item_price_graphql = """
       vendor {
         name
       }
-    }
-    historicalPrices {
-      price
-      timestamp
     }
   }
 }
