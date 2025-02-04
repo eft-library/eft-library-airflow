@@ -38,10 +38,8 @@ def merge_item_price_data(pvp_data, pve_data):
             "name_en": pvp_item["name"],
             "image512pxLink": pvp_item["image512pxLink"],
             "sellFor": {
-                "pvpPriceRUB": pvp_item["sellFor"]["priceRUB"] if pvp_item["sellFor"] else None,
-                "pvePriceRUB": pve_item["sellFor"]["priceRUB"] if pve_item and pve_item["sellFor"] else None,
-                "pvp_trader": mapping_trader(pvp_item["sellFor"]["vendor"]["name"]) if pvp_item["sellFor"] else None,
-                "pve_trader": mapping_trader(pve_item["sellFor"]["vendor"]["name"]) if pve_item["sellFor"] else None
+                "pvp_trader": mapping_trader(pvp_item["sellFor"]) if pvp_item["sellFor"] else None,
+                "pve_trader": mapping_trader(pve_item["sellFor"]) if pve_item["sellFor"] else None
             },
             # "pvpHistoricalPrices": [{"price_type": "pvp", **price} for price in pvp_item["historicalPrices"]],
             # "pveHistoricalPrices": [{"price_type": "pve", **price} for price in pve_item["historicalPrices"]]
@@ -53,7 +51,7 @@ def merge_item_price_data(pvp_data, pve_data):
     return merged_data
 
 
-def mapping_trader(trader):
+def mapping_trader(sell_for):
     """
     trader 정보 연결
     """
@@ -106,6 +104,12 @@ def mapping_trader(trader):
             "npc_name_kr": "래그맨",
             "npc_image": "/tkl_quest/npc/ragman.webp"
         },
+        "Ref": {
+            "npc_id": "REF",
+            "npc_name_en": "Ref",
+            "npc_name_kr": "레프",
+            "npc_image": "/tkl_quest/npc/ref.webp"
+        },
         "Flea Market": {
             "npc_id": "FLEA_MARKET",
             "npc_name_en": "Flea Market",
@@ -114,4 +118,12 @@ def mapping_trader(trader):
         },
     }
 
-    return npc_data.get(trader)
+    process_sell = []
+    for sell in sell_for:
+        new_sell = {
+            'price': sell.priceRUB,
+            'trader': npc_data.get(sell['vendor']['name'])
+        }
+        process_sell.append(new_sell)
+
+    return process_sell
