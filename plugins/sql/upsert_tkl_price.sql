@@ -1,4 +1,4 @@
-INSERT INTO tkl_price (
+INSERT INTO tkl_item_price (
     id,
     item_name_en,
     item_image,
