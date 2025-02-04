@@ -121,7 +121,7 @@ def mapping_trader(sell_for):
     process_sell = []
     for sell in sell_for:
         new_sell = {
-            'price': sell.priceRUB,
+            'price': sell.get('priceRUB'),
             'trader': npc_data.get(sell['vendor']['name'])
         }
         process_sell.append(new_sell)
