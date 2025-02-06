@@ -20,6 +20,22 @@ def process_price(item):
         update_time
     )
 
+def process_price_history(id, item, price_type):
+    """
+    price history 가공
+    """
+    price = item.get("price")
+    price_time = item.get("timestamp")
+    execute_time = pendulum.now("Asia/Seoul")
+
+    return (
+        id,
+        price,
+        price_type,
+        price_time,
+        execute_time
+    )
+
 def merge_item_price_data(pvp_data, pve_data):
     """
     pvp, pve 데이터 가공
@@ -39,8 +55,8 @@ def merge_item_price_data(pvp_data, pve_data):
                 "pvp_trader": mapping_trader(pvp_item["sellFor"]) if pvp_item["sellFor"] else None,
                 "pve_trader": mapping_trader(pve_item["sellFor"]) if pve_item["sellFor"] else None
             },
-            # "pvpHistoricalPrices": [{"price_type": "pvp", **price} for price in pvp_item["historicalPrices"]],
-            # "pveHistoricalPrices": [{"price_type": "pve", **price} for price in pve_item["historicalPrices"]]
+            "pvpHistoricalPrices": pvp_item["historicalPrices"],
+            "pveHistoricalPrices": pve_item["historicalPrices"]
         }
 
         merged_data.append(merged_item)
