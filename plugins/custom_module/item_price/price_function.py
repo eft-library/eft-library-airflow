@@ -128,7 +128,7 @@ def mapping_trader(sell_for):
             "npc_id": "FLEA_MARKET",
             "npc_name_en": "Flea Market",
             "npc_name_kr": "플리마켓",
-            "npc_image": "/tkl_quest/npc/ragman.webp"
+            "npc_image": "/tkl_main/fleamarket_main.webp"
         },
     }
 
