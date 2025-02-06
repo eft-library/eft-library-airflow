@@ -26,7 +26,7 @@ def process_price_history(id, item, price_type):
     price history 가공
     """
     price = item.get("price")
-    price_time = datetime.utcfromtimestamp(item.get("timestamp") / 1000)
+    price_time = datetime.utcfromtimestamp(int(item.get("timestamp")) / 1000)
     execute_time = pendulum.now("Asia/Seoul")
 
     return (
