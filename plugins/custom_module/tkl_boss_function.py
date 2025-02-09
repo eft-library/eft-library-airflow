@@ -14,21 +14,38 @@ boss_graphql = """
 
 def process_boss_spawn(map_list):
     """
-    boss location chance 가공
+    보스 출현 확률 데이터 가공
     """
-    result = [{'id': "RESHALA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Reshala', 'name_kr': '르샬라'},
-        {'id': "KOLLONTAY", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Kollontay', 'name_kr': '콜론테이'},
-        {'id': "KILLA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Killa', 'name_kr': '킬라'},
-        {'id': "KABAN", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Kaban', 'name_kr': '카반'},
-        {'id': "TAGILLA", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Tagilla', 'name_kr': '타길라'},
-        {'id': "ZRYACHIY", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Zryachiy', 'name_kr': '지랴키'},
-        {'id': "SHTURMAN", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Shturman', 'name_kr': '슈트르만'},
-        {'id': "SANITAR", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Sanitar', 'name_kr': '세니타'},
-        {'id': "GLUKHAR", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Glukhar', 'name_kr': '글루하'},
-        {'id': "KNIGHT", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Knight', 'name_kr': '나이트'},
-        {'id': "CULTISTS", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Cultists', 'name_kr': '컬티스트'},
-        {'id': "PARTISAN", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Partisan', 'name_kr': '파르티잔'}]
+    boss_template = {
+        "RESHALA": {"name_en": "Reshala", "name_kr": "르샬라"},
+        "KOLLONTAY": {"name_en": "Kollontay", "name_kr": "콜론테이"},
+        "KILLA": {"name_en": "Killa", "name_kr": "킬라"},
+        "KABAN": {"name_en": "Kaban", "name_kr": "카반"},
+        "TAGILLA": {"name_en": "Tagilla", "name_kr": "타길라"},
+        "ZRYACHIY": {"name_en": "Zryachiy", "name_kr": "지랴키"},
+        "SHTURMAN": {"name_en": "Shturman", "name_kr": "슈트르만"},
+        "SANITAR": {"name_en": "Sanitar", "name_kr": "세니타"},
+        "GLUKHAR": {"name_en": "Glukhar", "name_kr": "글루하"},
+        "KNIGHT": {"name_en": "Knight", "name_kr": "나이트"},
+        "BIRDEYE": {"name_en": "Birdeye", "name_kr": "버드아이"},
+        "BIG_PIPE": {"name_en": "Big Pipe", "name_kr": "빅파이프"},
+        "CULTISTS": {"name_en": "Cultists", "name_kr": "컬티스트"},
+        "PARTISAN": {"name_en": "Partisan", "name_kr": "파르티잔"},
+    }
 
+    # 보스 정보를 딕셔너리 형태로 변환
+    result = {
+        boss_id: {
+            "id": boss_id,
+            "name_en": data["name_en"],
+            "name_kr": data["name_kr"],
+            "location_spawn_chance_en": [],
+            "location_spawn_chance_kr": [],
+        }
+        for boss_id, data in boss_template.items()
+    }
+
+    # 맵 이름 매핑
     map_kr = {
         "Factory": "팩토리",
         "Night Factory": "야간 팩토리",
@@ -44,37 +61,42 @@ def process_boss_spawn(map_list):
         "Ground Zero 21+": "그라운드 제로 (LV.21+)",
     }
 
+    # 보스 스폰 정보 처리
     for map_data in map_list:
         map_name_en = map_data["name"]
-        map_name_kr = map_kr.get(map_name_en, map_name_en)  # 한국어 이름 매핑
+        map_name_kr = map_kr.get(map_name_en, map_name_en)
 
-        # ground zero 21은 다른데
         for boss_data in map_data["bosses"]:
             boss_name = boss_data["boss"]["name"]
             spawn_chance = boss_data["spawnChance"] * 100
 
+            # 특정 예외 처리 (이름이 다른 경우)
             if boss_name == "Cultist Priest":
-                result[10]["location_spawn_chance_en"].append({
+                boss_id = "CULTISTS"
+            elif boss_name == "Knight":
+                boss_id = "KNIGHT"
+                # Knight는 Big Pipe, Birdeye도 같이 등장
+                for extra_boss in ["BIG_PIPE", "BIRDEYE"]:
+                    result[extra_boss]["location_spawn_chance_en"].append({
+                        "chance": spawn_chance,
+                        "location": map_name_en
+                    })
+                    result[extra_boss]["location_spawn_chance_kr"].append({
+                        "chance": spawn_chance,
+                        "location": map_name_kr
+                    })
+            else:
+                # 일반적인 매칭
+                boss_id = next((key for key, data in boss_template.items() if data["name_en"].lower() in boss_name.lower()), None)
+
+            if boss_id:
+                result[boss_id]["location_spawn_chance_en"].append({
                     "chance": spawn_chance,
                     "location": map_name_en
                 })
-                result[10]["location_spawn_chance_kr"].append({
+                result[boss_id]["location_spawn_chance_kr"].append({
                     "chance": spawn_chance,
                     "location": map_name_kr
                 })
 
-            for boss in result:
-                if boss["name_en"].lower() in boss_name.lower():  # 이름 매칭 (대소문자 무시)
-                    # EN 데이터 추가
-                    boss["location_spawn_chance_en"].append({
-                        "chance": spawn_chance,
-                        "location": map_name_en
-                    })
-                    # KR 데이터 추가
-                    boss["location_spawn_chance_kr"].append({
-                        "chance": spawn_chance,
-                        "location": map_name_kr
-                    })
-
-
-    return result
+    return list(result.values())  # 딕셔너리를 리스트로 변환하여 반환
