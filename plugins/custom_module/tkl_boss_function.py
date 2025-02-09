@@ -25,7 +25,7 @@ def process_boss_spawn(map_list):
         {'id': "SHTURMAN", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Shturman', 'name_kr': '슈트르만'},
         {'id': "SANITAR", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Sanitar', 'name_kr': '세니타'},
         {'id': "GLUKHAR", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Glukhar', 'name_kr': '글루하'},
-        {'id': "KNIGHT", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Knight', 'name_kr': '나이트'},
+        # {'id': "KNIGHT", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Knight', 'name_kr': '나이트'},
         {'id': "CULTISTS", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Cultists', 'name_kr': '컬티스트'},
         {'id': "PARTISAN", 'location_spawn_chance_en': [], 'location_spawn_chance_kr': [], 'name_en': 'Partisan', 'name_kr': '파르티잔'}]
 
