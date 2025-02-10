@@ -40,6 +40,9 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
   - **quest item** : 퀘스트 아이템 관련 함수
   - **boss** : 보스 관련 함수
   - **quest** : 퀘스트 관련 함수
+ 
+![스크린샷 2025-02-10 오전 9 09 27](https://github.com/user-attachments/assets/6b36e8ab-03fe-4bee-8b27-923fec0d2f5a)
+
 
 ## 흐름
 
