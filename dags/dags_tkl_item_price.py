@@ -38,7 +38,11 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_price(item))
+                    insert_data = process_price(item)
+                    if insert_data['trader']['pve_trader'] is None:
+                        continue
+                    else:
+                        cursor.execute(sql, insert_data)
             conn.commit()
 
     def upsert_price_history(postgres_conn_id, **kwargs):
