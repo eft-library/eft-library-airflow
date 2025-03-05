@@ -1,5 +1,6 @@
 from airflow import DAG
 import pendulum
+import json
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
@@ -39,10 +40,13 @@ with DAG(
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
                     insert_data = process_price(item)
-                    if insert_data['trader']['pve_trader'] is None:
+
+                    trader_data = json.loads(insert_data[3])
+
+                    if trader_data.get("pve_trader") is None:
                         continue
-                    else:
-                        cursor.execute(sql, insert_data)
+
+                    cursor.execute(sql, insert_data)
             conn.commit()
 
     def upsert_price_history(postgres_conn_id, **kwargs):
