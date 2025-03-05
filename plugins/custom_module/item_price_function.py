@@ -5,6 +5,9 @@ pvp_item_price_graphql = """
     id
     name
     image512pxLink
+    category {
+      name
+    }
     sellFor {
       priceRUB
       vendor {

@@ -11,6 +11,7 @@ def process_price(item):
     item_name_en = item.get("name_en")
     item_image = item.get("image512pxLink")
     trader = json.dumps(item.get("sellFor"))
+    category = item["category"].get("name")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -18,6 +19,7 @@ def process_price(item):
         item_name_en,
         item_image,
         trader,
+        category,
         update_time
     )
 
