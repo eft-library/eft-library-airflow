@@ -24,7 +24,7 @@ def dump_script():
     return f"""
         source ~/.bashrc
         echo "Executing PostgreSQL Command - pg_dump"
-        pg_dump -h $DB -U tkl --inserts tkl > /opt/airflow/latest_data/{today}_backup.sql
+        pg_dump -h 192.168.219.102 -p 13245 -U tkl --inserts tkl > /opt/airflow/latest_data/{today}_backup.sql
         echo $?
         """
 
