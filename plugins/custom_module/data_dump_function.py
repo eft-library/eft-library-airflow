@@ -33,4 +33,4 @@ def remove_old_file_script():
     7일 지난 백업 파일들 제거 하기
     """
 
-    return "find /home/latest_data -type f -mtime +3 -delete"
+    return "find /opt/airflow/latest_data -type f -mtime +3 -delete"
