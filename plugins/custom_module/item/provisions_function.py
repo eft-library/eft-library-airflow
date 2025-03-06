@@ -18,7 +18,7 @@ def process_provisions(item):
     )
     new_stim_effects = process_stim_effect(stim_effects)
     result_stim_effects = json.dumps(add_painkiller(new_stim_effects, name_en))
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     update_time = pendulum.now("Asia/Seoul")
 
     return (

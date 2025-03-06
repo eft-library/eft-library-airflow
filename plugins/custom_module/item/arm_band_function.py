@@ -8,7 +8,7 @@ def process_arm_band(item):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     weight = item.get("weight")
     update_time = pendulum.now("Asia/Seoul")
 

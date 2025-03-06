@@ -8,7 +8,7 @@ def process_knife(item):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     category = item["category"].get("name") if item.get("category") else None
     slash_damage = (
         item["properties"].get("slashDamage") if item.get("properties") else None
