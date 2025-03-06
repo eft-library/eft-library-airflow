@@ -9,7 +9,7 @@ def process_backpack(item):
     name = item.get("name")
     short_name = item.get("shortName")
     weight = item.get("weight")
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     grids = json.dumps(item["properties"].get("grids"))
     capacity = item["properties"].get("capacity")
     update_time = pendulum.now("Asia/Seoul")
