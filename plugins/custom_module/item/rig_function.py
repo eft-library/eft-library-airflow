@@ -9,7 +9,7 @@ def process_rig(item):
     name = item.get("name")
     short_name = item.get("shortName")
     weight = item.get("weight")
-    image = item.get("gridImageLink")
+    image = item.get("image512pxLink")
     class_value = None
     areas_en = None
     areas_kr = None

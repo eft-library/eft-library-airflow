@@ -8,7 +8,7 @@ def process_container(item):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    image = item.get("gridImageLink")
+    image = item.get("image512pxLink")
     grids = json.dumps(item["properties"].get("grids"))
     capacity = item["properties"].get("capacity")
     update_time = pendulum.now("Asia/Seoul")

@@ -8,7 +8,7 @@ def process_glasses(item):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    image = item.get("gridImageLink")
+    image = item.get("image512pxLink")
     class_value = None
     durability = None
     blindness_protection = None

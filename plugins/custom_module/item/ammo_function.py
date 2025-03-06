@@ -30,7 +30,7 @@ def process_ammo(item):
         item["properties"].get("heavyBleedModifier") if item.get("properties") else None
     )
     # efficiency = get_efficiency(name)
-    image = item.get("gridImageLink")
+    image = item.get("image512pxLink")
     update_time = pendulum.now("Asia/Seoul")
 
     return (

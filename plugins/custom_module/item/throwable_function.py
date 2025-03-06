@@ -8,7 +8,7 @@ def process_throwable(item):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    image = item.get("gridImageLink")
+    image = item.get("image512pxLink")
     category = item["category"].get("name") if item.get("category") else None
     fuse = item["properties"].get("fuse") if item.get("properties") else None
     min_explosion_distance = (

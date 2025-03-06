@@ -9,7 +9,7 @@ def process_armor_vest(item):
     name = item.get("name")
     short_name = item.get("shortName")
     weight = item.get("weight")
-    image = item.get("gridImageLink")
+    image = item.get("image512pxLink")
     class_value = item["properties"].get("class")
     areas_en = item["properties"].get("zones")
     areas_kr = armor_vest_areas_kr(areas_en)
