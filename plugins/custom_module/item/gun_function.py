@@ -59,7 +59,8 @@ def gun_slot_change(original_list, slot_list):
             original_item["width"] = slot_dvl_width_dict[name]
         elif name in slot_pkp_width_dict:
             original_item["width"] = slot_pkp_width_dict[name]
-        elif name in slot_height_dict:
+
+        if name in slot_height_dict:
             original_item["height"] = slot_height_dict[name]
         elif name in slot_dvl_height_dict:
             original_item["height"] = slot_dvl_height_dict[name]
