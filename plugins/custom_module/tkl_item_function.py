@@ -138,11 +138,12 @@ def check_category(item_list, category):
     """
     category 별 데이터 변경
     """
-    for item in item_list:
-        if item["properties"] == {}:
-            print(item)
 
     if category == "Gun":
+        for item in item_list:
+            if item["properties"] == {}:
+                print(item)
+
         return [
             item
             for item in item_list
