@@ -6,6 +6,8 @@ quest_item_graphql = """
     id
     name
     image512pxLink
+    width
+    height
     gridImageLink
   }
 }
@@ -20,6 +22,8 @@ def process_quest_item(item):
     name_en = item.get("name")
     image = item.get("gridImageLink")
     category = "Quest items"
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -27,6 +31,8 @@ def process_quest_item(item):
         name_en,
         image,
         category,
+        width,
+        height,
         update_time,
     )
 
