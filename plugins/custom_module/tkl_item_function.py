@@ -138,7 +138,6 @@ def check_category(item_list, category):
     """
     category 별 데이터 변경
     """
-
     if category == "Gun":
         return [
             item
@@ -186,12 +185,6 @@ def check_category(item_list, category):
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
     elif category == "Provisions":
-        for item in item_list:
-            if (
-                item["category"]["name"] == "Food"
-                or item["category"]["name"] == "Drink"
-            ) and item["properties"] == {}:
-                print(item)
         return [
             item
             for item in item_list
@@ -202,9 +195,6 @@ def check_category(item_list, category):
             and item["properties"] != {}
         ]
     elif category == "Key" or category == "Meds":
-        for item in item_list:
-            if item["category"]["parent"]["name"] == category and item["properties"] == {}:
-                print(item)
         return [
             item
             for item in item_list
