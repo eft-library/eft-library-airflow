@@ -187,7 +187,10 @@ def check_category(item_list, category):
         ]
     elif category == "Provisions":
         for item in item_list:
-            if item["properties"] == {}:
+            if (
+                item["category"]["name"] == "Food"
+                or item["category"]["name"] == "Drink"
+            ) and item["properties"] == {}:
                 print(item)
         return [
             item
@@ -200,7 +203,7 @@ def check_category(item_list, category):
         ]
     elif category == "Key" or category == "Meds":
         for item in item_list:
-            if item["properties"] == {}:
+            if item["category"]["parent"]["name"] == category and item["properties"] == {}:
                 print(item)
         return [
             item
@@ -209,9 +212,6 @@ def check_category(item_list, category):
             and item["properties"] != {}
         ]
     elif category == "Loot":
-        for item in item_list:
-            if item["properties"] == {}:
-                print(item)
         return [item
             for item in item_list
             if (item["category"]["parent"]["name"] == "Barter item"
