@@ -16,6 +16,8 @@ def process_provisions(item):
     stim_effects = (
         item["properties"].get("stimEffects") if item.get("properties") else None
     )
+    width = item.get("width")
+    height = item.get("height")
     new_stim_effects = process_stim_effect(stim_effects)
     result_stim_effects = json.dumps(add_painkiller(new_stim_effects, name_en))
     image = item.get("gridImageLink")
@@ -31,6 +33,8 @@ def process_provisions(item):
         hydration,
         result_stim_effects,
         image,
+        width,
+        height,
         update_time,
     )
 

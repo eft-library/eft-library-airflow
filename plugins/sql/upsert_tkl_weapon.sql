@@ -12,9 +12,11 @@ INSERT INTO tkl_weapon (
     ergonomics,
     recoil_vertical,
     recoil_horizontal,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -29,4 +31,6 @@ ON CONFLICT (id) DO UPDATE SET
     ergonomics = EXCLUDED.ergonomics,
     recoil_vertical = EXCLUDED.recoil_vertical,
     recoil_horizontal = EXCLUDED.recoil_horizontal,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

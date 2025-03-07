@@ -8,9 +8,11 @@ INSERT INTO tkl_provisions (
     hydration,
     stim_effects,
     image,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name_en = EXCLUDED.name_en,
@@ -21,4 +23,6 @@ ON CONFLICT (id) DO UPDATE SET
     hydration = EXCLUDED.hydration,
     stim_effects = EXCLUDED.stim_effects,
     image = EXCLUDED.image,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

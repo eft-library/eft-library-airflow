@@ -10,6 +10,8 @@ def process_arm_band(item):
     short_name = item.get("shortName")
     image = item.get("gridImageLink")
     weight = item.get("weight")
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -18,5 +20,7 @@ def process_arm_band(item):
         short_name,
         weight,
         image,
+        width,
+        height,
         update_time,
     )

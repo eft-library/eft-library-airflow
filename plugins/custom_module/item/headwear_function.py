@@ -11,6 +11,8 @@ def process_headwear(item):
     weight = item.get("weight")
     image = item.get("gridImageLink")
     update_time = pendulum.now("Asia/Seoul")
+    width = item.get("width")
+    height = item.get("height")
     class_value = None
     areas_en = None
     areas_kr = None
@@ -48,6 +50,8 @@ def process_headwear(item):
         image,
         ricochet_str_en,
         ricochet_str_kr,
+        width,
+        height,
         update_time,
     )
 

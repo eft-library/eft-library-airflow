@@ -31,6 +31,8 @@ def process_ammo(item):
     )
     # efficiency = get_efficiency(name)
     image = item.get("gridImageLink")
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -48,6 +50,8 @@ def process_ammo(item):
         heavy_bleed_modifier,
         # efficiency,
         image,
+        width,
+        height,
         update_time,
     )
 

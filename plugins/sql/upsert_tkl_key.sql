@@ -7,9 +7,11 @@ INSERT INTO tkl_key (
     use_map_en,
     use_map_kr,
     map_value,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -19,4 +21,6 @@ ON CONFLICT (id) DO UPDATE SET
     use_map_en = EXCLUDED.use_map_en,
     use_map_kr = EXCLUDED.use_map_kr,
     map_value = EXCLUDED.map_value,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

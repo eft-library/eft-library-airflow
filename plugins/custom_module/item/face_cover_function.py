@@ -16,6 +16,8 @@ def process_face_cover(item):
     ricochet_chance = None
     ricochet_str_en = None
     ricochet_str_kr = None
+    width = item.get("width")
+    height = item.get("height")
 
     if item["properties"] is not {} and item["properties"] is not None:
         class_value = (
@@ -43,6 +45,8 @@ def process_face_cover(item):
         image,
         ricochet_str_en,
         ricochet_str_kr,
+        width,
+        height,
         update_time,
     )
 

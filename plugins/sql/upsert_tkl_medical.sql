@@ -15,9 +15,11 @@ INSERT INTO tkl_medical (
     painkiller_duration,
     hitpoints,
     image,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name_en = EXCLUDED.name_en,
@@ -35,4 +37,6 @@ ON CONFLICT (id) DO UPDATE SET
     painkiller_duration = EXCLUDED.painkiller_duration,
     hitpoints = EXCLUDED.hitpoints,
     image = EXCLUDED.image,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

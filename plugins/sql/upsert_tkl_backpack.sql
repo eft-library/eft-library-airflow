@@ -6,9 +6,11 @@ INSERT INTO tkl_backpack (
     image,
     grids,
     capacity,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -17,4 +19,6 @@ ON CONFLICT (id) DO UPDATE SET
     image = EXCLUDED.image,
     grids = EXCLUDED.grids,
     capacity = EXCLUDED.capacity,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

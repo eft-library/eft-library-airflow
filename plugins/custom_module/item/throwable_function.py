@@ -21,6 +21,8 @@ def process_throwable(item):
         if item.get("properties")
         else None
     )
+    width = item.get("width")
+    height = item.get("height")
     fragments = item["properties"].get("fragments") if item.get("properties") else None
     update_time = pendulum.now("Asia/Seoul")
 
@@ -34,5 +36,7 @@ def process_throwable(item):
         min_explosion_distance,
         max_explosion_distance,
         fragments,
+        width,
+        height,
         update_time,
     )

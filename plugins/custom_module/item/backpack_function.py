@@ -12,6 +12,8 @@ def process_backpack(item):
     image = item.get("gridImageLink")
     grids = json.dumps(item["properties"].get("grids"))
     capacity = item["properties"].get("capacity")
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -22,5 +24,7 @@ def process_backpack(item):
         image,
         grids,
         capacity,
+        width,
+        height,
         update_time,
     )

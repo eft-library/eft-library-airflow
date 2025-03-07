@@ -13,6 +13,8 @@ def process_key(item, key_map):
     map_value = get_map_for_key(key_map, name)
     use_map_en = get_use_map_en(map_value)
     use_map_kr = get_use_map_kr(map_value)
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -24,6 +26,8 @@ def process_key(item, key_map):
         use_map_en,
         use_map_kr,
         map_value,
+        width,
+        height,
         update_time,
     )
 

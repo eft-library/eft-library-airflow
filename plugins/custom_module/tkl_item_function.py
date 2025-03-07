@@ -7,6 +7,8 @@ item_graphql = """
     shortName
     image512pxLink
     gridImageLink
+    width
+    height
     category {
       name
       parent {

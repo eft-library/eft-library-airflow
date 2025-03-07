@@ -11,9 +11,11 @@ INSERT INTO tkl_headwear (
     image,
     ricochet_str_en,
     ricochet_str_kr,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -27,4 +29,6 @@ ON CONFLICT (id) DO UPDATE SET
     image = EXCLUDED.image,
     ricochet_str_en = EXCLUDED.ricochet_str_en,
     ricochet_str_kr = EXCLUDED.ricochet_str_kr,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

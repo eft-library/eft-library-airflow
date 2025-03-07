@@ -13,9 +13,11 @@ INSERT INTO tkl_ammo (
     heavy_bleed_modifier,
 --     efficiency,
     image,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -30,4 +32,6 @@ ON CONFLICT (id) DO UPDATE SET
     heavy_bleed_modifier = EXCLUDED.heavy_bleed_modifier,
 --     efficiency = EXCLUDED.efficiency,
     image = EXCLUDED.image,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

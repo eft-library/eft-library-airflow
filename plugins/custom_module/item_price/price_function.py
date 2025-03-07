@@ -12,6 +12,8 @@ def process_price(item):
     item_image = item.get("gridImageLink")
     trader = json.dumps(item.get("sellFor"))
     category = item.get("category")
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -20,6 +22,8 @@ def process_price(item):
         item_image,
         trader,
         category,
+        width,
+        height,
         update_time
     )
 

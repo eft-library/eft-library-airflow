@@ -14,6 +14,8 @@ def process_armor_vest(item):
     areas_en = item["properties"].get("zones")
     areas_kr = armor_vest_areas_kr(areas_en)
     # durability = armor_vest_durability(name)
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -26,6 +28,8 @@ def process_armor_vest(item):
         areas_en,
         areas_kr,
         # durability,
+        width,
+        height,
         update_time,
     )
 

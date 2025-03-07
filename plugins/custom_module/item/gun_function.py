@@ -63,6 +63,8 @@ def process_gun(item):
         if item.get("properties")
         else None
     )
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
     modes_kr = gun_modes_kr(modes_en)
 
@@ -80,6 +82,8 @@ def process_gun(item):
         ergonomics,
         recoil_vertical,
         recoil_horizontal,
+        width,
+        height,
         update_time,
     )
 

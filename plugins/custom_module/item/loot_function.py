@@ -11,6 +11,8 @@ def process_loot(item):
     # name_kr = get_loot_kr(name_en)
     short_name = item.get("shortName")
     image = item.get("gridImageLink")
+    width = item.get("width")
+    height = item.get("height")
     category = (
         change_category(item["category"].get("name"), name_en) if item.get("category") else None
     )
@@ -23,6 +25,8 @@ def process_loot(item):
         short_name,
         image,
         category,
+        width,
+        height,
         update_time,
     )
 

@@ -6,6 +6,8 @@ pvp_item_price_graphql = """
     name
     image512pxLink
     gridImageLink
+    width
+    height
     category {
       name
     }
@@ -30,6 +32,8 @@ pve_item_price_graphql = """
     name
     image512pxLink
     gridImageLink
+    width
+    height
     sellFor {
       priceRUB
       vendor {

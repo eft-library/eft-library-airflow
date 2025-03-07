@@ -9,6 +9,8 @@ def process_knife(item):
     name = item.get("name")
     short_name = item.get("shortName")
     image = item.get("gridImageLink")
+    width = item.get("width")
+    height = item.get("height")
     category = item["category"].get("name") if item.get("category") else None
     slash_damage = (
         item["properties"].get("slashDamage") if item.get("properties") else None
@@ -28,5 +30,7 @@ def process_knife(item):
         slash_damage,
         stab_damage,
         hit_radius,
+        width,
+        height,
         update_time,
     )

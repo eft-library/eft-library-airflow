@@ -6,9 +6,11 @@ INSERT INTO tkl_glasses (
     durability,
     blindness_protection,
     image,
+    width,
+    height,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -17,4 +19,6 @@ ON CONFLICT (id) DO UPDATE SET
     durability = EXCLUDED.durability,
     blindness_protection = EXCLUDED.blindness_protection,
     image = EXCLUDED.image,
+    width = EXCLUDED.width,
+    height = EXCLUDED.height,
     update_time = EXCLUDED.update_time;

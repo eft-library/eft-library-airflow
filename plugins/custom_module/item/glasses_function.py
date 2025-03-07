@@ -12,6 +12,8 @@ def process_glasses(item):
     class_value = None
     durability = None
     blindness_protection = None
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     if item["properties"]["class"] is not None:
@@ -27,5 +29,7 @@ def process_glasses(item):
         durability,
         blindness_protection,
         image,
+        width,
+        height,
         update_time,
     )

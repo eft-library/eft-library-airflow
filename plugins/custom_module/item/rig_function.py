@@ -13,6 +13,8 @@ def process_rig(item):
     class_value = None
     areas_en = None
     areas_kr = None
+    width = item.get("width")
+    height = item.get("height")
     capacity = item["properties"].get("capacity")
     # durability = None
     update_time = pendulum.now("Asia/Seoul")
@@ -34,6 +36,8 @@ def process_rig(item):
         areas_kr,
         # durability,
         capacity,
+        width,
+        height,
         update_time,
     )
 

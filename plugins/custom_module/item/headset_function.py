@@ -9,6 +9,8 @@ def process_headset(item):
     name = item.get("name")
     short_name = item.get("shortName")
     image = item.get("gridImageLink")
+    width = item.get("width")
+    height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -16,5 +18,7 @@ def process_headset(item):
         name,
         short_name,
         image,
+        width,
+        height,
         update_time,
     )

@@ -36,6 +36,8 @@ def process_medical(item):
     use_time = check_item["properties"].get("useTime")
     uses = check_item["properties"].get("uses")
     update_time = pendulum.now("Asia/Seoul")
+    width = item.get("width")
+    height = item.get("height")
 
     return (
         id,
@@ -54,6 +56,8 @@ def process_medical(item):
         update_duration,
         hitpoints,
         image,
+        width,
+        height,
         update_time,
     )
 
