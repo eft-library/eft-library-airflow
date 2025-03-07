@@ -186,6 +186,9 @@ def check_category(item_list, category):
             and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
     elif category == "Provisions":
+        for item in item_list:
+            if item["properties"] == {}:
+                print(item)
         return [
             item
             for item in item_list
@@ -196,6 +199,9 @@ def check_category(item_list, category):
             and item["properties"] != {}
         ]
     elif category == "Key" or category == "Meds":
+        for item in item_list:
+            if item["properties"] == {}:
+                print(item)
         return [
             item
             for item in item_list
@@ -203,6 +209,9 @@ def check_category(item_list, category):
             and item["properties"] != {}
         ]
     elif category == "Loot":
+        for item in item_list:
+            if item["properties"] == {}:
+                print(item)
         return [item
             for item in item_list
             if (item["category"]["parent"]["name"] == "Barter item"
