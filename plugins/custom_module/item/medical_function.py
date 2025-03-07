@@ -10,7 +10,6 @@ def process_medical(item):
 
     id = check_item.get("id")
     name_en = check_item.get("name")
-    # name_kr = get_name_kr(name_en)
     short_name = check_item.get("shortName")
     cures_en = check_item["properties"].get("cures")
     cures_kr = None
@@ -42,7 +41,6 @@ def process_medical(item):
     return (
         id,
         name_en,
-        # name_kr,
         short_name,
         cures_en,
         cures_kr,
@@ -111,62 +109,6 @@ def process_stim_effect(stim_effects):
                 effects["krSkill"] = kr_type[effects["type"]]
 
     return new_effects
-
-
-def get_name_kr(name):
-    """
-    name kr 값 반환
-    """
-    kr_list = {
-        "AFAK tactical individual first aid kit": "AFAK 개인 전술 응급 치료 키트",
-        "AI-2 medkit": "AI-2 응급 치료 키트",
-        "Aluminum splint": "Aluminum splint 알루미늄 부목",
-        "Analgin painkillers": "Analgin painkillers 아날긴 진통제",
-        "Army bandage": "Army bandage 군용 붕대",
-        "Aseptic bandage": "Aseptic bandage 무균 붕대",
-        "Augmentin antibiotic pills": "Augmentin 아목시실린 항생제",
-        "CALOK-B hemostatic applicator": "CALOK-B 지혈제 주입기",
-        "Car first aid kit": "Car 차량용 응급 치료 키트",
-        "CAT hemostatic tourniquet": "CAT 지혈대",
-        "CMS surgical kit": "CMS 휴대용 수술 키트",
-        "Esmarch tourniquet": "Esmarch 에스마르호 지혈대",
-        "Golden Star balm": "Golden Star 골든스타 연고",
-        "Grizzly medical kit": "Grizzly 응급 치료 키트",
-        "Ibuprofen painkillers": "Ibuprofen painkillers 이부프로펜 진통제",
-        "IFAK individual first aid kit": "IFAK 개인용 응급 치료 키트",
-        "Immobilizing splint": "Immobilizing splint 고정용 부목",
-        "Salewa first aid kit": "Salewa 응급 치료 키트",
-        "Surv12 field surgical kit": "Surv12 야전 수술 키트",
-        "Vaseline balm": "Vaseline 바셀린 연고",
-        '"Obdolbos 2" cocktail injector': '"Obdolbos 2" 칵테일 주사기',
-        '"Obdolbos" cocktail injector': '"Obdolbos" 칵테일 주사기',
-        "2A2-(b-TG) stimulant injector": "2A2-(b-TG) stimulant injector",
-        "3-(b-TG) stimulant injector": "3-(b-TG) 자극제 주사기",
-        "Adrenaline injector": "Adrenaline 아드레날린 주사기",
-        "AHF1-M stimulant injector": "AHF1-M 자극제 주사기",
-        "eTG-change regenerative stimulant injector": "eTG-change 재생 자극제 주사기",
-        "L1 (Norepinephrine) injector": "L1 (노르에피네프린) 주사기",
-        "M.U.L.E. stimulant injector": "M.U.L.E. 자극제 주사기",
-        "Meldonin injector": "Meldonin 멜도닌 주사기",
-        "Morphine injector": "Morphine 모르핀 주사기",
-        "P22 (Product 22) stimulant injector": "P22 자극제 주사기",
-        "Perfotoran (Blue Blood) stimulant injector": "Perfotoran (Blue Blood) stimulant injector",
-        "PNB (Product 16) stimulant injector": "PNB (Product 16) stimulant injector",
-        "Propital regenerative stimulant injector": "Propital 프로피탈 재생 자극제 주사기",
-        "SJ1 TGLabs combat stimulant injector": "SJ1 TGLabs 전투 자극제 주사기",
-        "SJ12 TGLabs combat stimulant injector": "SJ12 TGLabs combat stimulant injector",
-        "SJ6 TGLabs combat stimulant injector": "SJ6 TGLabs 전투 자극제 주사기",
-        "SJ9 TGLabs combat stimulant injector": "SJ9 TGLabs 전투 자극제 주사기",
-        "Trimadol stimulant injector": "Trimadol stimulant injector",
-        "xTG-12 antidote injector": "xTG-12 antidote injector",
-        "Zagustin hemostatic drug injector": "Zagustin 자구스틴 지혈제",
-    }
-
-    if name in kr_list:
-        return kr_list[name]
-
-    return name
-
 
 def get_buff(stim_effect):
     """
