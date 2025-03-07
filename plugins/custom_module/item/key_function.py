@@ -8,7 +8,7 @@ def process_key(item, key_map):
     id = item.get("id")
     name = item.get("name")
     short_name = item.get("shortName")
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     uses = item["properties"].get("uses")
     map_value = get_map_for_key(key_map, name)
     use_map_en = get_use_map_en(map_value)

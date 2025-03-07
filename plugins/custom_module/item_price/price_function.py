@@ -9,7 +9,7 @@ def process_price(item):
     """
     id = item.get("id")
     item_name_en = item.get("name_en")
-    item_image = item.get("image512pxLink")
+    item_image = item.get("gridImageLink")
     trader = json.dumps(item.get("sellFor"))
     category = item.get("category")
     update_time = pendulum.now("Asia/Seoul")
@@ -53,7 +53,7 @@ def merge_item_price_data(pvp_data, pve_data):
         merged_item = {
             "id": pvp_item["id"],
             "name_en": pvp_item["name"],
-            "image512pxLink": pvp_item["image512pxLink"],
+            "gridImageLink": pvp_item["gridImageLink"],
             "sellFor": {
                 "pvp_trader": mapping_trader(pvp_item["sellFor"]) if pvp_item["sellFor"] else None,
                 "pve_trader": mapping_trader(pve_item["sellFor"]) if pve_item["sellFor"] else None

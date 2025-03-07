@@ -8,7 +8,7 @@ def process_face_cover(item):
     name = item.get("name")
     short_name = item.get("shortName")
     weight = item.get("weight")
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     update_time = pendulum.now("Asia/Seoul")
     class_value = None
     areas_en = None

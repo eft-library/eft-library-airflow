@@ -10,6 +10,7 @@ hideout_graphql = """
         item {
           name
           image512pxLink
+          gridImageLink
         }
         quantity
         count

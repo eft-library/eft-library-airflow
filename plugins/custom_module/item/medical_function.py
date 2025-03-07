@@ -25,7 +25,7 @@ def process_medical(item):
         new_stim_effect = process_stim_effect(stim_effect)
         buff = json.dumps(get_buff(new_stim_effect))
         debuff = json.dumps(get_debuff(new_stim_effect))
-    image = check_item.get("image512pxLink")
+    image = check_item.get("gridImageLink")
     energy_impact = check_item["properties"].get("energyImpact")
     hydration_impact = check_item["properties"].get("hydrationImpact")
     painkiller_duration = check_item["properties"].get("painkillerDuration")

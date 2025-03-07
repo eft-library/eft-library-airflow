@@ -6,12 +6,12 @@ def gun_image_change(original_list, image_list):
     총의 경우 이미지를 다른 데이터에서 써야해서 변환하는 과정을 거쳐야 함
     """
     # 이미지 딕셔너리 생성
-    image_dict = {item["shortName"][:-8]: item["image512pxLink"] for item in image_list}
+    image_dict = {item["shortName"][:-8]: item["gridImageLink"] for item in image_list}
     image_dvl_dict = {
-        item["shortName"][:-7]: item["image512pxLink"] for item in image_list
+        item["shortName"][:-7]: item["gridImageLink"] for item in image_list
     }
     image_pkp_dict = {
-        item["shortName"][:-6]: item["image512pxLink"] for item in image_list
+        item["shortName"][:-6]: item["gridImageLink"] for item in image_list
     }
 
     # original_list 수정
@@ -19,15 +19,15 @@ def gun_image_change(original_list, image_list):
         name = original_item["shortName"]
         # 하필이면 이름이 중복이라 방법이 없다.
         if original_item["name"] == "Desert Tech MDR 5.56x45 assault rifle":
-            original_item["image512pxLink"] = (
-                "https://assets.tarkov.dev/5c98bd7386f7740cfb15654e-512.webp"
+            original_item["gridImageLink"] = (
+                "https://assets.tarkov.dev/5c488a752e221602b412af63-grid-image.webp"
             )
         elif name in image_dict:
-            original_item["image512pxLink"] = image_dict[name]
+            original_item["gridImageLink"] = image_dict[name]
         elif name in image_dvl_dict:
-            original_item["image512pxLink"] = image_dvl_dict[name]
+            original_item["gridImageLink"] = image_dvl_dict[name]
         elif name in image_pkp_dict:
-            original_item["image512pxLink"] = image_pkp_dict[name]
+            original_item["gridImageLink"] = image_pkp_dict[name]
 
     return original_list
 
@@ -39,7 +39,7 @@ def process_gun(item):
     id = item.get("id")
     name = item.get("name")
     short_name = check_short_name(name, item.get("shortName"))
-    img = item.get("image512pxLink")
+    img = item.get("gridImageLink")
     original_category = item["category"].get("name") if item.get("category") else None
     category = check_weapon_category(short_name, original_category)
     carliber = item["properties"].get("caliber") if item.get("properties") else None

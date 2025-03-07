@@ -10,7 +10,7 @@ def process_loot(item):
     name_en = item.get("name")
     # name_kr = get_loot_kr(name_en)
     short_name = item.get("shortName")
-    image = item.get("image512pxLink")
+    image = item.get("gridImageLink")
     category = (
         change_category(item["category"].get("name"), name_en) if item.get("category") else None
     )
