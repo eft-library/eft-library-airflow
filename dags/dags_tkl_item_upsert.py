@@ -12,7 +12,7 @@ from custom_module.item.rig_function import process_rig
 from custom_module.item.armor_vest_function import process_armor_vest
 from custom_module.item.headwear_function import process_headwear
 from custom_module.item.headset_function import process_headset
-from custom_module.item.gun_function import process_gun, gun_image_change
+from custom_module.item.gun_function import process_gun, gun_image_change, gun_slot_change
 from custom_module.item.backpack_function import process_backpack
 from custom_module.item.container_function import process_container
 from custom_module.item.key_function import process_key, process_key_map
@@ -50,11 +50,13 @@ with DAG(
         sql = read_sql("upsert_tkl_weapon.sql")
         original_data = check_category(item_list["data"]["items"], "Gun")
         image_data = check_category(item_list["data"]["items"], "Gun image")
+        slot_data = check_category(item_list["data"]["items"], "Gun slot")
         data_list = gun_image_change(original_data, image_data)
+        result_list = gun_slot_change(data_list, slot_data)
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
-                for item in data_list:
+                for item in result_list:
                     cursor.execute(sql, process_gun(item))
             conn.commit()
 

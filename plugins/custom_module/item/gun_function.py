@@ -31,6 +31,42 @@ def gun_image_change(original_list, image_list):
 
     return original_list
 
+def gun_slot_change(original_list, slot_list):
+    # slot width 딕셔너리 생성
+    slot_width_dict = {item["shortName"][:-8]: item["width"] for item in slot_list}
+    slot_dvl_width_dict = {
+        item["shortName"][:-7]: item["width"] for item in slot_list
+    }
+    slot_pkp_width_dict = {
+        item["shortName"][:-6]: item["width"] for item in slot_list
+    }
+
+    # slot height 딕셔너리 생성
+    slot_height_dict = {item["shortName"][:-8]: item["height"] for item in slot_list}
+    slot_dvl_height_dict = {
+        item["shortName"][:-7]: item["height"] for item in slot_list
+    }
+    slot_pkp_height_dict = {
+        item["shortName"][:-6]: item["height"] for item in slot_list
+    }
+
+    # original_list 수정
+    for original_item in original_list:
+        name = original_item["shortName"]
+        if name in slot_width_dict:
+            original_item["width"] = slot_width_dict[name]
+        elif name in slot_dvl_width_dict:
+            original_item["width"] = slot_dvl_width_dict[name]
+        elif name in slot_pkp_width_dict:
+            original_item["width"] = slot_pkp_width_dict[name]
+        elif name in slot_height_dict:
+            original_item["height"] = slot_height_dict[name]
+        elif name in slot_dvl_height_dict:
+            original_item["height"] = slot_dvl_height_dict[name]
+        elif name in slot_pkp_height_dict:
+            original_item["height"] = slot_pkp_height_dict[name]
+
+    return original_list
 
 def process_gun(item):
     """

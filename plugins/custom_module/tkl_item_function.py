@@ -159,6 +159,20 @@ def check_category(item_list, category):
                 or "Kalashnikov PKP 7.62x54R infantry machine gun Zenit" in item["name"]
             )
         ]
+    elif category == "Gun slot":
+        return [
+            item
+            for item in item_list
+            if item["category"]["parent"]["name"] == "Weapon"
+            and item["properties"] == {}
+            and (
+                "Default" in item["name"]
+                or "Lobaev Arms DVL-10 7.62x51 bolt-action sniper rifle Urbana"
+                in item["name"]
+                or "Colt M4A1 5.56x45 assault rifle Carbine" in item["name"]
+                or "Kalashnikov PKP 7.62x54R infantry machine gun Zenit" in item["name"]
+            )
+        ]
     elif category == "Headphones":
         return [item for item in item_list if item["category"]["name"] == category]
     elif category == "Headwear":
