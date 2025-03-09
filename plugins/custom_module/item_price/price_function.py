@@ -11,7 +11,7 @@ def process_price(item):
     item_name_en = item.get("name_en")
     item_image = item.get("gridImageLink")
     trader = json.dumps(item.get("sellFor"))
-    category = item.get("category")
+    category = categorize_item(item.get("category"))
     width = item.get("width")
     height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
@@ -42,6 +42,68 @@ def process_price_history(id, item, price_type):
         price_time,
         execute_time
     )
+
+
+def categorize_item(origin_category):
+    loot_categories = {
+        "Battery", "Building material", "Compass", "Electronics", "Flyer", "Fuel",
+        "Household goods", "Info", "Jewelry", "Lubricant", "Medical supplies",
+        "Multitools", "Repair Kits", "Special item", "Tool", "Map", "Other",
+        "Planting Kits", "Portable Range Finder"
+    }
+
+    mods_categories = {
+        "Pistol grip", "Magazine", "Comb. muzzle device", "Comb. tact. device",
+        "Compact reflex sight", "Cylinder Magazine", "Gas block", "Handguard",
+        "Foregrip", "Mount", "Assault scope", "Reflex sight", "Scope", "Special scope",
+        "Thermal Vision", "Stock", "Flashlight", "Auxiliary Mod", "Barrel", "Bipod",
+        "Charging handle", "Flashhider", "Ironsight", "Silencer",
+        "Spring Driven Cylinder", "Receiver", "UBGL"
+    }
+
+    weapon_categories = {
+        "Assault rifle", "Grenade launcher", "Marksman rifle", "Machinegun",
+        "Sniper rifle", "Throwable weapon", "Knife", "Assault carbine", "SMG",
+        "Shotgun", "Handgun", "Revolver"
+    }
+
+    provisions_categories = {"Drink", "Food"}
+
+    container_categories = {
+        "Ammo container", "Common container", "Locking container", "Random Loot Container"
+    }
+
+    wearables_categories = {
+        "Chest rig", "Backpack", "Arm Band", "Armor", "Armor Plate", "Armored equipment",
+        "Face Cover", "Headphones", "Headwear", "Night Vision", "Vis. observ. device"
+    }
+
+    meds_categories = {"Drug", "Medical item", "Medikit", "Stimulant"}
+
+    keys_categories = {"Keycard", "Mechanical Key"}
+
+    ammo_categories = {"Ammo"}
+
+    if origin_category in loot_categories:
+        return "LOOT"
+    elif origin_category in mods_categories:
+        return "Mods"
+    elif origin_category in weapon_categories:
+        return "Weapon"
+    elif origin_category in provisions_categories:
+        return "Provisions"
+    elif origin_category in container_categories:
+        return "Container"
+    elif origin_category in wearables_categories:
+        return "Wearables"
+    elif origin_category in meds_categories:
+        return "Meds"
+    elif origin_category in keys_categories:
+        return "Keys"
+    elif origin_category in ammo_categories:
+        return "Ammo"
+
+    return "ETC"
 
 def merge_item_price_data(pvp_data, pve_data):
     """
