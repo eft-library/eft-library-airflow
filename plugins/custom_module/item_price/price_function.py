@@ -125,7 +125,7 @@ def merge_item_price_data(pvp_data, pve_data):
                 "pve_trader": mapping_trader(pve_item["sellFor"]) if pve_item["sellFor"] else None
             },
             "width": pvp_item['width'],
-            "height": pvp_item['width'],
+            "height": pvp_item['height'],
             "pvpHistoricalPrices": pvp_item["historicalPrices"],
             "pveHistoricalPrices": pve_item["historicalPrices"],
             "category": pvp_item['category']['name']
