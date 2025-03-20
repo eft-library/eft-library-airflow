@@ -61,8 +61,18 @@ hideout_graphql = """
       level
       rewardItems {
         item {
+          id
           name
         }
+        quantity
+      }
+      duration
+      requiredItems {
+        item {
+          name
+          gridImageLink
+        }
+        quantity
       }
     }
   }
