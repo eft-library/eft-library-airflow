@@ -13,6 +13,6 @@ ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
     level = EXCLUDED.level,
     name_en = EXCLUDED.name_en,
-    duration = EXCLUDED.name_en,
-    req_item = EXCLUDED.name_en,
+    duration = EXCLUDED.duration,
+    req_item = EXCLUDED.req_item,
     update_time = EXCLUDED.update_time;
