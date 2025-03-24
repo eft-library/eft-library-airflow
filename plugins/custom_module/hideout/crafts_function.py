@@ -1,4 +1,5 @@
 import pendulum
+import json
 
 def process_crafts(item):
     """
@@ -9,9 +10,11 @@ def process_crafts(item):
     station_id = item['station'].get("id") if item.get("station") else None
     level = item.get("level")
     name_en = get_name(item.get("rewardItems"))
+    duration = item.get("duration")
+    req_item = json.dumps(item.get("requiredItems"))
 
     return (
-        id, f"{station_id}-{level}", level, name_en, update_time
+        id, f"{station_id}-{level}", level, name_en, duration, req_item, update_time
     )
 
 
