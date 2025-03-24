@@ -63,6 +63,8 @@ hideout_graphql = """
         item {
           id
           name
+          width
+          height
         }
         quantity
       }
@@ -71,6 +73,8 @@ hideout_graphql = """
         item {
           name
           gridImageLink
+          width
+          height
         }
         quantity
       }
