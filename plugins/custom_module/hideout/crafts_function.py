@@ -13,10 +13,11 @@ def process_crafts(item):
     height = get_height(item.get("rewardItems"))
     name_en = get_name(item.get("rewardItems"))
     duration = item.get("duration")
+    image = get_image(item.get("rewardItems"))
     req_item = json.dumps(item.get("requiredItems"))
 
     return (
-        id, f"{station_id}-{level}", level, width, height, name_en, duration, req_item, update_time
+        id, f"{station_id}-{level}", level, width, height, name_en, duration, req_item, image, update_time
     )
 
 
@@ -47,4 +48,14 @@ def get_width(rewards):
     """
     for reward in rewards:
         return reward["item"].get("width")
+    return None
+
+
+def get_image(rewards):
+    """
+    보상 뽑기
+    리스트지만 데이터 하나임
+    """
+    for reward in rewards:
+        return reward["item"].get("gridImageLink")
     return None
