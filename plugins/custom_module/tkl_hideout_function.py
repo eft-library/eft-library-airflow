@@ -65,6 +65,7 @@ hideout_graphql = """
           name
           width
           height
+          gridImageLink
         }
         quantity
       }
