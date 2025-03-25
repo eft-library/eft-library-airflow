@@ -8,9 +8,10 @@ INSERT INTO tkl_hideout_crafts (
     duration,
     req_item,
     image,
+    quantity,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
@@ -21,4 +22,5 @@ ON CONFLICT (id) DO UPDATE SET
     duration = EXCLUDED.duration,
     req_item = EXCLUDED.req_item,
     image = EXCLUDED.image,
+    quantity = EXCLUDED.quantity,
     update_time = EXCLUDED.update_time;
