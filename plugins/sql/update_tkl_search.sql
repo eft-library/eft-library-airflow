@@ -19,12 +19,6 @@ FROM (
                   SELECT '보스 : ' || tkl_boss.name_kr, '/boss/' || id, id, 'BOSS'
                   FROM tkl_boss
                   UNION ALL
-                  SELECT '하이드아웃 : ' || name_en, '/hideout', id, 'HIDEOUT'
-                  FROM tkl_hideout_master
-                  UNION ALL
-                  SELECT '하이드아웃 : ' || name_kr, '/hideout', id, 'HIDEOUT'
-                  FROM tkl_hideout_master
-                  UNION ALL
                   SELECT '퀘스트 : ' || name_kr, '/quest/detail/' || url_mapping, url_mapping, 'QUEST'
                   FROM tkl_quest
                   UNION ALL
