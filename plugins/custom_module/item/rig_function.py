@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 
@@ -39,6 +41,46 @@ def process_rig(item):
         width,
         height,
         update_time,
+    )
+
+def new_process_rig(item):
+    """
+    rig 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "Rig"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    class_value = None
+    areas_en = None
+    areas_kr = None
+    capacity = item["properties"].get("capacity")
+    # durability = None
+
+    if item["properties"]["class"] is not None:
+        class_value = item["properties"].get("class")
+        areas_en = item["properties"].get("zones")
+        areas_kr = rig_areas_kr(areas_en)
+        # durability = rig_durability_edit(name)
+
+    info = json.dumps({"weight": item.get("weight"), "class_value": class_value,
+                       "areas_en":areas_en,
+                       "areas_kr": areas_kr,
+                       "capacity": capacity})
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
     )
 
 

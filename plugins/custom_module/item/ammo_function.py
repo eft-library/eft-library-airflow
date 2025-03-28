@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 
@@ -53,6 +55,37 @@ def process_ammo(item):
         width,
         height,
         update_time,
+    )
+
+def new_process_ammo(item):
+    """
+    ammo 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "Ammo"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    info = json.dumps({"damage": item["properties"].get("damage") if item.get("properties") else None,
+                       "penetration_power": item["properties"].get("penetrationPower") if item.get("properties") else None,
+                       "armor_damage": item["properties"].get("armorDamage") if item.get("properties") else None,
+                       "accuracy_modifier": item["properties"].get("accuracyModifier") if item.get("properties") else None,
+                       "recoil_modifier": item["properties"].get("recoilModifier") if item.get("properties") else None,
+                       "light_bleed_modifier": item["properties"].get("lightBleedModifier") if item.get("properties") else None,
+                       "heavy_bleed_modifier":item["properties"].get("heavyBleedModifier") if item.get("properties") else None})
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
     )
 
 

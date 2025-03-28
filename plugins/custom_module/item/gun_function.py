@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 
@@ -122,6 +124,64 @@ def process_gun(item):
         width,
         height,
         update_time,
+    )
+
+def new_process_gun(item):
+    """
+    gun 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    short_name = check_short_name(name_en, item.get("shortName"))
+    category = "Gun"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    original_category = item["category"].get("name") if item.get("category") else None
+    gun_category = check_weapon_category(short_name, original_category)
+    carliber = item["properties"].get("caliber") if item.get("properties") else None
+    default_ammo = (
+        item["properties"]["defaultAmmo"].get("name")
+        if item.get("properties") and item["properties"].get("defaultAmmo")
+        else None
+    )
+    modes_en = item["properties"].get("fireModes") if item.get("properties") else None
+    fire_rate = item["properties"].get("fireRate") if item.get("properties") else None
+    ergonomics = (
+        item["properties"].get("defaultErgonomics") if item.get("properties") else None
+    )
+    recoil_vertical = (
+        item["properties"].get("defaultRecoilVertical")
+        if item.get("properties")
+        else None
+    )
+    recoil_horizontal = (
+        item["properties"].get("defaultRecoilHorizontal")
+        if item.get("properties")
+        else None
+    )
+    modes_kr = gun_modes_kr(modes_en)
+    info = json.dumps({"carliber": carliber,
+                       "default_ammo": default_ammo,
+                       "modes_en": modes_en,
+                       "modes_kr": modes_kr,
+                       "gun_category": gun_category,
+                       "fire_rate": fire_rate,
+                       "ergonomics": ergonomics,
+                       "recoil_vertical": recoil_vertical,
+                       "recoil_horizontal": recoil_horizontal})
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
     )
 
 def gun_modes_kr(weapon_modes_en):

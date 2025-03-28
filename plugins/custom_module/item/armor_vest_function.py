@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 
@@ -31,6 +33,32 @@ def process_armor_vest(item):
         width,
         height,
         update_time,
+    )
+
+def new_process_armor_vest(item):
+    """
+    armor vest 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "Armband"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+    areas_en = item["properties"].get("zones")
+
+    info = json.dumps({"weight": item.get("weight"), "class_value": item["properties"].get("class"), "areas_en": item["properties"].get("zones"), "areas_kr": armor_vest_areas_kr(areas_en)})
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
     )
 
 

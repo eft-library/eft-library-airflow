@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 def process_face_cover(item):
@@ -48,6 +50,52 @@ def process_face_cover(item):
         width,
         height,
         update_time,
+    )
+
+def new_process_face_cover(item):
+    """
+    face_cover 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "FaceCover"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    class_value = None
+    areas_en = None
+    areas_kr = None
+    ricochet_chance = None
+    ricochet_str_en = None
+    ricochet_str_kr = None
+
+    if item["properties"] is not {} and item["properties"] is not None:
+        class_value = (
+            item["properties"].get("class") if item.get("properties") else None
+        )
+        areas_en = modify_face_cover_area(
+            item["properties"].get("headZones") if item.get("properties") else None
+        )
+        areas_kr = check_face_cover_area_kr(areas_en)
+        ricochet_chance = (
+            item["properties"].get("ricochetY") if item.get("properties") else None
+        )
+        ricochet_str_en = ricochet_chance_en(ricochet_chance)
+        ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
+
+    info = json.dumps({"weight": item.get("weight"), "class_value": class_value, "areas_en": areas_en, "areas_kr": areas_kr, "ricochet_chance": ricochet_chance, "ricochet_str_en": ricochet_str_en, "ricochet_str_kr": ricochet_str_kr})
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
     )
 
 

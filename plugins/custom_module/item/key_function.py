@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 
@@ -29,6 +31,33 @@ def process_key(item, key_map):
         width,
         height,
         update_time,
+    )
+
+def new_process_key(item, key_map):
+    """
+    key 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "Key"
+    map_value = get_map_for_key(key_map, name_en)
+    info = json.dumps({"use_map_en": get_use_map_en(map_value),
+                       "use_map_kr": get_use_map_kr(map_value),
+                       "uses": item["properties"].get("uses")})
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
     )
 
 

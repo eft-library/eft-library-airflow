@@ -36,6 +36,37 @@ def process_provisions(item):
         update_time,
     )
 
+def new_process_provisions(item):
+    """
+    provisions 데이터 가공
+    """
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "Provisions"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+    stim_effects = (
+        item["properties"].get("stimEffects") if item.get("properties") else None
+    )
+    new_stim_effects = process_stim_effect(stim_effects)
+    info = json.dumps({"stim_effects": add_painkiller(new_stim_effects, name_en),
+                       "hydration": item["properties"].get("hydration") if item.get("properties") else None,
+                       "energy": item["properties"].get("energy") if item.get("properties") else None
+                       })
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
+    )
+
 def process_stim_effect(stim_effects):
     """
     stim effect 효과 추가

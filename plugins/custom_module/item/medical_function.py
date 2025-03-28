@@ -59,6 +59,68 @@ def process_medical(item):
         update_time,
     )
 
+def new_process_medical(item):
+    """
+    medical 데이터 가공
+    """
+    check_item = check_morphine(item)
+
+    item_id = item.get("id")
+    name_en = item.get("name")
+    category = "Medical"
+    image = item.get("gridImageLink")
+    image_width = item.get("width")
+    image_height = item.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+
+    cures_en = check_item["properties"].get("cures")
+    cures_kr = None
+    if cures_en is not None:
+        cures_kr = get_cures_kr(cures_en)
+    category = check_item["category"].get("name")
+    stim_effect = check_item["properties"].get("stimEffects")
+    add_painkiller(item)
+    buff = None
+    debuff = None
+    if stim_effect is not None:
+        new_stim_effect = process_stim_effect(stim_effect)
+        buff = json.dumps(get_buff(new_stim_effect))
+        debuff = json.dumps(get_debuff(new_stim_effect))
+    image = check_item.get("gridImageLink")
+    energy_impact = check_item["properties"].get("energyImpact")
+    hydration_impact = check_item["properties"].get("hydrationImpact")
+    painkiller_duration = check_item["properties"].get("painkillerDuration")
+    hitpoints = check_item["properties"].get("hitpoints")
+    update_duration = None
+    if painkiller_duration is not None:
+        update_duration = update_painkiller_duration(painkiller_duration, name_en)
+    use_time = check_item["properties"].get("useTime")
+    uses = check_item["properties"].get("uses")
+
+
+    info = json.dumps({"cures_en": cures_en,
+                       "cures_kr": cures_kr,
+                       "buff": buff if buff is not "null" else None,
+                       "debuff": debuff if debuff is not "null" else None,
+                       "use_time": use_time,
+                       "uses": uses,
+                       "energy_impact": energy_impact,
+                       "hydration_impact": hydration_impact,
+                       "update_duration": update_duration,
+                       "hitpoints": hitpoints})
+
+    return (
+        item_id,
+        name_en,
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time
+    )
+
 
 def process_stim_effect(stim_effects):
     """
