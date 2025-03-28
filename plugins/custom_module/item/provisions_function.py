@@ -2,40 +2,6 @@ import json
 import pendulum
 
 
-def process_provisions(item):
-    """
-    provisions 데이터 가공
-    """
-    id = item.get("id")
-    name_en = item.get("name")
-    short_name = item.get("shortName")
-    category = item["category"].get("name") if item.get("category") else None
-    energy = item["properties"].get("energy") if item.get("properties") else None
-    hydration = item["properties"].get("hydration") if item.get("properties") else None
-    stim_effects = (
-        item["properties"].get("stimEffects") if item.get("properties") else None
-    )
-    width = item.get("width")
-    height = item.get("height")
-    new_stim_effects = process_stim_effect(stim_effects)
-    result_stim_effects = json.dumps(add_painkiller(new_stim_effects, name_en))
-    image = item.get("gridImageLink")
-    update_time = pendulum.now("Asia/Seoul")
-
-    return (
-        id,
-        name_en,
-        short_name,
-        category,
-        energy,
-        hydration,
-        result_stim_effects,
-        image,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_provisions(item):
     """
     provisions 데이터 가공

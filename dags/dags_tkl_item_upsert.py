@@ -6,23 +6,23 @@ from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
 from custom_module.tkl_item_function import check_category, item_graphql
-from custom_module.item.knife_function import process_knife
-from custom_module.item.throwable_function import process_throwable
-from custom_module.item.rig_function import process_rig
-from custom_module.item.armor_vest_function import process_armor_vest
-from custom_module.item.headwear_function import process_headwear
-from custom_module.item.headset_function import process_headset
-from custom_module.item.gun_function import process_gun, gun_image_change, gun_slot_change
-from custom_module.item.backpack_function import process_backpack
-from custom_module.item.container_function import process_container
-from custom_module.item.key_function import process_key, process_key_map
-from custom_module.item.provisions_function import process_provisions
-from custom_module.item.medical_function import process_medical
-from custom_module.item.ammo_function import process_ammo
-from custom_module.item.loot_function import process_loot
-from custom_module.item.face_cover_function import process_face_cover
-from custom_module.item.arm_band_function import process_arm_band
-from custom_module.item.glasses_function import process_glasses
+from custom_module.item.knife_function import new_process_knife
+from custom_module.item.throwable_function import new_process_throwable
+from custom_module.item.rig_function import new_process_rig
+from custom_module.item.armor_vest_function import new_process_armor_vest
+from custom_module.item.headwear_function import new_process_headwear
+from custom_module.item.headset_function import new_process_headset
+from custom_module.item.gun_function import new_process_gun, gun_image_change, gun_slot_change
+from custom_module.item.backpack_function import new_process_backpack
+from custom_module.item.container_function import new_process_container
+from custom_module.item.key_function import new_process_key, process_key_map
+from custom_module.item.provisions_function import new_process_provisions
+from custom_module.item.medical_function import new_process_medical
+from custom_module.item.ammo_function import new_process_ammo
+from custom_module.item.loot_function import new_process_loot
+from custom_module.item.face_cover_function import new_process_face_cover
+from custom_module.item.arm_band_function import new_process_arm_band
+from custom_module.item.glasses_function import new_process_glasses
 
 default_args = {
     "owner": "airflow",
@@ -57,7 +57,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in result_list:
-                    cursor.execute(sql, process_gun(item))
+                    cursor.execute(sql, new_process_gun(item))
             conn.commit()
 
     def upsert_knife(postgres_conn_id, **kwargs):
@@ -70,7 +70,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_knife(item))
+                    cursor.execute(sql, new_process_knife(item))
             conn.commit()
 
     def upsert_throwable(postgres_conn_id, **kwargs):
@@ -83,7 +83,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_throwable(item))
+                    cursor.execute(sql, new_process_throwable(item))
             conn.commit()
 
     def upsert_headset(postgres_conn_id, **kwargs):
@@ -96,7 +96,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_headset(item))
+                    cursor.execute(sql, new_process_headset(item))
             conn.commit()
 
     def upsert_headwear(postgres_conn_id, **kwargs):
@@ -109,7 +109,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_headwear(item))
+                    cursor.execute(sql, new_process_headwear(item))
             conn.commit()
 
     def upsert_armor_vest(postgres_conn_id, **kwargs):
@@ -122,7 +122,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_armor_vest(item))
+                    cursor.execute(sql, new_process_armor_vest(item))
             conn.commit()
 
     def upsert_backpack(postgres_conn_id, **kwargs):
@@ -135,7 +135,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_backpack(item))
+                    cursor.execute(sql, new_process_backpack(item))
             conn.commit()
 
     def upsert_container(postgres_conn_id, **kwargs):
@@ -148,7 +148,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_container(item))
+                    cursor.execute(sql, new_process_container(item))
             conn.commit()
 
     def upsert_key(postgres_conn_id, **kwargs):
@@ -162,7 +162,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_key(item, key_map))
+                    cursor.execute(sql, new_process_key(item, key_map))
             conn.commit()
 
     def upsert_rig(postgres_conn_id, **kwargs):
@@ -175,7 +175,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_rig(item))
+                    cursor.execute(sql, new_process_rig(item))
             conn.commit()
 
     def upsert_provisions(postgres_conn_id, **kwargs):
@@ -188,7 +188,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_provisions(item))
+                    cursor.execute(sql, new_process_provisions(item))
             conn.commit()
 
     def upsert_medical(postgres_conn_id, **kwargs):
@@ -201,7 +201,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_medical(item))
+                    cursor.execute(sql, new_process_medical(item))
             conn.commit()
 
     def upsert_ammo(postgres_conn_id, **kwargs):
@@ -214,7 +214,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_ammo(item))
+                    cursor.execute(sql, new_process_ammo(item))
             conn.commit()
 
     def upsert_loot(postgres_conn_id, **kwargs):
@@ -227,7 +227,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_loot(item))
+                    cursor.execute(sql, new_process_loot(item))
             conn.commit()
 
     def upsert_face_cover(postgres_conn_id, **kwargs):
@@ -240,7 +240,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_face_cover(item))
+                    cursor.execute(sql, new_process_face_cover(item))
             conn.commit()
 
     def upsert_arm_band(postgres_conn_id, **kwargs):
@@ -253,7 +253,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_arm_band(item))
+                    cursor.execute(sql, new_process_arm_band(item))
             conn.commit()
 
     def upsert_glasses(postgres_conn_id, **kwargs):
@@ -266,7 +266,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item in data_list:
-                    cursor.execute(sql, process_glasses(item))
+                    cursor.execute(sql, new_process_glasses(item))
             conn.commit()
 
     fetch_data = PythonOperator(

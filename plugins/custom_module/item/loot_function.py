@@ -3,33 +3,6 @@ import json
 import pendulum
 
 
-def process_loot(item):
-    """
-    loot 데이터 가공
-    """
-
-    id = item.get("id")
-    name_en = item.get("name")
-    short_name = item.get("shortName")
-    image = item.get("gridImageLink")
-    width = item.get("width")
-    height = item.get("height")
-    category = (
-        change_category(item["category"].get("name"), name_en) if item.get("category") else None
-    )
-    update_time = pendulum.now("Asia/Seoul")
-
-    return (
-        id,
-        name_en,
-        short_name,
-        image,
-        category,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_loot(item):
     """
     loot 데이터 가공
@@ -37,7 +10,7 @@ def new_process_loot(item):
     item_id = item.get("id")
     name_en = item.get("name")
     category = "Loot"
-    info = json.dumps({"category": change_category(item["category"].get("name"), name_en) if item.get("category") else None})
+    info = json.dumps({"loot_category": change_category(item["category"].get("name"), name_en) if item.get("category") else None})
     image = item.get("gridImageLink")
     image_width = item.get("width")
     image_height = item.get("height")

@@ -3,60 +3,6 @@ import json
 import pendulum
 
 
-def process_headwear(item):
-    """
-    headwear 데이터 가공
-    """
-    id = item.get("id")
-    name = item.get("name")
-    short_name = item.get("shortName")
-    weight = item.get("weight")
-    image = item.get("gridImageLink")
-    update_time = pendulum.now("Asia/Seoul")
-    width = item.get("width")
-    height = item.get("height")
-    class_value = None
-    areas_en = None
-    areas_kr = None
-    # durability = None
-    ricochet_chance = None
-    ricochet_str_en = None
-    ricochet_str_kr = None
-
-    if item["properties"] != {}:
-        class_value = (
-            item["properties"].get("class") if item.get("properties") else None
-        )
-        areas_en = modify_helmet_area(
-            item["properties"].get("headZones") if item.get("properties") else None
-        )
-        areas_kr = check_helmet_area_kr(areas_en)
-        # durability = durability_edit(name)
-        ricochet_chance = (
-            item["properties"].get("ricochetY") if item.get("properties") else None
-        )
-        ricochet_chance = ricochet_chance_edit(name, ricochet_chance)
-        ricochet_str_en = ricochet_chance_en(ricochet_chance)
-        ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
-
-    return (
-        id,
-        name,
-        short_name,
-        class_value,
-        areas_en,
-        areas_kr,
-        # durability,
-        ricochet_chance,
-        weight,
-        image,
-        ricochet_str_en,
-        ricochet_str_kr,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_headwear(item):
     """
     headwear 데이터 가공
@@ -72,7 +18,7 @@ def new_process_headwear(item):
     class_value = None
     areas_en = None
     areas_kr = None
-    # durability = None
+    durability = None
     ricochet_chance = None
     ricochet_str_en = None
     ricochet_str_kr = None
@@ -85,7 +31,7 @@ def new_process_headwear(item):
             item["properties"].get("headZones") if item.get("properties") else None
         )
         areas_kr = check_helmet_area_kr(areas_en)
-        # durability = durability_edit(name)
+        durability = durability_edit(name_en)
         ricochet_chance = (
             item["properties"].get("ricochetY") if item.get("properties") else None
         )
@@ -95,6 +41,7 @@ def new_process_headwear(item):
 
     info = json.dumps({"weight": item.get("weight"),
                        "class_value": class_value,
+                       "durability": durability,
                        "areas_en": areas_en,
                        "areas_kr": areas_kr,
                        "ricochet_chance": ricochet_chance,

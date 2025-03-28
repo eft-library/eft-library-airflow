@@ -71,61 +71,6 @@ def gun_slot_change(original_list, slot_list):
 
     return original_list
 
-def process_gun(item):
-    """
-    gun 데이터 가공
-    """
-    id = item.get("id")
-    name = item.get("name")
-    short_name = check_short_name(name, item.get("shortName"))
-    img = item.get("gridImageLink")
-    original_category = item["category"].get("name") if item.get("category") else None
-    category = check_weapon_category(short_name, original_category)
-    carliber = item["properties"].get("caliber") if item.get("properties") else None
-    default_ammo = (
-        item["properties"]["defaultAmmo"].get("name")
-        if item.get("properties") and item["properties"].get("defaultAmmo")
-        else None
-    )
-    modes_en = item["properties"].get("fireModes") if item.get("properties") else None
-    fire_rate = item["properties"].get("fireRate") if item.get("properties") else None
-    ergonomics = (
-        item["properties"].get("defaultErgonomics") if item.get("properties") else None
-    )
-    recoil_vertical = (
-        item["properties"].get("defaultRecoilVertical")
-        if item.get("properties")
-        else None
-    )
-    recoil_horizontal = (
-        item["properties"].get("defaultRecoilHorizontal")
-        if item.get("properties")
-        else None
-    )
-    width = item.get("width")
-    height = item.get("height")
-    update_time = pendulum.now("Asia/Seoul")
-    modes_kr = gun_modes_kr(modes_en)
-
-    return (
-        id,
-        name,
-        short_name,
-        img,
-        category,
-        carliber,
-        default_ammo,
-        modes_en,
-        modes_kr,
-        fire_rate,
-        ergonomics,
-        recoil_vertical,
-        recoil_horizontal,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_gun(item):
     """
     gun 데이터 가공

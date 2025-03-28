@@ -2,61 +2,6 @@ import json
 
 import pendulum
 
-
-def process_ammo(item):
-    """
-    ammo 데이터 가공
-    """
-    id = item.get("id")
-    name = item.get("name")
-    short_name = item.get("shortName")
-    # category = get_category(name)
-    # round = get_round(name)
-    damage = item["properties"].get("damage") if item.get("properties") else None
-    penetration_power = (
-        item["properties"].get("penetrationPower") if item.get("properties") else None
-    )
-    armor_damage = (
-        item["properties"].get("armorDamage") if item.get("properties") else None
-    )
-    accuracy_modifier = (
-        item["properties"].get("accuracyModifier") if item.get("properties") else None
-    )
-    recoil_modifier = (
-        item["properties"].get("recoilModifier") if item.get("properties") else None
-    )
-    light_bleed_modifier = (
-        item["properties"].get("lightBleedModifier") if item.get("properties") else None
-    )
-    heavy_bleed_modifier = (
-        item["properties"].get("heavyBleedModifier") if item.get("properties") else None
-    )
-    # efficiency = get_efficiency(name)
-    image = item.get("gridImageLink")
-    width = item.get("width")
-    height = item.get("height")
-    update_time = pendulum.now("Asia/Seoul")
-
-    return (
-        id,
-        name,
-        short_name,
-        # category,
-        # round,
-        damage,
-        penetration_power,
-        armor_damage,
-        accuracy_modifier,
-        recoil_modifier,
-        light_bleed_modifier,
-        heavy_bleed_modifier,
-        # efficiency,
-        image,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_ammo(item):
     """
     ammo 데이터 가공
@@ -70,6 +15,9 @@ def new_process_ammo(item):
     update_time = pendulum.now("Asia/Seoul")
 
     info = json.dumps({"damage": item["properties"].get("damage") if item.get("properties") else None,
+                       "ammo_category": get_category(name_en),
+                       "round": get_round(name_en),
+                       "efficiency": get_efficiency(name_en),
                        "penetration_power": item["properties"].get("penetrationPower") if item.get("properties") else None,
                        "armor_damage": item["properties"].get("armorDamage") if item.get("properties") else None,
                        "accuracy_modifier": item["properties"].get("accuracyModifier") if item.get("properties") else None,

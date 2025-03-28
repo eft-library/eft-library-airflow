@@ -2,39 +2,6 @@ import json
 
 import pendulum
 
-
-def process_armor_vest(item):
-    """
-    armor vest 데이터 가공
-    """
-    id = item.get("id")
-    name = item.get("name")
-    short_name = item.get("shortName")
-    weight = item.get("weight")
-    image = item.get("gridImageLink")
-    class_value = item["properties"].get("class")
-    areas_en = item["properties"].get("zones")
-    areas_kr = armor_vest_areas_kr(areas_en)
-    # durability = armor_vest_durability(name)
-    width = item.get("width")
-    height = item.get("height")
-    update_time = pendulum.now("Asia/Seoul")
-
-    return (
-        id,
-        name,
-        short_name,
-        weight,
-        image,
-        class_value,
-        areas_en,
-        areas_kr,
-        # durability,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_armor_vest(item):
     """
     armor vest 데이터 가공
@@ -46,9 +13,14 @@ def new_process_armor_vest(item):
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
+    durability = armor_vest_durability(name_en)
     areas_en = item["properties"].get("zones")
 
-    info = json.dumps({"weight": item.get("weight"), "class_value": item["properties"].get("class"), "areas_en": item["properties"].get("zones"), "areas_kr": armor_vest_areas_kr(areas_en)})
+    info = json.dumps({"weight": item.get("weight"),
+                       "class_value": item["properties"].get("class"),
+                       "durability": durability,
+                       "areas_en": item["properties"].get("zones"),
+                       "areas_kr": armor_vest_areas_kr(areas_en)})
 
     return (
         item_id,

@@ -3,46 +3,6 @@ import json
 import pendulum
 
 
-def process_rig(item):
-    """
-    rig 데이터 가공
-    """
-    id = item.get("id")
-    name = item.get("name")
-    short_name = item.get("shortName")
-    weight = item.get("weight")
-    image = item.get("gridImageLink")
-    class_value = None
-    areas_en = None
-    areas_kr = None
-    width = item.get("width")
-    height = item.get("height")
-    capacity = item["properties"].get("capacity")
-    # durability = None
-    update_time = pendulum.now("Asia/Seoul")
-
-    if item["properties"]["class"] is not None:
-        class_value = item["properties"].get("class")
-        areas_en = item["properties"].get("zones")
-        areas_kr = rig_areas_kr(areas_en)
-        # durability = rig_durability_edit(name)
-
-    return (
-        id,
-        name,
-        short_name,
-        weight,
-        image,
-        class_value,
-        areas_en,
-        areas_kr,
-        # durability,
-        capacity,
-        width,
-        height,
-        update_time,
-    )
-
 def new_process_rig(item):
     """
     rig 데이터 가공
@@ -59,17 +19,19 @@ def new_process_rig(item):
     areas_en = None
     areas_kr = None
     capacity = item["properties"].get("capacity")
-    # durability = None
+    durability = None
 
     if item["properties"]["class"] is not None:
         class_value = item["properties"].get("class")
         areas_en = item["properties"].get("zones")
         areas_kr = rig_areas_kr(areas_en)
-        # durability = rig_durability_edit(name)
+        durability = rig_durability_edit(name_en)
 
-    info = json.dumps({"weight": item.get("weight"), "class_value": class_value,
+    info = json.dumps({"weight": item.get("weight"),
+                       "class_value": class_value,
                        "areas_en":areas_en,
                        "areas_kr": areas_kr,
+                       "durability": durability,
                        "capacity": capacity})
 
     return (
