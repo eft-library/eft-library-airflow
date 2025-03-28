@@ -8,10 +8,10 @@ def new_process_throwable(item):
     throwable 데이터 가공
     """
     item_id = item.get("id")
-    name_en = item.get("name")
     category = "Throwable"
     image = item.get("gridImageLink")
     image_width = item.get("width")
+    short_name = item.get("shortName")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
     min_explosion_distance = (
@@ -32,7 +32,7 @@ def new_process_throwable(item):
 
     return (
         item_id,
-        name_en,
+        short_name,
         category,
         info,
         image,

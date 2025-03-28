@@ -120,7 +120,7 @@ def new_process_gun(item):
 
     return (
         item_id,
-        name_en,
+        short_name,
         category,
         info,
         image,
