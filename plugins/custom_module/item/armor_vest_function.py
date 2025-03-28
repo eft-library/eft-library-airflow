@@ -8,7 +8,7 @@ def new_process_armor_vest(item):
     """
     item_id = item.get("id")
     name_en = item.get("name")
-    category = "Armband"
+    category = "ArmorVest"
     image = item.get("gridImageLink")
     image_width = item.get("width")
     image_height = item.get("height")
