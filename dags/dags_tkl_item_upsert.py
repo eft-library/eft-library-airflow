@@ -47,7 +47,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_weapon.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         original_data = check_category(item_list["data"]["items"], "Gun")
         image_data = check_category(item_list["data"]["items"], "Gun image")
         slot_data = check_category(item_list["data"]["items"], "Gun slot")
@@ -64,7 +64,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_knife.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Knife")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -77,7 +77,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_throwable.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Throwable weapon")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -90,7 +90,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_headset.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Headphones")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -103,7 +103,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_headwear.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Headwear")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -116,7 +116,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_armor_vest.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Armor")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -129,7 +129,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_backpack.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Backpack")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -142,7 +142,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_container.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Common container")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -155,7 +155,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_key.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Key")
         key_map = process_key_map(item_list["data"]["maps"])
 
@@ -169,7 +169,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_rig.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Chest rig")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -182,7 +182,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_provisions.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Provisions")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -195,7 +195,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_medical.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Meds")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -208,7 +208,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_ammo.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Ammo")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -221,7 +221,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_loot.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Loot")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -234,7 +234,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_face_cover.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Face Cover")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -247,7 +247,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_arm_band.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Arm Band")
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -260,7 +260,7 @@ with DAG(
         ti = kwargs["ti"]
         item_list = ti.xcom_pull(task_ids="fetch_item_list")
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_tkl_glasses.sql")
+        sql = read_sql("upsert_tkl_item.sql")
         data_list = check_category(item_list["data"]["items"], "Vis. observ. device")
 
         with closing(postgres_hook.get_conn()) as conn:
