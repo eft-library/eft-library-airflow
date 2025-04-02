@@ -7,6 +7,7 @@ def new_process_headwear(item):
     """
     headwear 데이터 가공
     """
+    print(item)
     item_id = item.get("id")
     name_en = item.get("name")
     category = "Headwear"
