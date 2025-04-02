@@ -5,7 +5,6 @@ item_graphql = """
     name
     weight
     shortName
-    image512pxLink
     gridImageLink
     width
     height
@@ -17,9 +16,14 @@ item_graphql = """
     }
     properties {
       ... on ItemPropertiesWeapon {
+        allowedAmmo {
+          name
+          gridImageLink
+        }
         caliber
         defaultAmmo {
           name
+          gridImageLink
         }
         fireModes
         fireRate
@@ -41,28 +45,60 @@ item_graphql = """
         contusionRadius
       }
       ... on ItemPropertiesHelmet {
-        durability
         class
+        deafening
+        turnPenalty
+        ergoPenalty
+        speedPenalty
         headZones
         ricochetY
+        durability
+        material {
+          name
+        }
+      }
+      ... on ItemPropertiesHeadphone {
+        distanceModifier
       }
       ... on ItemPropertiesArmor {
-        durability
         class
+        durability
+        turnPenalty
+        ergoPenalty
+        speedPenalty
         zones
-      } 
+        material {
+          name
+        }
+      }
       ... on ItemPropertiesChestRig {
         class
+        durability
+        turnPenalty
+        ergoPenalty
+        speedPenalty
         zones
         capacity
+        material {
+          name
+        }
       }
       ... on ItemPropertiesBackpack {
-        grids{width, height}
+        turnPenalty
+        ergoPenalty
+        speedPenalty
         capacity
+        grids {
+          width
+          height
+        }
       }
       ... on ItemPropertiesContainer {
         capacity
-        grids{width, height}
+        grids {
+          width
+          height
+        }
       }
       ... on ItemPropertiesKey {
         uses
@@ -70,13 +106,14 @@ item_graphql = """
       ... on ItemPropertiesFoodDrink {
         energy
         hydration
-        stimEffects{
+        stimEffects {
           delay
           value
           type
           skillName
           duration
         }
+        units
       }
       ... on ItemPropertiesMedKit {
         cures
@@ -119,6 +156,9 @@ item_graphql = """
         class
         durability
         blindnessProtection
+        material {
+          name
+        }
       }
     }
   }

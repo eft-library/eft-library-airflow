@@ -7,7 +7,6 @@ quest_item_graphql = """
   questItems {
     id
     name
-    image512pxLink
     width
     height
     gridImageLink

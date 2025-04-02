@@ -9,7 +9,6 @@ hideout_graphql = """
         id
         item {
           name
-          image512pxLink
           gridImageLink
         }
         quantity

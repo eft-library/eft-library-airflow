@@ -4,7 +4,6 @@ pvp_item_price_graphql = """
   items {
     id
     name
-    image512pxLink
     gridImageLink
     width
     height
@@ -30,7 +29,6 @@ pve_item_price_graphql = """
   items(gameMode: pve) {
     id
     name
-    image512pxLink
     gridImageLink
     width
     height
