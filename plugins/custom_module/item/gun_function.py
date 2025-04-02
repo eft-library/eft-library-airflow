@@ -107,6 +107,10 @@ def new_process_gun(item):
         if item.get("properties")
         else None
     )
+    allowed_ammo = (
+        item["properties"].get("allowedAmmo")
+        if item.get("properties")
+        else None)
     modes_kr = gun_modes_kr(modes_en)
     info = json.dumps({"carliber": carliber,
                        "default_ammo": default_ammo,
@@ -115,6 +119,7 @@ def new_process_gun(item):
                        "gun_category": gun_category,
                        "fire_rate": fire_rate,
                        "ergonomics": ergonomics,
+                       "allowed_ammo": allowed_ammo,
                        "recoil_vertical": recoil_vertical,
                        "recoil_horizontal": recoil_horizontal})
 

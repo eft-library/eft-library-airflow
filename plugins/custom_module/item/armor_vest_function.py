@@ -14,11 +14,19 @@ def new_process_armor_vest(item):
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
     durability = armor_vest_durability(name_en)
-    areas_en = item["properties"].get("zones")
+    areas_en = item["properties"].get("zones") if item.get("properties") else None
+    material = item["properties"].get("ricochetY") if item.get("properties") else None
+    turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
+    ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
+    speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
 
     info = json.dumps({"weight": item.get("weight"),
                        "class_value": item["properties"].get("class"),
                        "durability": durability,
+                       "material": material,
+                       "turn_penalty": turn_penalty,
+                       "ergo_penalty": ergo_penalty,
+                       "speed_penalty": speed_penalty,
                        "areas_en": item["properties"].get("zones"),
                        "areas_kr": armor_vest_areas_kr(areas_en)})
 

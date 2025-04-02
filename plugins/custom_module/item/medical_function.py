@@ -47,6 +47,7 @@ def new_process_medical(item):
                        "debuff": debuff if debuff is not "null" else None,
                        "medical_category": medical_category,
                        "use_time": use_time,
+                       "weight": item.get("weight"),
                        "uses": uses,
                        "energy_impact": energy_impact,
                        "hydration_impact": hydration_impact,

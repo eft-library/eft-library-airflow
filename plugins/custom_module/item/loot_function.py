@@ -10,7 +10,8 @@ def new_process_loot(item):
     item_id = item.get("id")
     name_en = item.get("name")
     category = "Loot"
-    info = json.dumps({"loot_category": change_category(item["category"].get("name"), name_en) if item.get("category") else None})
+    info = json.dumps({"loot_category": change_category(item["category"].get("name"), name_en) if item.get("category") else None,
+                       "weight": item.get("weight"),})
     image = item.get("gridImageLink")
     image_width = item.get("width")
     image_height = item.get("height")

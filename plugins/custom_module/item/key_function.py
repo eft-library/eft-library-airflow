@@ -12,6 +12,7 @@ def new_process_key(item, key_map):
     category = "Key"
     map_value = get_map_for_key(key_map, name_en)
     info = json.dumps({"use_map_en": get_use_map_en(map_value),
+                       "weight": item.get("weight"),
                        "use_map_kr": get_use_map_kr(map_value),
                        "map_value": get_map_for_key(key_map, name_en),
                        "uses": item["properties"].get("uses")})

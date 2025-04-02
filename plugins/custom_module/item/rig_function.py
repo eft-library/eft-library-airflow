@@ -14,16 +14,20 @@ def new_process_rig(item):
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
-
+    turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
+    ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
+    speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
+    material = item["properties"].get("ricochetY") if item.get("properties") else None
     class_value = None
     areas_en = None
     areas_kr = None
-    capacity = item["properties"].get("capacity")
+    capacity = None
     durability = None
 
     if item["properties"]["class"] is not None:
         class_value = item["properties"].get("class")
         areas_en = item["properties"].get("zones")
+        capacity = item["properties"].get("capacity")
         areas_kr = rig_areas_kr(areas_en)
         durability = rig_durability_edit(name_en)
 
@@ -31,6 +35,10 @@ def new_process_rig(item):
                        "class_value": class_value,
                        "areas_en":areas_en,
                        "areas_kr": areas_kr,
+                       "turn_penalty": turn_penalty,
+                       "ergo_penalty": ergo_penalty,
+                       "material": material,
+                       "speed_penalty": speed_penalty,
                        "durability": durability,
                        "capacity": capacity})
 

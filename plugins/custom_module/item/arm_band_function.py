@@ -10,7 +10,7 @@ def new_process_arm_band(item):
     item_id = item.get("id")
     name_en = item.get("name")
     category = "Armband"
-    info = json.dumps({})
+    info = json.dumps({"weight": item.get("weight")})
     image = item.get("gridImageLink")
     image_width = item.get("width")
     image_height = item.get("height")

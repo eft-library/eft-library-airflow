@@ -13,25 +13,25 @@ def new_process_face_cover(item):
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
-
-    class_value = None
-    areas_en = None
+    class_value = (
+        item["properties"].get("class") if item.get("properties") else None
+    )
+    areas_en = modify_face_cover_area(
+        item["properties"].get("headZones") if item.get("properties") else None
+    )
     areas_kr = None
-    ricochet_chance = None
+    ricochet_chance = (
+        item["properties"].get("ricochetY") if item.get("properties") else None
+    )
     ricochet_str_en = None
     ricochet_str_kr = None
+    material = item["properties"].get("ricochetY") if item.get("properties") else None
+    turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
+    ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
+    speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
 
     if item["properties"] is not {} and item["properties"] is not None:
-        class_value = (
-            item["properties"].get("class") if item.get("properties") else None
-        )
-        areas_en = modify_face_cover_area(
-            item["properties"].get("headZones") if item.get("properties") else None
-        )
         areas_kr = check_face_cover_area_kr(areas_en)
-        ricochet_chance = (
-            item["properties"].get("ricochetY") if item.get("properties") else None
-        )
         ricochet_str_en = ricochet_chance_en(ricochet_chance)
         ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
 
@@ -39,6 +39,10 @@ def new_process_face_cover(item):
                        "class_value": class_value,
                        "areas_en": areas_en,
                        "areas_kr": areas_kr,
+                       "material": material,
+                       "turn_penalty": turn_penalty,
+                       "ergo_penalty": ergo_penalty,
+                       "speed_penalty": speed_penalty,
                        "ricochet_chance": ricochet_chance,
                        "ricochet_str_en": ricochet_str_en,
                        "ricochet_str_kr": ricochet_str_kr})

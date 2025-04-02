@@ -14,19 +14,13 @@ def new_process_glasses(item):
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
-
-
-    class_value = None
-    durability = None
-    blindness_protection = None
-    if item["properties"]["class"] is not None:
-        class_value = item["properties"].get("class")
-        durability = get_durability(name_en)
-        blindness_protection = item["properties"].get("blindnessProtection")
-
+    class_value = item["properties"].get("class")
+    durability = get_durability(name_en)
+    blindness_protection = item["properties"].get("blindnessProtection")
 
     info = json.dumps({"class_value": class_value,
                        "durability": durability,
+                       "material": item["properties"].get("material"),
                        "blindness_protection": blindness_protection})
 
     return (

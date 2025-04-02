@@ -14,36 +14,42 @@ def new_process_headwear(item):
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
-
-    class_value = None
-    areas_en = None
     areas_kr = None
     durability = None
-    ricochet_chance = None
     ricochet_str_en = None
     ricochet_str_kr = None
+    class_value = (
+        item["properties"].get("class") if item.get("properties") else None
+    )
+    areas_en = modify_helmet_area(
+        item["properties"].get("headZones") if item.get("properties") else None
+    )
+    ricochet_chance = (
+        item["properties"].get("material") if item.get("properties") else None
+    )
+    material = item["properties"].get("ricochetY") if item.get("properties") else None
+    deafening = item["properties"].get("deafening") if item.get("properties") else None
+    turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
+    ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
+    speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
 
     if item["properties"] != {}:
-        class_value = (
-            item["properties"].get("class") if item.get("properties") else None
-        )
-        areas_en = modify_helmet_area(
-            item["properties"].get("headZones") if item.get("properties") else None
-        )
-        areas_kr = check_helmet_area_kr(areas_en)
-        durability = durability_edit(name_en)
-        ricochet_chance = (
-            item["properties"].get("ricochetY") if item.get("properties") else None
-        )
         ricochet_chance = ricochet_chance_edit(name_en, ricochet_chance)
         ricochet_str_en = ricochet_chance_en(ricochet_chance)
         ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
+        areas_kr = check_helmet_area_kr(areas_en)
+        durability = durability_edit(name_en)
 
     info = json.dumps({"weight": item.get("weight"),
                        "class_value": class_value,
                        "durability": durability,
                        "areas_en": areas_en,
                        "areas_kr": areas_kr,
+                       "material": material,
+                       "deafening": deafening,
+                       "turn_penalty": turn_penalty,
+                       "ergo_penalty": ergo_penalty,
+                       "speed_penalty": speed_penalty,
                        "ricochet_chance": ricochet_chance,
                        "ricochet_str_en": ricochet_str_en,
                        "ricochet_str_kr": ricochet_str_kr

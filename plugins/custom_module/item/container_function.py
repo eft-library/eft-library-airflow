@@ -10,6 +10,7 @@ def new_process_container(item):
     category = "Container"
     info = json.dumps({"width": item.get("width"),
                        "height": item.get("height"),
+                       "weight": item.get("weight"),
                        "capacity": item["properties"].get("capacity"),
                        "grids": item["properties"].get("grids")})
     image = item.get("gridImageLink")
