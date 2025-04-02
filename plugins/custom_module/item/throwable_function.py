@@ -26,6 +26,7 @@ def new_process_throwable(item):
     )
     info = json.dumps({"fragments": item["properties"].get("fragments") if item.get("properties") else None,
                        "fuse": item["properties"].get("fuse") if item.get("properties") else None,
+                       "min_fuse": 0.3 if short_name == "RGO" or short_name == "RGN" else 0,
                        "min_explosion_distance": min_explosion_distance,
                        "max_explosion_distance": max_explosion_distance,
                        "gun_category": 'Throwable weapon'})
