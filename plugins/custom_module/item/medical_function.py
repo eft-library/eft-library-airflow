@@ -28,8 +28,8 @@ def new_process_medical(item):
     debuff = None
     if stim_effect is not None:
         new_stim_effect = process_stim_effect(stim_effect)
-        buff = json.dumps(get_buff(new_stim_effect))
-        debuff = json.dumps(get_debuff(new_stim_effect))
+        buff = get_buff(new_stim_effect)
+        debuff = get_debuff(new_stim_effect)
     energy_impact = check_item["properties"].get("energyImpact")
     hydration_impact = check_item["properties"].get("hydrationImpact")
     painkiller_duration = check_item["properties"].get("painkillerDuration")
