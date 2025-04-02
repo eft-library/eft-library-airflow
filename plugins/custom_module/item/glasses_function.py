@@ -21,7 +21,7 @@ def new_process_glasses(item):
     blindness_protection = None
     if item["properties"]["class"] is not None:
         class_value = item["properties"].get("class")
-        durability = item["properties"].get("durability")
+        durability = get_durability(name_en)
         blindness_protection = item["properties"].get("blindnessProtection")
 
 
@@ -39,3 +39,11 @@ def new_process_glasses(item):
         image_height,
         update_time
     )
+
+def get_durability(name):
+    if name == 'Oakley SI Batwolf glasses':
+        return 20
+    if name == 'NPP KlASS Condor glasses':
+        return 25
+
+    return 0
