@@ -27,7 +27,7 @@ def new_process_headwear(item):
     durability = None
     deafening = None
 
-    if item["properties"] != {}:
+    if item["properties"] != {} and item["properties"] is not None:
         class_value = (
             item["properties"].get("class") if item.get("properties") else None
         )
