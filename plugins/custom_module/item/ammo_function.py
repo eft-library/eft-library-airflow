@@ -407,6 +407,10 @@ def get_category(name):
         "40mm VOG-25 grenade": "other",
         "26x75mm flare cartridge (Acid Green)": "other",
         "40x46mm M433 (HEDP) grenade": "40x46mm",
+        ".50 AE FMJ": ".50 Action Express",
+        ".50 AE JHP": ".50 Action Express",
+        ".50 AE Copper Solid": ".50 Action Express",
+        ".50 AE Hawk JSP": ".50 Action Express",
     }
 
     if name in category:
@@ -596,6 +600,22 @@ def get_efficiency(name):
         "40mm VOG-25 grenade": [0, 0, 0, 0, 0, 0],
         "26x75mm flare cartridge (Acid Green)": [0, 0, 0, 0, 0, 0],
         "40x46mm M433 (HEDP) grenade": [5,3,3,3,3,3],
+        "Signal flare (Blue)": [0,0,0,0,0,0],
+        "Signal flare (New Year)": [0,0,0,0,0,0],
+        ".50 AE JHP": [6,1,0,0,0,0],
+        "20/70 Poleva-3 slug": [6,2,0,0,0,0],
+        "12/70 Poleva-3 slug": [6,5,1,0,0,0],
+        "20/70 Poleva-6u slug": [6,5,1,0,0,0],
+        "12/70 Poleva-6u slug": [6,6,2,0,0,0],
+        "20/70 flechette": [6,6,5,4,4,4],
+        "20/70 Dangerous Game Slug": [6,6,5,3,1,0],
+        ".50 AE Hawk JSP": [6,6,4,1,0,0],
+        "20/70 TSS Armor Piercing Slug": [6,6,6,3,1,0],
+        ".50 AE Copper Solid":[6,6,6,5,3,2],
+        "9x21mm 7N42 Zubilo": [6,6,6,5,4,2],
+        ".50 AE FMJ": [6,6,6,6,4,3],
+        "7.62x51mm M80A1": [6,6,6,6,6,6],
+        "5.45x39mm PPBS gs Igolnik": [6,6,6,6,6,6]
     }
 
     if name in efficiency:
