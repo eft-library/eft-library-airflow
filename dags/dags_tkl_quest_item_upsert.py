@@ -5,7 +5,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
-from custom_module.quest_item_function import quest_item_graphql, process_quest_item
+from custom_module.quest_item_function import quest_item_graphql, new_process_quest_item
 
 default_args = {
     "owner": "airflow",
@@ -36,7 +36,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for quest in data_list:
-                    cursor.execute(sql, process_quest_item(quest))
+                    cursor.execute(sql, new_process_quest_item(quest))
             conn.commit()
 
     fetch_data = PythonOperator(

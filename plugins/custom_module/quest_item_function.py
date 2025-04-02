@@ -1,3 +1,5 @@
+import json
+
 import pendulum
 
 quest_item_graphql = """
@@ -13,26 +15,27 @@ quest_item_graphql = """
 }
 """
 
-def process_quest_item(item):
+def new_process_quest_item(item):
     """
-    loot에 들어가는 quest item 데이터 가공
+    quest item 데이터 가공
     """
-
-    id = item.get("id")
+    item_id = item.get("id")
     name_en = item.get("name")
+    category = "Loot"
     image = item.get("gridImageLink")
-    category = "Quest items"
-    width = item.get("width")
-    height = item.get("height")
+    info = json.dumps({"loot_category": "Quest items"})
+    image_width = item.get("width")
+    image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
-        id,
+        item_id,
         name_en,
-        image,
         category,
-        width,
-        height,
+        info,
+        image,
+        image_width,
+        image_height,
         update_time,
     )
 
