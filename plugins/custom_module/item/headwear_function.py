@@ -7,7 +7,6 @@ def new_process_headwear(item):
     """
     headwear 데이터 가공
     """
-    print(item)
     item_id = item.get("id")
     name_en = item.get("name")
     category = "Headwear"
@@ -36,9 +35,9 @@ def new_process_headwear(item):
             item["properties"].get("headZones") if item.get("properties") else None
         )
         ricochet_chance = (
-            item["properties"].get("material") if item.get("properties") else None
+            item["properties"].get("ricochetY") if item.get("properties") else None
         )
-        material = item["properties"].get("ricochetY") if item.get("properties") else None
+        material = item["properties"].get("material") if item.get("properties") else None
         deafening = item["properties"].get("deafening") if item.get("properties") else None
         turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
         ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
