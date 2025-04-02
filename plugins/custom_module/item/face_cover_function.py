@@ -6,6 +6,7 @@ def new_process_face_cover(item):
     """
     face_cover 데이터 가공
     """
+    print(item)
     item_id = item.get("id")
     name_en = item.get("name")
     category = "FaceCover"
