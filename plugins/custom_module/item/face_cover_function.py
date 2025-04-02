@@ -14,24 +14,31 @@ def new_process_face_cover(item):
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
-    class_value = (
-        item["properties"].get("class") if item.get("properties") else None
-    )
-    areas_en = modify_face_cover_area(
-        item["properties"].get("headZones") if item.get("properties") else None
-    )
     areas_kr = None
-    ricochet_chance = (
-        item["properties"].get("ricochetY") if item.get("properties") else None
-    )
     ricochet_str_en = None
     ricochet_str_kr = None
-    material = item["properties"].get("ricochetY") if item.get("properties") else None
-    turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
-    ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
-    speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
+    class_value = None
+    areas_en = None
+    material = None
+    turn_penalty = None
+    ergo_penalty = None
+    speed_penalty = None
+    ricochet_chance = None
 
     if item["properties"] is not {} and item["properties"] is not None:
+        material = item["properties"].get("ricochetY") if item.get("properties") else None
+        turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
+        ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
+        speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
+        class_value = (
+            item["properties"].get("class") if item.get("properties") else None
+        )
+        areas_en = modify_face_cover_area(
+            item["properties"].get("headZones") if item.get("properties") else None
+        )
+        ricochet_chance = (
+            item["properties"].get("ricochetY") if item.get("properties") else None
+        )
         areas_kr = check_face_cover_area_kr(areas_en)
         ricochet_str_en = ricochet_chance_en(ricochet_chance)
         ricochet_str_kr = ricochet_chance_kr(ricochet_chance)

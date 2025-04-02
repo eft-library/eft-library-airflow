@@ -15,25 +15,33 @@ def new_process_headwear(item):
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
     areas_kr = None
-    durability = None
     ricochet_str_en = None
     ricochet_str_kr = None
-    class_value = (
-        item["properties"].get("class") if item.get("properties") else None
-    )
-    areas_en = modify_helmet_area(
-        item["properties"].get("headZones") if item.get("properties") else None
-    )
-    ricochet_chance = (
-        item["properties"].get("material") if item.get("properties") else None
-    )
-    material = item["properties"].get("ricochetY") if item.get("properties") else None
-    deafening = item["properties"].get("deafening") if item.get("properties") else None
-    turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
-    ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
-    speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
+    class_value = None
+    areas_en = None
+    material = None
+    turn_penalty = None
+    ergo_penalty = None
+    speed_penalty = None
+    ricochet_chance = None
+    durability = None
+    deafening = None
 
     if item["properties"] != {}:
+        class_value = (
+            item["properties"].get("class") if item.get("properties") else None
+        )
+        areas_en = modify_helmet_area(
+            item["properties"].get("headZones") if item.get("properties") else None
+        )
+        ricochet_chance = (
+            item["properties"].get("material") if item.get("properties") else None
+        )
+        material = item["properties"].get("ricochetY") if item.get("properties") else None
+        deafening = item["properties"].get("deafening") if item.get("properties") else None
+        turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
+        ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
+        speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
         ricochet_chance = ricochet_chance_edit(name_en, ricochet_chance)
         ricochet_str_en = ricochet_chance_en(ricochet_chance)
         ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
