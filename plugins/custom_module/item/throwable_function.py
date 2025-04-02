@@ -28,7 +28,7 @@ def new_process_throwable(item):
                        "fuse": item["properties"].get("fuse") if item.get("properties") else None,
                        "min_explosion_distance": min_explosion_distance,
                        "max_explosion_distance": max_explosion_distance,
-                       "gun_categoy": 'Throwable weapon'})
+                       "gun_category": 'Throwable weapon'})
 
     return (
         item_id,
