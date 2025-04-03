@@ -29,6 +29,7 @@ def new_process_throwable(item):
                        "min_fuse": 0.3 if short_name == "RGO" or short_name == "RGN" else 0,
                        "min_explosion_distance": min_explosion_distance,
                        "max_explosion_distance": max_explosion_distance,
+                       "weight": item.get("weight"),
                        "gun_category": 'Throwable weapon'})
 
     return (

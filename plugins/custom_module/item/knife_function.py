@@ -18,6 +18,7 @@ def new_process_knife(item):
     info = json.dumps({"slash_damage": item["properties"].get("slashDamage") if item.get("properties") else None,
                        "stab_damage": item["properties"].get("stabDamage") if item.get("properties") else None,
                        "hit_radius": item["properties"].get("hitRadius") if item.get("properties") else None,
+                       "weight": item.get("weight"),
                        "gun_category": 'Knife'})
 
     return (
