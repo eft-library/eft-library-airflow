@@ -1,10 +1,10 @@
-UPDATE tkl_search
-SET
-    value = a.value,
-    link = a.link,
-    page_value = a.page_value,
-    type = a.type,
-    "order" = a.seq_num
+INSERT INTO tkl_search (value, link, page_value, type, "order")
+SELECT
+    a.value,
+    a.link,
+    a.page_value,
+    a.type,
+    a.seq_num
 FROM (
          SELECT
              *,
@@ -27,7 +27,7 @@ FROM (
                   UNION ALL
                   SELECT '상인 : ' || tkl_npc.name_kr, '/quest', id, 'TRADER'
                   FROM tkl_npc
---                   UNION ALL
+                  --                   UNION ALL
 --                   SELECT '무기 : ' || name, '/weapon?id=' || id, id, 'WEAPON'
 --                   FROM tkl_weapon
 --                   UNION ALL
@@ -80,5 +80,8 @@ FROM (
 --                   FROM tkl_glasses
               ) AS subquery
      ) AS a
-WHERE tkl_search.value = a.value
-  AND tkl_search.page_value = a.page_value
+ON CONFLICT (value, page_value)
+DO UPDATE SET
+    link = EXCLUDED.link,
+    type = EXCLUDED.type,
+    "order" = EXCLUDED."order";
