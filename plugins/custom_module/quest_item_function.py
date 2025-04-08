@@ -9,6 +9,7 @@ quest_item_graphql = """
     name
     width
     height
+    weight
     gridImageLink
   }
 }
