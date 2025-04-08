@@ -37,6 +37,7 @@ hideout_graphql = """
         id
         level
         station {
+          id
           name
           imageLink
         }
