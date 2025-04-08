@@ -19,6 +19,7 @@ def new_process_provisions(item):
     new_stim_effects = process_stim_effect(stim_effects)
     info = json.dumps({"stim_effects": add_painkiller(new_stim_effects, name_en),
                        "weight": item.get("weight"),
+                       "units": item["properties"].get("units") if item.get("properties") else None,
                        "hydration": item["properties"].get("hydration") if item.get("properties") else None,
                        "energy": item["properties"].get("energy") if item.get("properties") else None
                        })
