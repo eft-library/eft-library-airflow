@@ -160,8 +160,7 @@ def check_weapon_category(weapon_short_name, weapon_category):
     """
     weapon category 확인
     """
-    special_weapons = ["SP-81", "Green", "Red", "Flare", "Yellow", "RSP-30 reactive signal cartridge (Blue)", "RSP-30 reactive signal cartridge (Special Yellow)", "RSP-30 reactive signal cartridge (Firework)"]
-    grenade_weapons = ["MSGL"]
+    grenade_weapons = ["MSGL", "SP-81", "Green", "Red", "Flare", "Yellow", "RSP-30 reactive signal cartridge (Blue)", "RSP-30 reactive signal cartridge (Special Yellow)", "RSP-30 reactive signal cartridge (Firework)"]
     carbine_weapons = [
         "ADAR 2-15",
         "TX-15 DML",
@@ -173,9 +172,7 @@ def check_weapon_category(weapon_short_name, weapon_category):
     ]
     rifle_weapons = ["AS VAL"]
 
-    if weapon_short_name in special_weapons:
-        return "Special weapons"
-    elif weapon_short_name in grenade_weapons:
+    if weapon_short_name in grenade_weapons:
         return "Grenade launcher"
     elif weapon_short_name == "MTs-255-12":
         return "Shotgun"
