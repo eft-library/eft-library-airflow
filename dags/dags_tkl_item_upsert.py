@@ -426,5 +426,5 @@ with DAG(
         upsert_face_cover_task,
         upsert_arm_band_task,
         upsert_glasses_task,
-        upsert_item_url_mapping,
+        upsert_item_url_mapping_task,
     ]
