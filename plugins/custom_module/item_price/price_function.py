@@ -199,7 +199,7 @@ def mapping_trader(sell_for):
             "npc_id": "FLEA_MARKET",
             "npc_name_en": "Flea Market",
             "npc_name_kr": "플리마켓",
-            "npc_image": "http://125.185.36.205:9000/eftlibrary/tkl_main/fleamarket.webp"
+            "npc_image": "https://image.eftlibrary.com/eftlibrary/tkl_main/fleamarket.webp"
         },
     }
 
