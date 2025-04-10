@@ -73,6 +73,7 @@ hideout_graphql = """
       duration
       requiredItems {
         item {
+          id
           name
           gridImageLink
           width

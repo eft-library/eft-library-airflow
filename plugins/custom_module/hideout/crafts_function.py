@@ -16,9 +16,10 @@ def process_crafts(item):
     image = get_image(item.get("rewardItems"))
     quantity = get_quantity(item.get("rewardItems"))
     req_item = json.dumps(item.get("requiredItems"))
+    reward_item_id = get_reward_item_id(item.get("rewardItems"))
 
     return (
-        id, f"{station_id}-{level}", level, width, height, name_en, duration, req_item, image, quantity, update_time
+        id, f"{station_id}-{level}", level, width, height, name_en, duration, req_item, image, quantity, reward_item_id, update_time
     )
 
 
@@ -29,6 +30,16 @@ def get_name(rewards):
     """
     for reward in rewards:
         return reward["item"].get("name")
+    return None
+
+
+def get_reward_item_id(rewards):
+    """
+    보상 뽑기
+    리스트지만 데이터 하나임
+    """
+    for reward in rewards:
+        return reward["item"].get("id")
     return None
 
 def get_quantity(rewards):
