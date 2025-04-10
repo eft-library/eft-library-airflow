@@ -23,6 +23,7 @@ def new_process_face_cover(item):
     ergo_penalty = None
     speed_penalty = None
     ricochet_chance = None
+    durability = get_durability(name_en)
 
     if item["properties"] is not {} and item["properties"] is not None:
         material = item["properties"].get("ricochetY") if item.get("properties") else None
@@ -52,7 +53,8 @@ def new_process_face_cover(item):
                        "speed_penalty": speed_penalty,
                        "ricochet_chance": ricochet_chance,
                        "ricochet_str_en": ricochet_str_en,
-                       "ricochet_str_kr": ricochet_str_kr})
+                       "ricochet_str_kr": ricochet_str_kr,
+                       "durability": durability})
 
     return (
         item_id,
@@ -65,6 +67,30 @@ def new_process_face_cover(item):
         update_time
     )
 
+
+def get_durability(name):
+    masks = {
+        "Death Knight mask": 55,
+        "Glorious E lightweight armored mask": 40,
+        "Shattered lightweight armored mask": 40,
+        "Death Shadow lightweight armored mask": 30,
+        "Tagilla's welding mask 'Gorilla'": 40,
+        "Tagilla's welding mask 'UBEY'": 40,
+        "Tagilla's welding mask 'ZABEY'": 100,
+        "Atomic Defense CQCM up armored ballistic mask (Black)": 35,
+        "Atomic Defense CQCM ballistic mask (Smile)": 35,
+        "Atomic Defense CQCM ballistic mask (Stop Me)": 35,
+        "Atomic Defense CQCM ballistic mask (Scars)": 35,
+        "Atomic Defense CQCM ballistic mask (Target)": 35,
+        "Atomic Defense CQCM ballistic mask (Skull)": 35,
+        "Atomic Defense CQCM ballistic mask (Demon)": 35,
+        "Atomic Defense CQCM ballistic mask (El Día de Muertos)": 35
+    }
+
+    if name in masks:
+        return masks[name]
+
+    return None
 
 def ricochet_chance_en(item):
     """
