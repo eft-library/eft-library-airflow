@@ -11,6 +11,8 @@ def process_item_require(level_id, item):
     image = item['item'].get('gridImageLink') if item.get("item") else None
     quantity = item.get("quantity")
     count = item.get("count")
+    item_id = item['item'].get('id') if item.get("item") else None
+
     return (
-        id, level_id, name_en, quantity, count, image, update_time
+        id, level_id, name_en, quantity, count, image, item_id, update_time
     )

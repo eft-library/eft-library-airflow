@@ -8,6 +8,12 @@ item_graphql = """
     gridImageLink
     width
     height
+    usedInTasks {
+      id
+    }
+    receivedFromTasks {
+      id
+    }
     category {
       name
       parent {

@@ -5,9 +5,10 @@ INSERT INTO tkl_hideout_item_require (
     quantity,
     "count",
     image,
+    item_id,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
@@ -15,4 +16,5 @@ ON CONFLICT (id) DO UPDATE SET
     quantity = EXCLUDED.quantity,
     "count" = EXCLUDED.count,
     image = EXCLUDED.image,
+    item_id = EXCLUDED.item_id,
     update_time = EXCLUDED.update_time;

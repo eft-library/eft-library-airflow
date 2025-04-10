@@ -8,6 +8,7 @@ hideout_graphql = """
       itemRequirements {
         id
         item {
+          id
           name
           gridImageLink
         }
