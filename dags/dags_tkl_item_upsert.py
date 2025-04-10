@@ -269,6 +269,15 @@ with DAG(
                     cursor.execute(sql, new_process_glasses(item))
             conn.commit()
 
+    def upsert_item_url_mapping(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item_url_mapping.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_item_list", python_callable=fetch_item_list
     )
@@ -392,6 +401,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_item_url_mapping_task = PythonOperator(
+        task_id="upsert_item_url_mapping",
+        python_callable=upsert_item_url_mapping,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     fetch_data >> [
         upsert_gun_task,
         upsert_knife_task,
@@ -410,4 +426,5 @@ with DAG(
         upsert_face_cover_task,
         upsert_arm_band_task,
         upsert_glasses_task,
+        upsert_item_url_mapping,
     ]

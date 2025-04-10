@@ -1,0 +1,23 @@
+WITH ranked_items AS (
+    SELECT
+        id,
+        base_url,
+        CASE
+            WHEN rn = 1 THEN base_url
+            ELSE base_url || '-' || (rn - 1)
+        END AS final_url
+    FROM (
+        SELECT
+            id,
+            trim(both '-' from regexp_replace(lower(name_en), '[^a-z0-9]+', '-', 'g')) AS base_url,
+            ROW_NUMBER() OVER (PARTITION BY
+                trim(both '-' from regexp_replace(lower(name_en), '[^a-z0-9]+', '-', 'g'))
+                ORDER BY id
+            ) AS rn
+        FROM tkl_item
+    ) AS sub
+)
+UPDATE tkl_item
+SET url_mapping = ranked_items.final_url
+FROM ranked_items
+WHERE tkl_item.id = ranked_items.id;
