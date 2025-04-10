@@ -142,64 +142,64 @@ def mapping_trader(sell_for):
     """
     npc_data = {
         "Peacekeeper": {
-            "npc_id": "PEACE_KEEPER",
+            "npc_id": "5935c25fb3acc3127c3d8cd9",
             "npc_name_en": "Peace Keeper",
             "npc_name_kr": "피스키퍼",
-            "npc_image": "/eftlibrary/tkl_quest/npc/peacekeeper.webp"
+            "npc_image": "https://assets.tarkov.dev/5935c25fb3acc3127c3d8cd9.webp"
         },
         "Mechanic": {
-            "npc_id": "MECHANIC",
+            "npc_id": "5a7c2eca46aef81a7ca2145d",
             "npc_name_en": "Mechanic",
             "npc_name_kr": "메카닉",
-            "npc_image": "/eftlibrary/tkl_quest/npc/mechanic.webp"
+            "npc_image": "https://assets.tarkov.dev/5a7c2eca46aef81a7ca2145d.webp"
         },
         "Prapor": {
-            "npc_id": "PRAPOR",
+            "npc_id": "54cb50c76803fa8b248b4571",
             "npc_name_en": "Prapor",
             "npc_name_kr": "프라퍼",
-            "npc_image": "/eftlibrary/tkl_quest/npc/prapor.webp"
+            "npc_image": "https://assets.tarkov.dev/54cb50c76803fa8b248b4571.webp"
         },
         "Skier": {
-            "npc_id": "SKIER",
+            "npc_id": "58330581ace78e27b8b10cee",
             "npc_name_en": "Skier",
             "npc_name_kr": "스키어",
-            "npc_image": "/eftlibrary/tkl_quest/npc/skier.webp"
+            "npc_image": "https://assets.tarkov.dev/58330581ace78e27b8b10cee.webp"
         },
         "Fence": {
-            "npc_id": "FENCE",
+            "npc_id": "579dc571d53a0658a154fbec",
             "npc_name_en": "Fence",
             "npc_name_kr": "펜스",
-            "npc_image": "/eftlibrary/tkl_quest/npc/fence.webp"
+            "npc_image": "https://assets.tarkov.dev/579dc571d53a0658a154fbec.webp"
         },
         "Therapist": {
-            "npc_id": "THERAPIST",
+            "npc_id": "54cb57776803fa99248b456e",
             "npc_name_en": "Therapist",
             "npc_name_kr": "테라피스트",
-            "npc_image": "/eftlibrary/tkl_quest/npc/therapist.webp"
+            "npc_image": "https://assets.tarkov.dev/54cb57776803fa99248b456e.webp"
         },
         "Jaeger": {
             "npc_id": "JAEGER",
             "npc_name_en": "Jaeger",
             "npc_name_kr": "예거",
-            "npc_image": "/eftlibrary/tkl_quest/npc/jaeger.webp"
+            "npc_image": "https://assets.tarkov.dev/5c0647fdd443bc2504c2d371.webp"
         },
         "Ragman": {
-            "npc_id": "RAGMAN",
+            "npc_id": "5ac3b934156ae10c4430e83c",
             "npc_name_en": "Ragman",
             "npc_name_kr": "래그맨",
-            "npc_image": "/eftlibrary/tkl_quest/npc/ragman.webp"
+            "npc_image": "https://assets.tarkov.dev/5ac3b934156ae10c4430e83c.webp"
         },
         "Ref": {
-            "npc_id": "REF",
+            "npc_id": "6617beeaa9cfa777ca915b7c",
             "npc_name_en": "Ref",
             "npc_name_kr": "레프",
-            "npc_image": "/eftlibrary/tkl_quest/npc/ref.webp"
+            "npc_image": "https://assets.tarkov.dev/6617beeaa9cfa777ca915b7c.webp"
         },
         "Flea Market": {
             "npc_id": "FLEA_MARKET",
             "npc_name_en": "Flea Market",
             "npc_name_kr": "플리마켓",
-            "npc_image": "/eftlibrary/tkl_main/fleamarket.webp"
+            "npc_image": "http://125.185.36.205:9000/eftlibrary/tkl_main/fleamarket.webp"
         },
     }
 
