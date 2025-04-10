@@ -408,7 +408,7 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> [
+    upsert_tasks = [
         upsert_gun_task,
         upsert_knife_task,
         upsert_throwable_task,
@@ -426,5 +426,6 @@ with DAG(
         upsert_face_cover_task,
         upsert_arm_band_task,
         upsert_glasses_task,
-        update_item_url_mapping_task,
     ]
+
+    fetch_data >> upsert_tasks >> update_item_url_mapping_task
