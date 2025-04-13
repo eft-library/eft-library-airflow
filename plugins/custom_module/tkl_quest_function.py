@@ -6,8 +6,10 @@ quest_graphql = """
   tasks {
     id
     name
+    kappaRequired
+    lightkeeperRequired
     trader {
-      name
+      id
     }
     taskRequirements{
       task {
@@ -18,16 +20,34 @@ quest_graphql = """
     objectives {
       id
       type
+      description
       ... on TaskObjectiveQuestItem {
-        id
-        type
         questItem {
           id
           name
-          shortName
-          description
+          gridImageLink
         }
         count
+      }
+      ... on TaskObjectiveItem {
+        items {
+          id
+          name
+          gridImageLink
+        }
+        count
+        foundInRaid
+      }
+    }
+    finishRewards {
+      items {
+        item {
+          id
+          name
+          gridImageLink
+        }
+        count
+        quantity
       }
     }
   }
@@ -40,12 +60,15 @@ def process_quest(quest):
     quest 가공
     """
     id = quest.get("id")
-    name = quest.get("name")
-    npc_name = (
-        quest.get("trader").get("name") if quest.get("trader").get("name") else None
+    name_en = quest.get("name")
+    npc_id = (
+        quest.get("trader").get("id") if quest.get("trader").get("id") else None
     )
+    lightkeeper_required = quest.get("lightkeeperRequired")
+    kappa_required = quest.get("kappaRequired")
     task_requirements = json.dumps(quest.get("taskRequirements"))
     objectives = json.dumps(quest.get("objectives"))
+    finish_rewards = quest.get("finishRewards")
     update_time = pendulum.now("Asia/Seoul")
 
-    return (id, name, npc_name, task_requirements, objectives, update_time)
+    return (id, name_en, npc_id, lightkeeper_required, kappa_required, task_requirements, objectives, finish_rewards, update_time)
