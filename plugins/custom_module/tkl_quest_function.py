@@ -68,7 +68,7 @@ def process_quest(quest):
     kappa_required = quest.get("kappaRequired")
     task_requirements = json.dumps(quest.get("taskRequirements"))
     objectives = json.dumps(quest.get("objectives"))
-    finish_rewards = quest.get("finishRewards")
+    finish_rewards =  json.dumps(quest.get("finishRewards"))
     update_time = pendulum.now("Asia/Seoul")
 
     return (id, name_en, npc_id, lightkeeper_required, kappa_required, task_requirements, objectives, finish_rewards, update_time)
