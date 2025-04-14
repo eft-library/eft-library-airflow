@@ -150,6 +150,24 @@ with DAG(
                         cursor.execute(sql, process_crafts(level))
             conn.commit()
 
+    def update_hideout_item_require_name_kr(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("update_hideout_item_require_name_kr.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
+    def update_hideout_crafts_name_kr(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("update_hideout_crafts_name_kr.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_hideout_list", python_callable=fetch_hideout_list
     )
@@ -210,11 +228,30 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> [upsert_hideout_master_task,
-                   upsert_hideout_level_task,
-                   upsert_hideout_item_require_task,
-                   upsert_hideout_trader_require_task,
-                   upsert_hideout_station_require_task,
-                   upsert_hideout_skill_require_task,
-                   upsert_hideout_bonus_task,
-                   upsert_hideout_crafts_task]
+    update_hideout_item_require_name_kr_task = PythonOperator(
+        task_id="update_hideout_item_require_name_kr",
+        python_callable=update_hideout_item_require_name_kr,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    update_hideout_crafts_name_kr_task = PythonOperator(
+        task_id="update_hideout_crafts_name_kr",
+        python_callable=update_hideout_crafts_name_kr,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    fetch_data >> [
+        upsert_hideout_master_task,
+        upsert_hideout_level_task,
+        upsert_hideout_item_require_task,
+        upsert_hideout_trader_require_task,
+        upsert_hideout_station_require_task,
+        upsert_hideout_skill_require_task,
+        upsert_hideout_bonus_task,
+        upsert_hideout_crafts_task
+    ] >> [
+        update_hideout_item_require_name_kr_task,
+        update_hideout_crafts_name_kr_task
+    ]
