@@ -39,6 +39,9 @@ def change_category(category, name):
         "Radio Transmitter",
         "Repair Kits",
         "Compass",
+        "Leatherman Multitool",
+        "Tripwire installation kit",
+        "Mark of The Unheard",
         "Cultist Amulet",
     ]
 
