@@ -251,7 +251,4 @@ with DAG(
         upsert_hideout_skill_require_task,
         upsert_hideout_bonus_task,
         upsert_hideout_crafts_task
-    ] >> [
-        update_hideout_item_require_name_kr_task,
-        update_hideout_crafts_name_kr_task
-    ]
+    ] >> update_hideout_item_require_name_kr_task >> update_hideout_crafts_name_kr_task
