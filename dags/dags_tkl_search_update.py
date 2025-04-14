@@ -20,15 +20,6 @@ with (DAG(
     catchup=False,
 ) as dag):
 
-    # def truncate_search(postgres_conn_id, **kwargs):
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("truncate_tkl_search.sql")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             cursor.execute(sql)
-    #         conn.commit()
-
     def update_search(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("update_tkl_search.sql")
@@ -38,13 +29,6 @@ with (DAG(
                 cursor.execute(sql)
             conn.commit()
 
-    # truncate_search_task = PythonOperator(
-    #     task_id="truncate_search",
-    #     python_callable=truncate_search,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
-
     update_search_task = PythonOperator(
         task_id="update_search",
         python_callable=update_search,
@@ -52,5 +36,4 @@ with (DAG(
         provide_context=True,
     )
 
-    # truncate_search_task >>
     update_search_task

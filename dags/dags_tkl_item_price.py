@@ -76,6 +76,15 @@ with DAG(
 
                 conn.commit()  # 한 번에 커밋
 
+    def update_item_name_kr(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("update_item_price_name_kr.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_price_list", python_callable=fetch_price_list
     )
@@ -94,4 +103,11 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> upsert_price_task >> upsert_price_history_task
+    upsert_item_name_kr_task = PythonOperator(
+        task_id="update_item_name_kr",
+        python_callable=update_item_name_kr,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    fetch_data >> upsert_price_task >> upsert_price_history_task >> upsert_item_name_kr_task
