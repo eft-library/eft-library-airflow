@@ -18,7 +18,8 @@ def new_process_headset(item):
         if item.get("properties")
         else None
     )
-    info = json.dumps({"distance_modifier": distance_modifier})
+    info = json.dumps({"weight": item.get("weight"),
+                       "distance_modifier": distance_modifier})
     image_width = item.get("width")
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
