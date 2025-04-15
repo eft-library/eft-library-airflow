@@ -32,7 +32,7 @@ with DAG(
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_tkl_api_quest.sql")
         data_list = quest_list["data"]["tasks"]
-        no_insert = ["5e381b0286f77420e3417a74", "6744a728352b4da8e003eda9", "6615141bfda04449120269a7", "6745cbee909d2013670a4a55", "66151401efb0539ae10875ae", "5e4d515e86f77438b2195244", "6391d9144b15ca31f76bc323", "6391d912f8e5dd32bf4e3ab2"]
+        no_insert = ["5e381b0286f77420e3417a74", "6744a728352b4da8e003eda9", "6615141bfda04449120269a7", "6745cbee909d2013670a4a55", "66151401efb0539ae10875ae", "5e4d515e86f77438b2195244", "6391d9144b15ca31f76bc323", "6391d912f8e5dd32bf4e3ab2", "5e4d4ac186f774264f758336"]
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for quest in data_list:
