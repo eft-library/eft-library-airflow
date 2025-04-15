@@ -112,7 +112,8 @@ def new_process_gun(item):
         if item.get("properties")
         else None)
     modes_kr = gun_modes_kr(modes_en)
-    info = json.dumps({"carliber": carliber,
+    info = json.dumps({"weight": item.get("weight"),
+                        "carliber": carliber,
                        "default_ammo": default_ammo,
                        "modes_en": modes_en,
                        "modes_kr": modes_kr,
