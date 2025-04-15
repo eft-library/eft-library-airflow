@@ -226,9 +226,6 @@ def check_category(item_list, category):
             item
             for item in item_list
             if item["category"]["name"] == category
-            and item["name"] != "Maska-1SCh bulletproof helmet (Killa Edition) Default"
-            and item["name"] != "Ops-Core FAST MT Super High Cut helmet (Black) RAC"
-            and item["name"] != "Wilcox Skull Lock head mount PVS-14"
         ]
     elif category == "Provisions":
         return [
