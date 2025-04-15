@@ -15,10 +15,11 @@ def new_process_glasses(item):
     image_height = item.get("height")
     update_time = pendulum.now("Asia/Seoul")
     class_value = item["properties"].get("class")
-    durability = get_durability(name_en)
+    durability = item["properties"].get("durability")
     blindness_protection = item["properties"].get("blindnessProtection")
 
-    info = json.dumps({"class_value": class_value,
+    info = json.dumps({"weight": item.get("weight"),
+                       "class_value": class_value,
                        "durability": durability,
                        "material": item["properties"].get("material"),
                        "blindness_protection": blindness_protection})
@@ -33,11 +34,3 @@ def new_process_glasses(item):
         image_height,
         update_time
     )
-
-def get_durability(name):
-    if name == 'Oakley SI Batwolf glasses':
-        return 20
-    if name == 'NPP KlASS Condor glasses':
-        return 25
-
-    return 0

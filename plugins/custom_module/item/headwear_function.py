@@ -42,11 +42,11 @@ def new_process_headwear(item):
         turn_penalty = item["properties"].get("turnPenalty") if item.get("properties") else None
         ergo_penalty = item["properties"].get("ergoPenalty") if item.get("properties") else None
         speed_penalty = item["properties"].get("speedPenalty") if item.get("properties") else None
+        durability = item["properties"].get("durability") if item.get("properties") else None
         ricochet_chance = ricochet_chance_edit(name_en, ricochet_chance)
         ricochet_str_en = ricochet_chance_en(ricochet_chance)
         ricochet_str_kr = ricochet_chance_kr(ricochet_chance)
         areas_kr = check_helmet_area_kr(areas_en)
-        durability = durability_edit(name_en)
 
     info = json.dumps({"weight": item.get("weight"),
                        "class_value": class_value,
@@ -73,70 +73,6 @@ def new_process_headwear(item):
         image_height,
         update_time
     )
-
-
-def durability_edit(name):
-    """
-    내구성 주입
-    """
-    helmets = {
-        "MSA ACH TC-2001 MICH Series helmet (Olive Drab)": 30,
-        "MSA ACH TC-2002 MICH Series helmet (Olive Drab)": 32,
-        "LShZ lightweight helmet (Olive Drab)": 36,
-        "HighCom Striker ACHHC IIIA helmet (Black)": 36,
-        "HighCom Striker ACHHC IIIA helmet (Olive Drab)": 36,
-        "MSA Gallet TC 800 High Cut combat helmet (Black)": 36,
-        "Jack-o'-lantern tactical pumpkin helmet": 40,
-        "MTEK STRIKE Ballistic helmet (Coyote/MultiCam Arid)": 40,
-        "MTEK STRIKE Ballistic helmet (Coyote)": 40,
-        "Kolpak-1S riot helmet": 45,
-        "6B47 Ratnik-BSh helmet (EMR Arctic cover)": 45,
-        "6B47 Ratnik-BSh helmet (EMR cover)": 45,
-        "UNTAR helmet": 45,
-        "6B47 Ratnik-BSh helmet (Olive Drab)": 45,
-        "Crye Precision AirFrame helmet (Tan)": 48,
-        "Diamond Age Bastion helmet (Black)": 48,
-        "Tac-Kek FAST MT helmet (Replica)": 48,
-        "Ops-Core FAST MT Super High Cut helmet (Urban Tan)": 48,
-        "Ops-Core FAST MT Super High Cut helmet (Black)": 48,
-        "MTEK FLUX Ballistic helmet (MultiCam Alpine)": 50,
-        "MTEK FLUX Ballistic helmet (Olive Drab)": 50,
-        "Ballistic Armor Co. Bastion helmet (Armor Black)": 50,
-        "Ballistic Armor Co. Bastion helmet (OD Green)": 50,
-        "Ballistic Armor Co. Bastion helmet (MultiCam)": 50,
-        "SSh-68 steel helmet (Olive Drab)": 54,
-        "Team Wendy EXFIL Ballistic Helmet (Coyote Brown)": 54,
-        "Team Wendy EXFIL Ballistic Helmet (Black)": 54,
-        "Galvion Caiman Hybrid helmet (Grey)": 60,
-        "ZSh-1-2M helmet (Olive Drab)": 63,
-        "ZSh-1-2M helmet (Black cover)": 63,
-        "FORT Kiver-M bulletproof helmet": 63,
-        "HighCom Striker ULACH IIIA helmet (Black)": 66,
-        "HighCom Striker ULACH IIIA helmet (Desert Tan)": 66,
-        "Diamond Age NeoSteel High Cut helmet (Black)": 72,
-        "NFM HJELM helmet (Hellhound Grey)": 78,
-        "Altyn bulletproof helmet (Olive Drab)": 81,
-        "NPP KlASS Tor-2 helmet (Olive Drab)": 81,
-        "Rys-T bulletproof helmet (Black)": 90,
-        "ShPM Firefighter helmet": 96,
-        "BNTI LShZ-2DTM helmet (Black)": 99,
-        "Vulkan-5 LShZ-5 bulletproof helmet (Black)": 99,
-        "TSh-4M-L soft tank crew helmet": 105,
-        "Maska-1SCh bulletproof helmet (Olive Drab)": 108,
-        "Maska-1SCh bulletproof helmet (Christmas Edition)": 108,
-        "Maska-1SCh bulletproof helmet (Killa Edition)": 108,
-        "SSSh-94 SFERA-S helmet": 135,
-        "Bomber beanie": 150,
-        "PSh-97 DJETA riot helmet": 156,
-        "DevTac Ronin Respirator": 180,
-        "DevTac Ronin ballistic helmet": 180
-    }
-
-    if name in helmets:
-        return helmets[name]
-
-    return None
-
 
 def ricochet_chance_edit(name, ricochet_chance):
     """
