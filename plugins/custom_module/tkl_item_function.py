@@ -238,7 +238,6 @@ def check_category(item_list, category):
                 item["category"]["name"] == "Food"
                 or item["category"]["name"] == "Drink"
             )
-            and item["properties"] != {}
         ]
     elif category == "Key" or category == "Meds":
         return [
