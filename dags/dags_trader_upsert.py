@@ -16,6 +16,10 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
+en_path = "/mnt/ramdisk/trader_en_list.json"
+ko_path = "/mnt/ramdisk/trader_ko_list.json"
+ja_path = "/mnt/ramdisk/trader_ja_list.json"
+
 with DAG(
     dag_id="dags_trader_upsert",
     default_args=default_args,
@@ -38,9 +42,9 @@ with DAG(
             json.dump(trader_ja_list, f)
 
         return {
-            'en': '/home/airflow/tmp/trader_en_list.json',
-            'ko': '/home/airflow/tmp/trader_ko_list.json',
-            'ja': '/home/airflow/tmp/trader_ja_list.json',
+            'en': en_path,
+            'ko': ko_path,
+            'ja': ja_path,
         }
 
     def upsert_trader(postgres_conn_id, **kwargs):
@@ -79,9 +83,9 @@ with DAG(
 
     def remove_trader_json_files(**kwargs):
         files = [
-            '/home/airflow/tmp/trader_en_list.json',
-            '/home/airflow/tmp/trader_ko_list.json',
-            '/home/airflow/tmp/trader_ja_list.json',
+            en_path,
+            ko_path,
+            ja_path,
         ]
 
         for path in files:
