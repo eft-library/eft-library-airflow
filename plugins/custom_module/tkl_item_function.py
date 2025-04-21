@@ -172,6 +172,7 @@ item_graphql = """
     name
     locks {
       key {
+        id
         name
       }
     }
