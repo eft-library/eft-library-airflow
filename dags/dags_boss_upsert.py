@@ -35,11 +35,11 @@ with DAG(
         item_list_ja = get_graphql(generate_boss_graphql("ja"))
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["questItems"], f)
+            json.dump(item_list_en["data"]["bosses"], f)
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["questItems"], f)
+            json.dump(item_list_ko["data"]["bosses"], f)
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["questItems"], f)
+            json.dump(item_list_ja["data"]["bosses"], f)
 
         return {
             "en": en_path,
