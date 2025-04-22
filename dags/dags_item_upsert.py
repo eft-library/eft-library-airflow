@@ -79,9 +79,10 @@ with DAG(
         item_en_dict = {item["id"]: item for item in item_en_list["items"]}
         item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
         item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Gun")
 
         item_ids = (
-            set(item_en_dict.keys())
+            set(item["id"] for item in filtered_items)
             & set(item_ko_dict.keys())
             & set(item_ja_dict.keys())
         )
@@ -92,8 +93,6 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item_id in item_ids:
-                    if not check_category([item_en], "Gun"):
-                        continue
                     item_en = item_en_dict[item_id]
                     item_ko = item_ko_dict[item_id]
                     item_ja = item_ja_dict[item_id]
@@ -115,9 +114,10 @@ with DAG(
         item_en_dict = {item["id"]: item for item in item_en_list["items"]}
         item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
         item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Knife")
 
         item_ids = (
-            set(item_en_dict.keys())
+            set(item["id"] for item in filtered_items)
             & set(item_ko_dict.keys())
             & set(item_ja_dict.keys())
         )
@@ -128,8 +128,6 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item_id in item_ids:
-                    if not check_category([item_en], "Knife"):
-                        continue
                     item_en = item_en_dict[item_id]
                     item_ko = item_ko_dict[item_id]
                     item_ja = item_ja_dict[item_id]
