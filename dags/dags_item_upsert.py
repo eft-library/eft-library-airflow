@@ -209,15 +209,37 @@ with DAG(
 
     def upsert_armor_vest(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        item_list = ti.xcom_pull(task_ids="fetch_item_list")
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Armor")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_item.sql")
-        data_list = check_category(item_list["data"]["items"], "Armor")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
-                for item in data_list:
-                    cursor.execute(sql, v2_armor_vest_process(item))
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(sql, v2_rig_process(item_en, item_ko, item_ja))
             conn.commit()
 
     # def upsert_headset(postgres_conn_id, **kwargs):
