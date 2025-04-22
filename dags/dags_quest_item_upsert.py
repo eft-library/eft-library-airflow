@@ -1,13 +1,17 @@
 import json
 import os
-import pendulum
+
 from airflow import DAG
+import pendulum
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
 from custom_module.graphql_func import get_graphql
-from custom_module.trader_func import generate_trader_graphql, v2_trader_process
+from custom_module.quest_item_func import (
+    generate_quest_item_graphql,
+    v2_quest_item_process,
+)
 
 default_args = {
     "owner": "airflow",
@@ -15,30 +19,30 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/trader_en_list.json"
-ko_path = "/opt/airflow/tmp/trader_ko_list.json"
-ja_path = "/opt/airflow/tmp/trader_ja_list.json"
+en_path = "/opt/airflow/tmp/quest_item_en_list.json"
+ko_path = "/opt/airflow/tmp/quest_item_ko_list.json"
+ja_path = "/opt/airflow/tmp/quest_item_ja_list.json"
 
 with DAG(
-    dag_id="dags_trader_upsert",
+    dag_id="dags_tkl_quest_item_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="15 0 * * *",
+    schedule_interval="10 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def fetch_trader_list(**kwargs):
-        item_list_en = get_graphql(generate_trader_graphql("en"))
-        item_list_ko = get_graphql(generate_trader_graphql("ko"))
-        item_list_ja = get_graphql(generate_trader_graphql("ja"))
+    def fetch_quest_item_list(**kwargs):
+        item_list_en = get_graphql(generate_quest_item_graphql("en"))
+        item_list_ko = get_graphql(generate_quest_item_graphql("ko"))
+        item_list_ja = get_graphql(generate_quest_item_graphql("ja"))
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["traders"], f)
+            json.dump(item_list_en["data"]["questItems"], f)
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["traders"], f)
+            json.dump(item_list_ko["data"]["questItems"], f)
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["traders"], f)
+            json.dump(item_list_ja["data"]["questItems"], f)
 
         return {
             "en": en_path,
@@ -46,9 +50,9 @@ with DAG(
             "ja": ja_path,
         }
 
-    def upsert_trader(postgres_conn_id, **kwargs):
+    def upsert_quest_item(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        item_paths = ti.xcom_pull(task_ids="fetch_trader_list")
+        item_paths = ti.xcom_pull(task_ids="fetch_quest_item_list")
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
@@ -68,7 +72,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_trader.sql")
+        sql = read_sql("upsert_item.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -77,7 +81,9 @@ with DAG(
                     item_ko = item_ko_dict[item_id]
                     item_ja = item_ja_dict[item_id]
 
-                    cursor.execute(sql, v2_trader_process(item_en, item_ko, item_ja))
+                    cursor.execute(
+                        sql, v2_quest_item_process(item_en, item_ko, item_ja)
+                    )
             conn.commit()
 
     def remove_json_files(**kwargs):
@@ -98,12 +104,12 @@ with DAG(
                 print(f"Error deleting {path}: {e}")
 
     fetch_data = PythonOperator(
-        task_id="fetch_trader_list", python_callable=fetch_trader_list
+        task_id="fetch_quest_item_list", python_callable=fetch_quest_item_list
     )
 
-    upsert_trader_task = PythonOperator(
-        task_id="upsert_trader",
-        python_callable=upsert_trader,
+    upsert_quest_item_task = PythonOperator(
+        task_id="upsert_quest_item",
+        python_callable=upsert_quest_item,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
@@ -114,4 +120,4 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> upsert_trader_task >> remove_json_files_task
+    fetch_data >> upsert_quest_item_task >> remove_json_files_task
