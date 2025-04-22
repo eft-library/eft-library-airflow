@@ -239,7 +239,9 @@ with DAG(
                     item_ko = item_ko_dict[item_id]
                     item_ja = item_ja_dict[item_id]
 
-                    cursor.execute(sql, v2_rig_process(item_en, item_ko, item_ja))
+                    cursor.execute(
+                        sql, v2_armor_vest_process(item_en, item_ko, item_ja)
+                    )
             conn.commit()
 
     # def upsert_headset(postgres_conn_id, **kwargs):
