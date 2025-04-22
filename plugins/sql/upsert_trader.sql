@@ -1,4 +1,4 @@
-INSERT INTO tkl_npc (id, name_en, image, barter_info, update_time)
+INSERT INTO npc_i18n (id, name_en, image, barter_info, update_time)
 VALUES (%s, %s, %s, %s, %s)
 ON CONFLICT (id) DO UPDATE SET
     name_en = EXCLUDED.name_en,
