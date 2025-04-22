@@ -1,7 +1,7 @@
 def generate_pvp_item_price_graphql(lang: str) -> str:
     return f"""
 {{
-  items(lang: {lang}, gameMode: pvp) {{
+  items(lang: {lang}) {{
     id
     name
     gridImageLink

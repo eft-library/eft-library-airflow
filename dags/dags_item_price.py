@@ -43,7 +43,6 @@ with DAG(
 
     def fetch_price_list(**kwargs):
         pvp_list_en = get_graphql(generate_pvp_item_price_graphql("en"))
-        print(generate_pvp_item_price_graphql("en"))
         pvp_list_ko = get_graphql(generate_pvp_item_price_graphql("ko"))
         pvp_list_ja = get_graphql(generate_pvp_item_price_graphql("ja"))
 
