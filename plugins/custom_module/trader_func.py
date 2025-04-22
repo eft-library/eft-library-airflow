@@ -78,4 +78,4 @@ def v2_trader_process(item_en, item_ko, item_ja):
 
     update_time = pendulum.now("Asia/Seoul")
 
-    return npc_id, name, trader_image, json.dumps(merged_barters), update_time
+    return (npc_id, name, trader_image, json.dumps(merged_barters), update_time)

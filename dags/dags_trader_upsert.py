@@ -34,11 +34,11 @@ with DAG(
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
 
         with open(en_path, "w") as f:
-            json.dump(trader_en_list['data']['traders'], f)
+            json.dump(trader_en_list["data"]["traders"], f)
         with open(ko_path, "w") as f:
-            json.dump(trader_ko_list['data']['traders'], f)
+            json.dump(trader_ko_list["data"]["traders"], f)
         with open(ja_path, "w") as f:
-            json.dump(trader_ja_list['data']['traders'], f)
+            json.dump(trader_ja_list["data"]["traders"], f)
 
         return {
             "en": en_path,
