@@ -15,9 +15,9 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/mnt/ramdisk/trader_en_list.json"
-ko_path = "/mnt/ramdisk/trader_ko_list.json"
-ja_path = "/mnt/ramdisk/trader_ja_list.json"
+en_path = "/opt/airflow/tmp/trader_en_list.json"
+ko_path = "/opt/airflow/tmp/trader_ko_list.json"
+ja_path = "/opt/airflow/tmp/trader_ja_list.json"
 
 with DAG(
     dag_id="dags_trader_upsert",
@@ -32,19 +32,13 @@ with DAG(
         trader_en_list = get_graphql(generate_trader_graphql("en"))
         trader_ko_list = get_graphql(generate_trader_graphql("ko"))
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
-        print("EN list sample:", trader_en_list["data"]["traders"])
-        print("Directory exists?", os.path.exists("/mnt/ramdisk/"))
-        try:
-            json.dumps(trader_en_list)
-        except Exception as e:
-            print("❌ json serialization error:", e)
 
         with open(en_path, "w") as f:
-            json.dump(trader_en_list, f)
+            json.dump(trader_en_list['data']['traders'], f)
         with open(ko_path, "w") as f:
-            json.dump(trader_ko_list, f)
+            json.dump(trader_ko_list['data']['traders'], f)
         with open(ja_path, "w") as f:
-            json.dump(trader_ja_list, f)
+            json.dump(trader_ja_list['data']['traders'], f)
 
         return {
             "en": en_path,
@@ -63,13 +57,9 @@ with DAG(
         with open(trader_paths["ja"], "r") as f:
             trader_ja_list = json.load(f)
 
-        trader_en_data = trader_en_list["data"]["traders"]
-        trader_ko_data = trader_ko_list["data"]["traders"]
-        trader_ja_data = trader_ja_list["data"]["traders"]
-
-        trader_en_dict = {item["id"]: item for item in trader_en_data}
-        trader_ko_dict = {item["id"]: item for item in trader_ko_data}
-        trader_ja_dict = {item["id"]: item for item in trader_ja_data}
+        trader_en_dict = {item["id"]: item for item in trader_en_list}
+        trader_ko_dict = {item["id"]: item for item in trader_ko_list}
+        trader_ja_dict = {item["id"]: item for item in trader_ja_list}
 
         trader_ids = (
             set(trader_en_dict.keys())
