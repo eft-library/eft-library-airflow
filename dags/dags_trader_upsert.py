@@ -32,7 +32,7 @@ with DAG(
         trader_en_list = get_graphql(generate_trader_graphql("en"))
         trader_ko_list = get_graphql(generate_trader_graphql("ko"))
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
-        print("EN list sample:", trader_en_list["data"][:1])
+        print("EN list sample:", trader_en_list["data"]["traders"])
         print("Directory exists?", os.path.exists("/mnt/ramdisk/"))
         try:
             json.dumps(trader_en_list)
@@ -63,9 +63,9 @@ with DAG(
         with open(trader_paths["ja"], "r") as f:
             trader_ja_list = json.load(f)
 
-        trader_en_data = trader_en_list["data"]["trader"]
-        trader_ko_data = trader_ko_list["data"]["trader"]
-        trader_ja_data = trader_ja_list["data"]["trader"]
+        trader_en_data = trader_en_list["data"]["traders"]
+        trader_ko_data = trader_ko_list["data"]["traders"]
+        trader_ja_data = trader_ja_list["data"]["traders"]
 
         trader_en_dict = {item["id"]: item for item in trader_en_data}
         trader_ko_dict = {item["id"]: item for item in trader_ko_data}
