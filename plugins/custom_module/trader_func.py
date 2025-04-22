@@ -46,31 +46,41 @@ def v2_trader_process(item_en, item_ko, item_ja):
     }
     trader_image = item_en.get("imageLink")
     merged_barters = []
-    print(item_en)
+
     for b_en, b_ko, b_ja in zip(
-        item_en.get("barters"), item_ko.get("barters"), item_ja.get("barters")
+        item_en.get("barters", []),
+        item_ko.get("barters", []),
+        item_ja.get("barters", []),
     ):
         merged_barter = copy.deepcopy(b_en)  # 기본 구조는 en 기준 복사
 
         # requiredItems 병합
         for i, (r_en, r_ko, r_ja) in enumerate(
-            zip(b_en["requiredItems"], b_ko["requiredItems"], b_ja["requiredItems"])
+            zip(
+                b_en.get("requiredItems", []),
+                b_ko.get("requiredItems", []),
+                b_ja.get("requiredItems", []),
+            )
         ):
             item = r_en["item"]
-            item["name_en"] = r_en["item"]["name"]
-            item["name_ko"] = r_ko["item"]["name"]
-            item["name_ja"] = r_ja["item"]["name"]
+            item["name_en"] = r_en["item"].get("name", "")
+            item["name_ko"] = r_ko["item"].get("name", "")
+            item["name_ja"] = r_ja["item"].get("name", "")
             del item["name"]  # 기존 name 제거
             merged_barter["requiredItems"][i]["item"] = item
 
         # rewardItems 병합
         for i, (r_en, r_ko, r_ja) in enumerate(
-            zip(b_en["rewardItems"], b_ko["rewardItems"], b_ja["rewardItems"])
+            zip(
+                b_en.get("rewardItems", []),
+                b_ko.get("rewardItems", []),
+                b_ja.get("rewardItems", []),
+            )
         ):
             item = r_en["item"]
-            item["name_en"] = r_en["item"]["name"]
-            item["name_ko"] = r_ko["item"]["name"]
-            item["name_ja"] = r_ja["item"]["name"]
+            item["name_en"] = r_en["item"].get("name", "")
+            item["name_ko"] = r_ko["item"].get("name", "")
+            item["name_ja"] = r_ja["item"].get("name", "")
             del item["name"]
             merged_barter["rewardItems"][i]["item"] = item
 
