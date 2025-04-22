@@ -1,6 +1,6 @@
 INSERT INTO tkl_item (
     id,
-    name_en,
+    name,
     category,
     info,
     image,
@@ -11,7 +11,7 @@ INSERT INTO tkl_item (
     %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     category = EXCLUDED.category,
     info = EXCLUDED.info,
     image = EXCLUDED.image,
