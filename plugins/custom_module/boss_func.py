@@ -47,7 +47,7 @@ def v2_boss_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
-    image = item_en.get("gridImageLink")
+    image = item_en.get("imagePortraitLink")
     merged_equipment = []
 
     for eq_en, eq_ko, eq_ja in zip(
