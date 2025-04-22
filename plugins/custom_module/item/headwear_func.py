@@ -8,7 +8,11 @@ def v2_headwear_process(item_en, item_ko, item_ja):
     headwear 데이터 가공
     """
     item_en_id = item_en.get("id")
-    name_en = item_en.get("name")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
     category = "Headwear"
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
@@ -60,7 +64,7 @@ def v2_headwear_process(item_en, item_ko, item_ja):
 
     return (
         item_en_id,
-        name_en,
+        json.dumps(name),
         category,
         info,
         image,
