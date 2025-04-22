@@ -6,9 +6,9 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-from v2_module.psql_func import read_sql
-from v2_module.graphql_func import get_graphql
-from v2_module.trader_func import generate_trader_graphql, v2_trader_process
+from custom_module.psql_func import read_sql
+from custom_module.graphql_func import get_graphql
+from custom_module.trader_func import generate_trader_graphql, v2_trader_process
 
 default_args = {
     "owner": "airflow",
