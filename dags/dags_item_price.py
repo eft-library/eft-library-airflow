@@ -131,7 +131,7 @@ with DAG(
                     pvp_item_list, pve_item_list
                 )
 
-                for item in data_list:
+                for item in merged_item_price_list:
                     insert_data = v2_item_price_process(item)
                     trader_data = json.loads(insert_data[3])
                     if trader_data.get("pve_trader") is None:
