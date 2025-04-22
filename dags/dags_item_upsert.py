@@ -15,9 +15,8 @@ from custom_module.item.weapon_func import (
     v2_throwable_process,
 )
 
-from custom_module.item.rig_func import v2_rig_process
+from custom_module.item.general_func import v2_rig_process, v2_armor_vest_process
 
-# from custom_module.item.armor_vest_function import new_process_armor_vest
 # from custom_module.item.headwear_function import new_process_headwear
 # from custom_module.item.headset_function import new_process_headset
 # from custom_module.item.backpack_function import new_process_backpack
@@ -208,6 +207,19 @@ with DAG(
                     cursor.execute(sql, v2_rig_process(item_en, item_ko, item_ja))
             conn.commit()
 
+    def upsert_armor_vest(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_list = ti.xcom_pull(task_ids="fetch_item_list")
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+        data_list = check_category(item_list["data"]["items"], "Armor")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item in data_list:
+                    cursor.execute(sql, v2_armor_vest_process(item))
+            conn.commit()
+
     # def upsert_headset(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
     #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
@@ -233,20 +245,7 @@ with DAG(
     #             for item in data_list:
     #                 cursor.execute(sql, new_process_headwear(item))
     #         conn.commit()
-    #
-    # def upsert_armor_vest(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Armor")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_armor_vest(item))
-    #         conn.commit()
-    #
+
     # def upsert_backpack(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
     #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
@@ -432,6 +431,13 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
+
+    upsert_armor_vest_task = PythonOperator(
+        task_id="upsert_armor_vest",
+        python_callable=upsert_armor_vest,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
     # upsert_headset_task = PythonOperator(
     #     task_id="upsert_headset",
     #     python_callable=upsert_headset,
@@ -445,14 +451,7 @@ with DAG(
     #     op_kwargs={"postgres_conn_id": "tkl_db"},
     #     provide_context=True,
     # )
-    #
-    # upsert_armor_vest_task = PythonOperator(
-    #     task_id="upsert_armor_vest",
-    #     python_callable=upsert_armor_vest,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
-    #
+
     #
     # upsert_backpack_task = PythonOperator(
     #     task_id="upsert_backpack",
@@ -536,9 +535,9 @@ with DAG(
         upsert_knife_task,
         upsert_throwable_task,
         upsert_rig_task,
+        upsert_armor_vest_task,
         # upsert_headset_task,
         # upsert_headwear_task,
-        # upsert_armor_vest_task,
         # upsert_backpack_task,
         # upsert_container_task,
         # upsert_key_task,
