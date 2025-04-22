@@ -17,7 +17,7 @@ def price_list_process(item_en, item_ko, item_ja):
     }
     width = item_en.get("width")
     height = item_en.get("height")
-    category = categorize_item(item_en.get("category"))
+    category = categorize_item(item_en["category"].get('name'))
     historicalPrices = item_en.get("historicalPrices")
     image = item_en.get("gridImageLink")
     merged_sell_for = []
