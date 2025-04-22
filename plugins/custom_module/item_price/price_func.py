@@ -17,7 +17,7 @@ def price_list_process(item_en, item_ko, item_ja):
     }
     width = item_en.get("width")
     height = item_en.get("height")
-    category = categorize_item(item_en["category"].get('name'))
+    category = categorize_item(item_en["category"].get("name"))
     historicalPrices = item_en.get("historicalPrices")
     image = item_en.get("gridImageLink")
     merged_sell_for = []
@@ -244,6 +244,7 @@ def mapping_trader(sell_for):
     """
     trader 정보 연결
     """
+    print(sell_for)
     npc_data = {
         "Peacekeeper": {
             "npc_id": "5935c25fb3acc3127c3d8cd9",
