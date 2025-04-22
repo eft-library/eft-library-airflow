@@ -6,9 +6,9 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-from v2_module.psql_function import read_sql
-from v2_module.graphql_function import get_graphql
-from v2_module.trader_function import generate_trader_graphql, process_trader
+from v2_module.psql_func import read_sql
+from v2_module.graphql_func import get_graphql
+from v2_module.trader_func import generate_trader_graphql, v2_trader_process
 
 default_args = {
     "owner": "airflow",
@@ -25,7 +25,7 @@ with DAG(
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
     schedule_interval="15 0 * * *",
-    tags=['postgresql', "tarkov-dev-api"],
+    tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
@@ -34,39 +34,43 @@ with DAG(
         trader_ko_list = get_graphql(generate_trader_graphql("ko"))
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
 
-        with open('/home/airflow/tmp/trader_en_list.json', 'w') as f:
+        with open("/home/airflow/tmp/trader_en_list.json", "w") as f:
             json.dump(trader_en_list, f)
-        with open('/home/airflow/tmp/trader_ko_list.json', 'w') as f:
+        with open("/home/airflow/tmp/trader_ko_list.json", "w") as f:
             json.dump(trader_ko_list, f)
-        with open('/home/airflow/tmp/trader_ja_list.json', 'w') as f:
+        with open("/home/airflow/tmp/trader_ja_list.json", "w") as f:
             json.dump(trader_ja_list, f)
 
         return {
-            'en': en_path,
-            'ko': ko_path,
-            'ja': ja_path,
+            "en": en_path,
+            "ko": ko_path,
+            "ja": ja_path,
         }
 
     def upsert_trader(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
         trader_paths = ti.xcom_pull(task_ids="fetch_trader_list")
 
-        with open(trader_paths['en'], 'r') as f:
+        with open(trader_paths["en"], "r") as f:
             trader_en_list = json.load(f)
-        with open(trader_paths['ko'], 'r') as f:
+        with open(trader_paths["ko"], "r") as f:
             trader_ko_list = json.load(f)
-        with open(trader_paths['ja'], 'r') as f:
+        with open(trader_paths["ja"], "r") as f:
             trader_ja_list = json.load(f)
 
         trader_en_data = trader_en_list["data"]["trader"]
         trader_ko_data = trader_ko_list["data"]["trader"]
         trader_ja_data = trader_ja_list["data"]["trader"]
 
-        trader_en_dict = {item['id']: item for item in trader_en_data}
-        trader_ko_dict = {item['id']: item for item in trader_ko_data}
-        trader_ja_dict = {item['id']: item for item in trader_ja_data}
+        trader_en_dict = {item["id"]: item for item in trader_en_data}
+        trader_ko_dict = {item["id"]: item for item in trader_ko_data}
+        trader_ja_dict = {item["id"]: item for item in trader_ja_data}
 
-        trader_ids = set(trader_en_dict.keys()) & set(trader_ko_dict.keys()) & set(trader_ja_dict.keys())
+        trader_ids = (
+            set(trader_en_dict.keys())
+            & set(trader_ko_dict.keys())
+            & set(trader_ja_dict.keys())
+        )
 
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_trader.sql")
@@ -78,7 +82,9 @@ with DAG(
                     trader_ko = trader_ko_dict[trader_id]
                     trader_ja = trader_ja_dict[trader_id]
 
-                    cursor.execute(sql, process_trader(trader_en, trader_ko, trader_ja))
+                    cursor.execute(
+                        sql, v2_trader_process(trader_en, trader_ko, trader_ja)
+                    )
             conn.commit()
 
     def remove_trader_json_files(**kwargs):
