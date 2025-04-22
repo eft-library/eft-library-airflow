@@ -1,56 +1,50 @@
-item_graphql = """
-{
-  items {
+def generate_item_graphql(lang: str) -> str:
+    return f"""
+{{
+  items(lang: {lang}) {{
     id
     name
     weight
-    shortName
     gridImageLink
     width
     height
-    usedInTasks {
-      id
-    }
-    receivedFromTasks {
-      id
-    }
-    category {
+    category {{
       name
-      parent {
+      parent {{
         name
-      }
-    }
-    properties {
-      ... on ItemPropertiesWeapon {
-        allowedAmmo {
+      }}
+    }}
+    properties {{
+      ... on ItemPropertiesWeapon {{
+        allowedAmmo {{
           name
           gridImageLink
-        }
+        }}
         caliber
-        defaultAmmo {
+        defaultAmmo {{
           name
           gridImageLink
-        }
+        }}
         fireModes
         fireRate
         defaultErgonomics
         defaultRecoilVertical
         defaultRecoilHorizontal
-      }
-      ... on ItemPropertiesMelee {
+      }}
+      ... on ItemPropertiesMelee {{
         slashDamage
         stabDamage
         hitRadius
-      }
-      ... on ItemPropertiesGrenade {
+      }}
+      ... on ItemPropertiesGrenade {{
         type
         fuse
         minExplosionDistance
         maxExplosionDistance
         fragments
         contusionRadius
-      }
-      ... on ItemPropertiesHelmet {
+      }}
+      ... on ItemPropertiesHelmet {{
         class
         deafening
         turnPenalty
@@ -59,25 +53,25 @@ item_graphql = """
         headZones
         ricochetY
         durability
-        material {
+        material {{
           name
-        }
-      }
-      ... on ItemPropertiesHeadphone {
+        }}
+      }}
+      ... on ItemPropertiesHeadphone {{
         distanceModifier
-      }
-      ... on ItemPropertiesArmor {
+      }}
+      ... on ItemPropertiesArmor {{
         class
         durability
         turnPenalty
         ergoPenalty
         speedPenalty
         zones
-        material {
+        material {{
           name
-        }
-      }
-      ... on ItemPropertiesChestRig {
+        }}
+      }}
+      ... on ItemPropertiesChestRig {{
         class
         durability
         turnPenalty
@@ -85,71 +79,71 @@ item_graphql = """
         speedPenalty
         zones
         capacity
-        material {
+        material {{
           name
-        }
-      }
-      ... on ItemPropertiesBackpack {
+        }}
+      }}
+      ... on ItemPropertiesBackpack {{
         turnPenalty
         ergoPenalty
         speedPenalty
         capacity
-        grids {
+        grids {{
           width
           height
-        }
-      }
-      ... on ItemPropertiesContainer {
+        }}
+      }}
+      ... on ItemPropertiesContainer {{
         capacity
-        grids {
+        grids {{
           width
           height
-        }
-      }
-      ... on ItemPropertiesKey {
+        }}
+      }}
+      ... on ItemPropertiesKey {{
         uses
-      }
-      ... on ItemPropertiesFoodDrink {
+      }}
+      ... on ItemPropertiesFoodDrink {{
         energy
         hydration
-        stimEffects {
+        stimEffects {{
           delay
           value
           type
           skillName
           duration
-        }
+        }}
         units
-      }
-      ... on ItemPropertiesMedKit {
+      }}
+      ... on ItemPropertiesMedKit {{
         cures
         useTime
         hitpoints
-      }
-      ... on ItemPropertiesMedicalItem {
+      }}
+      ... on ItemPropertiesMedicalItem {{
         cures
         useTime
         uses
-      }
-      ... on ItemPropertiesPainkiller {
+      }}
+      ... on ItemPropertiesPainkiller {{
         cures
         uses
         useTime
         energyImpact
         hydrationImpact
         painkillerDuration
-      }
-      ... on ItemPropertiesStim {
-        stimEffects {
+      }}
+      ... on ItemPropertiesStim {{
+        stimEffects {{
           duration
           skillName
           type
           delay
           value
           chance
-        }
-      }
-      ... on ItemPropertiesAmmo {
+        }}
+      }}
+      ... on ItemPropertiesAmmo {{
         damage
         penetrationPower
         armorDamage
@@ -157,27 +151,27 @@ item_graphql = """
         recoilModifier
         lightBleedModifier
         heavyBleedModifier
-      }
-      ... on ItemPropertiesGlasses {
+      }}
+      ... on ItemPropertiesGlasses {{
         class
         durability
         blindnessProtection
-        material {
+        material {{
           name
-        }
-      }
-    }
-  }
-  maps {
+        }}
+      }}
+    }}
+  }}
+  maps(lang: {lang}) {{
     name
-    locks {
-      key {
+    locks {{
+      key {{
         id
         name
-      }
-    }
-  }
-}
+      }}
+    }}
+  }}
+}}
 """
 
 
