@@ -146,7 +146,7 @@ with DAG(
                 boss_spawn_dict = make_boss_spawn_dict(process_spawn_list)
 
                 for boss_name, spawn_info in boss_spawn_dict.items():
-                    cursor.execute(sql, (boss_name, json.dumps(spawn_info)))
+                    cursor.execute(sql, (json.dumps(spawn_info), boss_name))
 
             conn.commit()
 
