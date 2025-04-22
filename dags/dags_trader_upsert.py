@@ -32,7 +32,13 @@ with DAG(
         trader_en_list = get_graphql(generate_trader_graphql("en"))
         trader_ko_list = get_graphql(generate_trader_graphql("ko"))
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
-        print(trader_en_list)
+        print("EN list sample:", trader_en_list[:1])
+        print("Directory exists?", os.path.exists("/mnt/ramdisk/"))
+        try:
+            json.dumps(trader_en_list)
+        except Exception as e:
+            print("❌ json serialization error:", e)
+
         with open(en_path, "w") as f:
             json.dump(trader_en_list, f)
         with open(ko_path, "w") as f:
