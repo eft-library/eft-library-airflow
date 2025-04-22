@@ -69,7 +69,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_item.sql")
+        sql = read_sql("upsert_boss.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
