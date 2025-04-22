@@ -36,7 +36,7 @@ def v2_quest_item_process(item_en, item_ko, item_ja):
 
     return (
         item_id,
-        name,
+        json.dumps(name),
         category,
         info,
         image,
