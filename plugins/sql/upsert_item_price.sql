@@ -1,7 +1,7 @@
-INSERT INTO tkl_item_price (
+INSERT INTO item_price_i18n (
     id,
-    item_name_en,
-    item_image,
+    name,
+    image,
     trader,
     category,
     width,
@@ -11,8 +11,8 @@ INSERT INTO tkl_item_price (
     %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
-    item_name_en = EXCLUDED.item_name_en,
-    item_image = EXCLUDED.item_image,
+    name = EXCLUDED.name,
+    image = EXCLUDED.image,
     trader = EXCLUDED.trader,
     category = EXCLUDED.category,
     width = EXCLUDED.width,

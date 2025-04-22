@@ -12,17 +12,17 @@ default_args = {
 }
 
 with DAG(
-    dag_id="dags_tkl_item_price_delete",
+    dag_id="dags_item_price_delete",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
     schedule_interval="20 0 * * *",
-    tags=['postgresql', "tarkov-dev-api"],
+    tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
     def delete_price(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("delete_tkl_item_price.sql")
+        sql = read_sql("delete_item_price.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
