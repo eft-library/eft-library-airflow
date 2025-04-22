@@ -1,18 +1,78 @@
-boss_graphql = """
-{
-  maps {
+import json
+import pendulum
+import copy
+
+
+def generate_boss_graphql(lang: str) -> str:
+    return f"""
+{{
+  bosses(lang: {lang}) {{
+    id
     name
-    bosses {
-      spawnChance
-      boss {
+    imagePortraitLink
+    equipment {{
+      item {{
+        id
         name
-      }
-    }
-  }
-}
+        gridImageLink
+      }}
+      count
+      quantity
+    }}
+  }}
+}}
 """
 
-def process_boss_spawn(map_list):
+
+def generate_boss_spawn_graphql(lang: str) -> str:
+    return f"""
+{{
+  maps(lang: {lang}) {{
+    name
+    bosses {{
+      spawnChance
+      boss {{
+        name
+      }}
+    }}
+  }}
+}}
+"""
+
+
+def v2_boss_process(item_en, item_ko, item_ja):
+    boss_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    image = item_en.get("gridImageLink")
+    merged_equipment = []
+
+    for eq_en, eq_ko, eq_ja in zip(
+        item_en.get("equipment", []),
+        item_ko.get("equipment", []),
+        item_ja.get("equipment", []),
+    ):
+        merged_eq = copy.deepcopy(eq_en)  # 기본은 영어 구조 복사
+        item = eq_en["item"]
+
+        # 다국어 이름 병합
+        item["name_en"] = eq_en["item"].get("name", "")
+        item["name_ko"] = eq_ko["item"].get("name", "")
+        item["name_ja"] = eq_ja["item"].get("name", "")
+        del item["name"]
+
+        merged_eq["item"] = item
+        merged_equipment.append(merged_eq)
+
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (boss_id, json.dumps(name), image, json.dumps(merged_equipment), update_time)
+
+
+def v2_boss_spawn_process(map_list):
     """
     보스 출현 확률 데이터 가공
     """
@@ -77,26 +137,29 @@ def process_boss_spawn(map_list):
                 boss_id = "KNIGHT"
                 # Knight는 Big Pipe, Birdeye도 같이 등장
                 for extra_boss in ["BIG_PIPE", "BIRDEYE"]:
-                    result[extra_boss]["location_spawn_chance_en"].append({
-                        "chance": spawn_chance,
-                        "location": map_name_en
-                    })
-                    result[extra_boss]["location_spawn_chance_kr"].append({
-                        "chance": spawn_chance,
-                        "location": map_name_kr
-                    })
+                    result[extra_boss]["location_spawn_chance_en"].append(
+                        {"chance": spawn_chance, "location": map_name_en}
+                    )
+                    result[extra_boss]["location_spawn_chance_kr"].append(
+                        {"chance": spawn_chance, "location": map_name_kr}
+                    )
             else:
                 # 일반적인 매칭
-                boss_id = next((key for key, data in boss_template.items() if data["name_en"].lower() in boss_name.lower()), None)
+                boss_id = next(
+                    (
+                        key
+                        for key, data in boss_template.items()
+                        if data["name_en"].lower() in boss_name.lower()
+                    ),
+                    None,
+                )
 
             if boss_id:
-                result[boss_id]["location_spawn_chance_en"].append({
-                    "chance": spawn_chance,
-                    "location": map_name_en
-                })
-                result[boss_id]["location_spawn_chance_kr"].append({
-                    "chance": spawn_chance,
-                    "location": map_name_kr
-                })
+                result[boss_id]["location_spawn_chance_en"].append(
+                    {"chance": spawn_chance, "location": map_name_en}
+                )
+                result[boss_id]["location_spawn_chance_kr"].append(
+                    {"chance": spawn_chance, "location": map_name_kr}
+                )
 
     return list(result.values())  # 딕셔너리를 리스트로 변환하여 반환

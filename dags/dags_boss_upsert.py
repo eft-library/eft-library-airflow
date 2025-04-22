@@ -1,4 +1,3 @@
-import json
 import os
 
 from airflow import DAG
@@ -8,10 +7,8 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
 from custom_module.graphql_func import get_graphql
-from custom_module.quest_item_func import (
-    generate_quest_item_graphql,
-    v2_quest_item_process,
-)
+from custom_module.boss_func import v2_boss_process, generate_boss_graphql
+import json
 
 default_args = {
     "owner": "airflow",
@@ -19,23 +16,23 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/quest_item_en_list.json"
-ko_path = "/opt/airflow/tmp/quest_item_ko_list.json"
-ja_path = "/opt/airflow/tmp/quest_item_ja_list.json"
+en_path = "/opt/airflow/tmp/boss_en_list.json"
+ko_path = "/opt/airflow/tmp/boss_ko_list.json"
+ja_path = "/opt/airflow/tmp/boss_ja_list.json"
 
 with DAG(
-    dag_id="dags_quest_item_upsert",
+    dag_id="dags_boss_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="5 0 * * *",
+    schedule_interval="15 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def fetch_quest_item_list(**kwargs):
-        item_list_en = get_graphql(generate_quest_item_graphql("en"))
-        item_list_ko = get_graphql(generate_quest_item_graphql("ko"))
-        item_list_ja = get_graphql(generate_quest_item_graphql("ja"))
+    def fetch_boss_list(**kwargs):
+        item_list_en = get_graphql(generate_boss_graphql("en"))
+        item_list_ko = get_graphql(generate_boss_graphql("ko"))
+        item_list_ja = get_graphql(generate_boss_graphql("ja"))
 
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["questItems"], f)
@@ -50,9 +47,9 @@ with DAG(
             "ja": ja_path,
         }
 
-    def upsert_quest_item(postgres_conn_id, **kwargs):
+    def upsert_boss(postgres_conn_id, **kwargs):
         ti = kwargs["ti"]
-        item_paths = ti.xcom_pull(task_ids="fetch_quest_item_list")
+        item_paths = ti.xcom_pull(task_ids="fetch_boss_list")
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
@@ -81,9 +78,7 @@ with DAG(
                     item_ko = item_ko_dict[item_id]
                     item_ja = item_ja_dict[item_id]
 
-                    cursor.execute(
-                        sql, v2_quest_item_process(item_en, item_ko, item_ja)
-                    )
+                    cursor.execute(sql, v2_boss_process(item_en, item_ko, item_ja))
             conn.commit()
 
     def remove_json_files(**kwargs):
@@ -104,12 +99,12 @@ with DAG(
                 print(f"Error deleting {path}: {e}")
 
     fetch_data = PythonOperator(
-        task_id="fetch_quest_item_list", python_callable=fetch_quest_item_list
+        task_id="fetch_boss_list", python_callable=fetch_boss_list
     )
 
-    upsert_quest_item_task = PythonOperator(
-        task_id="upsert_quest_item",
-        python_callable=upsert_quest_item,
+    upsert_boss_task = PythonOperator(
+        task_id="upsert_boss",
+        python_callable=upsert_boss,
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
@@ -120,4 +115,4 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> upsert_quest_item_task >> remove_json_files_task
+    fetch_data >> upsert_boss_task >> remove_json_files_task
