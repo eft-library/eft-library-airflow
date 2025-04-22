@@ -29,9 +29,9 @@ def v2_gun_process(item_en, item_ko, item_ja):
             else None
         )
         modes = {
-            "modes_en": item_en.get("properties").get("fireMods"),
-            "modes_ko": item_ko.get("properties").get("fireMods"),
-            "modes_ja": item_ja.get("properties").get("fireMods"),
+            "modes_en": item_en.get("properties").get("fireModes"),
+            "modes_ko": item_ko.get("properties").get("fireModes"),
+            "modes_ja": item_ja.get("properties").get("fireModes"),
         }
         fire_rate = properties.get("fireRate")
         ergonomics = properties.get("defaultErgonomics")
