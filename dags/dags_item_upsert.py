@@ -9,10 +9,12 @@ from contextlib import closing
 from custom_module.psql_func import read_sql
 from custom_module.graphql_func import get_graphql
 from custom_module.item_func import check_category, generate_item_graphql
-from custom_module.item.gun_func import v2_gun_process
-from custom_module.item.knife_func import v2_knife_process
+from custom_module.item.weapon_func import (
+    v2_gun_process,
+    v2_knife_process,
+    v2_throwable_process,
+)
 
-# from custom_module.item.throwable_function import new_process_throwable
 # from custom_module.item.rig_function import new_process_rig
 # from custom_module.item.armor_vest_function import new_process_armor_vest
 # from custom_module.item.headwear_function import new_process_headwear
@@ -135,20 +137,41 @@ with DAG(
                     cursor.execute(sql, v2_knife_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    #
-    # def upsert_throwable(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Throwable weapon")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_throwable(item))
-    #         conn.commit()
-    #
+    def upsert_throwable(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Throwable weapon")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(sql, v2_throwable_process(item_en, item_ko, item_ja))
+            conn.commit()
+
     # def upsert_headset(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
     #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
@@ -371,14 +394,14 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
-    #
-    # upsert_throwable_task = PythonOperator(
-    #     task_id="upsert_throwable",
-    #     python_callable=upsert_throwable,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
-    #
+
+    upsert_throwable_task = PythonOperator(
+        task_id="upsert_throwable",
+        python_callable=upsert_throwable,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     # upsert_headset_task = PythonOperator(
     #     task_id="upsert_headset",
     #     python_callable=upsert_headset,
@@ -487,7 +510,7 @@ with DAG(
     upsert_tasks = [
         upsert_gun_task,
         upsert_knife_task,
-        # upsert_throwable_task,
+        upsert_throwable_task,
         # upsert_headset_task,
         # upsert_headwear_task,
         # upsert_armor_vest_task,
