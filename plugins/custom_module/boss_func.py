@@ -80,9 +80,9 @@ def spawn_list_process(item_en, item_ko, item_ja):
     """
     map_id = item_en.get("id")
     name = {
-        "en": item_en.get("name"),
-        "ko": item_ko.get("name"),
-        "ja": item_ja.get("name"),
+        "name_en": item_en.get("name"),
+        "name_ko": item_ko.get("name"),
+        "name_ja": item_ja.get("name"),
     }
     bosses = item_en.get("bosses")
 
