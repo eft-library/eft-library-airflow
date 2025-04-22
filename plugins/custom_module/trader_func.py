@@ -46,7 +46,7 @@ def v2_trader_process(item_en, item_ko, item_ja):
     }
     trader_image = item_en.get("imageLink")
     merged_barters = []
-
+    print(item_en)
     for b_en, b_ko, b_ja in zip(
         item_en.get("barters"), item_ko.get("barters"), item_ja.get("barters")
     ):
