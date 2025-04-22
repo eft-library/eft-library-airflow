@@ -40,7 +40,7 @@ def v2_headwear_process(item_en, item_ko, item_ja):
         }
         durability = properties.get("durability")
         en_ricochet_chance = properties.get("ricochetY")
-        ricochet_chance = ricochet_chance_edit(name_en, en_ricochet_chance)
+        ricochet_chance = ricochet_chance_edit(item_en.get("name"), en_ricochet_chance)
         ricochet_result = {
             "ricochet_chance_en": ricochet_chance_en(ricochet_chance),
             "ricochet_chance_ko": ricochet_chance_kr(ricochet_chance),
