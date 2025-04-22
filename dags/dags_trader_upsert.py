@@ -32,7 +32,7 @@ with DAG(
         trader_en_list = get_graphql(generate_trader_graphql("en"))
         trader_ko_list = get_graphql(generate_trader_graphql("ko"))
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
-        print("EN list sample:", trader_en_list[:1])
+        print("EN list sample:", trader_en_list["data"]["trader"][:1])
         print("Directory exists?", os.path.exists("/mnt/ramdisk/"))
         try:
             json.dumps(trader_en_list)
