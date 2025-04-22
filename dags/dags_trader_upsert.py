@@ -34,11 +34,11 @@ with DAG(
         trader_ko_list = get_graphql(generate_trader_graphql("ko"))
         trader_ja_list = get_graphql(generate_trader_graphql("ja"))
 
-        with open("/home/airflow/tmp/trader_en_list.json", "w") as f:
+        with open(en_path, "w") as f:
             json.dump(trader_en_list, f)
-        with open("/home/airflow/tmp/trader_ko_list.json", "w") as f:
+        with open(ko_path, "w") as f:
             json.dump(trader_ko_list, f)
-        with open("/home/airflow/tmp/trader_ja_list.json", "w") as f:
+        with open(ja_path, "w") as f:
             json.dump(trader_ja_list, f)
 
         return {
