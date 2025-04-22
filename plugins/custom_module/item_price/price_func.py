@@ -75,7 +75,7 @@ def v2_item_price_process(item):
     )
 
 
-def process_price_history(id, item, price_type):
+def v2_item_price_history_process(id, item, price_type):
     """
     price history 가공
     """

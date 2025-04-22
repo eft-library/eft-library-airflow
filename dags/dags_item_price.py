@@ -15,6 +15,7 @@ from custom_module.item_price_func import (
 from custom_module.item_price.price_func import (
     merge_item_price_data,
     v2_item_price_process,
+    v2_item_price_history_process,
     price_list_process,
 )
 
@@ -109,7 +110,6 @@ with DAG(
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_item_price.sql")
 
-        data_list = ti.xcom_pull(task_ids="fetch_price_list")
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 pvp_item_list = []
@@ -139,32 +139,85 @@ with DAG(
                     cursor.execute(sql, insert_data)
             conn.commit()
 
-    # def upsert_price_history(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     data_list = ti.xcom_pull(task_ids="fetch_price_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_tkl_price_history.sql")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             batch_data = []  # executemany에 사용할 리스트
-    #
-    #             for item in data_list:
-    #                 item_id = item.get("id")
-    #                 if not item_id:
-    #                     continue  # ID가 없는 데이터는 무시
-    #
-    #                 for pvp_price in item.get("pvpHistoricalPrices", []):
-    #                     batch_data.append(process_price_history(item_id, pvp_price, "PVP"))
-    #
-    #                 for pve_price in item.get("pveHistoricalPrices", []):
-    #                     batch_data.append(process_price_history(item_id, pve_price, "PVE"))
-    #
-    #             # Batch Insert (executemany 사용)
-    #             if batch_data:
-    #                 cursor.executemany(sql, batch_data)
-    #
-    #             conn.commit()  # 한 번에 커밋
+    def upsert_price_history(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_price_list")
+
+        with open(item_paths["pvp_en"], "r") as f:
+            pvp_en_list = json.load(f)
+        with open(item_paths["pvp_ko"], "r") as f:
+            pvp_ko_list = json.load(f)
+        with open(item_paths["pvp_ja"], "r") as f:
+            pvp_ja_list = json.load(f)
+
+        with open(item_paths["pve_en"], "r") as f:
+            pve_en_list = json.load(f)
+        with open(item_paths["pve_ko"], "r") as f:
+            pve_ko_list = json.load(f)
+        with open(item_paths["pve_ja"], "r") as f:
+            pve_ja_list = json.load(f)
+
+        pvp_en_dict = {item["id"]: item for item in pvp_en_list}
+        pvp_ko_dict = {item["id"]: item for item in pvp_ko_list}
+        pvp_ja_dict = {item["id"]: item for item in pvp_ja_list}
+
+        pve_en_dict = {item["id"]: item for item in pve_en_list}
+        pve_ko_dict = {item["id"]: item for item in pve_ko_list}
+        pve_ja_dict = {item["id"]: item for item in pve_ja_list}
+
+        pvp_item_ids = (
+            set(pvp_en_dict.keys()) & set(pvp_ko_dict.keys()) & set(pvp_ja_dict.keys())
+        )
+        pve_item_ids = (
+            set(pve_en_dict.keys()) & set(pve_ko_dict.keys()) & set(pve_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item_price_history.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                pvp_item_list = []
+                pve_item_list = []
+
+                for item_id in pvp_item_ids:
+                    item_en = pvp_en_dict[item_id]
+                    item_ko = pvp_ko_dict[item_id]
+                    item_ja = pvp_ja_dict[item_id]
+                    pvp_item_list.append(price_list_process(item_en, item_ko, item_ja))
+
+                for item_id in pve_item_ids:
+                    item_en = pve_en_dict[item_id]
+                    item_ko = pve_ko_dict[item_id]
+                    item_ja = pve_ja_dict[item_id]
+                    pve_item_list.append(price_list_process(item_en, item_ko, item_ja))
+
+                merged_item_price_list = merge_item_price_data(
+                    pvp_item_list, pve_item_list
+                )
+
+                batch_data = []  # executemany에 사용할 리스트
+
+                for item in merged_item_price_list:
+                    item_id = item.get("id")
+                    if not item_id:
+                        continue  # ID가 없는 데이터는 무시
+
+                    for pvp_price in item.get("pvpHistoricalPrices", []):
+                        batch_data.append(
+                            v2_item_price_history_process(item_id, pvp_price, "PVP")
+                        )
+
+                    for pve_price in item.get("pveHistoricalPrices", []):
+                        batch_data.append(
+                            v2_item_price_history_process(item_id, pve_price, "PVE")
+                        )
+
+                # Batch Insert (executemany 사용)
+                if batch_data:
+                    cursor.executemany(sql, batch_data)
+
+                conn.commit()  # 한 번에 커밋
 
     def remove_json_files(**kwargs):
         files = [
@@ -196,13 +249,13 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
-    #
-    # upsert_price_history_task = PythonOperator(
-    #     task_id="upsert_price_history",
-    #     python_callable=upsert_price_history,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
+    upsert_price_history_task = PythonOperator(
+        task_id="upsert_price_history",
+        python_callable=upsert_price_history,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
@@ -210,4 +263,9 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> upsert_price_task >> remove_json_files_task
+    (
+        fetch_data
+        >> upsert_price_task
+        >> upsert_price_history_task
+        >> remove_json_files_task
+    )

@@ -1,4 +1,4 @@
-INSERT INTO tkl_item_price_history (
+INSERT INTO item_price_history_i18n (
    id,
    price,
    price_type,
