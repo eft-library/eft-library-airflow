@@ -1,4 +1,5 @@
 import json
+import os
 
 from airflow import DAG
 import pendulum
@@ -316,6 +317,19 @@ with DAG(
     #             cursor.execute(sql)
     #         conn.commit()
 
+    def remove_json_files(**kwargs):
+        files = [en_path, ko_path, ja_path]
+
+        for path in files:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"Deleted: {path}")
+                else:
+                    print(f"File not found: {path}")
+            except Exception as e:
+                print(f"Error deleting {path}: {e}")
+
     fetch_data = PythonOperator(
         task_id="fetch_item_list", python_callable=fetch_item_list
     )
@@ -466,4 +480,10 @@ with DAG(
         # upsert_glasses_task,
     ]
 
-    fetch_data >> upsert_tasks
+    remove_json_files_task = PythonOperator(
+        task_id="remove_json_files",
+        python_callable=remove_json_files,
+        provide_context=True,
+    )
+
+    fetch_data >> upsert_tasks >> remove_json_files_task
