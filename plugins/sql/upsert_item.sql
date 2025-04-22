@@ -1,4 +1,4 @@
-INSERT INTO tkl_item (
+INSERT INTO item_i18n (
     id,
     name,
     category,
