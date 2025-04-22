@@ -62,7 +62,6 @@ def v2_trader_process(item_en, item_ko, item_ja):
             )
         ):
             item = r_en["item"]
-            print(item)
             item["name_en"] = r_en["item"].get("name", "")
             item["name_ko"] = r_ko["item"].get("name", "")
             item["name_ja"] = r_ja["item"].get("name", "")
@@ -87,5 +86,11 @@ def v2_trader_process(item_en, item_ko, item_ja):
         merged_barters.append(merged_barter)
 
     update_time = pendulum.now("Asia/Seoul")
-    print((npc_id, name, trader_image, json.dumps(merged_barters), update_time))
-    return (npc_id, name, trader_image, json.dumps(merged_barters), update_time)
+
+    return (
+        npc_id,
+        json.dumps(name),
+        trader_image,
+        json.dumps(merged_barters),
+        update_time,
+    )
