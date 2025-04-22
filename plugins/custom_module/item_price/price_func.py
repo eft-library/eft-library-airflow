@@ -244,7 +244,6 @@ def mapping_trader(sell_for):
     """
     trader 정보 연결
     """
-    print(sell_for)
     npc_data = {
         "Peacekeeper": {
             "npc_id": "5935c25fb3acc3127c3d8cd9",
