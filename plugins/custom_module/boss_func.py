@@ -80,9 +80,9 @@ def spawn_list_process(item_en, item_ko, item_ja):
     """
     map_id = item_en.get("id")
     name = {
-        "name_en": item_en.get("name"),
-        "name_ko": item_ko.get("name"),
-        "name_ja": item_ja.get("name"),
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
     }
     bosses = item_en.get("bosses")
 
@@ -98,9 +98,10 @@ def make_boss_spawn_dict(maps):
 
     # 원본 데이터 (maps는 이미 주어진 JSON 리스트라고 가정)
     for map_info in maps:
-        map_name_en = map_info["name_en"]
-        map_name_ko = map_info["name_ko"]
-        map_name_ja = map_info["name_ja"]
+        map_name_en = map_info["name"]["name_en"]
+        map_name_ko = map_info["name"]["name_ko"]
+        map_name_ja = map_info["name"]["name_ja"]
+
         for boss_info in map_info.get("bosses", []):
             boss_id = boss_info["boss"]["id"]
             spawn_chance = boss_info["spawnChance"]
