@@ -53,7 +53,7 @@ def v2_trader_process(item_en, item_ko, item_ja):
         item_ja.get("barters", []),
     ):
         merged_barter = copy.deepcopy(b_en)  # 기본 구조는 en 기준 복사
-
+        print(b_en, b_ko, b_ja)
         # requiredItems 병합
         for i, (r_en, r_ko, r_ja) in enumerate(
             zip(
@@ -63,6 +63,7 @@ def v2_trader_process(item_en, item_ko, item_ja):
             )
         ):
             item = r_en["item"]
+            print(item)
             item["name_en"] = r_en["item"].get("name", "")
             item["name_ko"] = r_ko["item"].get("name", "")
             item["name_ja"] = r_ja["item"].get("name", "")
@@ -88,4 +89,5 @@ def v2_trader_process(item_en, item_ko, item_ja):
 
     update_time = pendulum.now("Asia/Seoul")
 
+    print(npc_id, name, trader_image, json.dumps(merged_barters), update_time)
     return (npc_id, name, trader_image, json.dumps(merged_barters), update_time)
