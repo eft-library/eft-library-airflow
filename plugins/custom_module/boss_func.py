@@ -98,9 +98,9 @@ def make_boss_spawn_dict(maps):
 
     # 원본 데이터 (maps는 이미 주어진 JSON 리스트라고 가정)
     for map_info in maps:
-        map_name_en = map_info["name"]["name_en"]
-        map_name_ko = map_info["name"]["name_ko"]
-        map_name_ja = map_info["name"]["name_ja"]
+        map_name_en = map_info["name"]["en"]
+        map_name_ko = map_info["name"]["ko"]
+        map_name_ja = map_info["name"]["ja"]
 
         for boss_info in map_info.get("bosses", []):
             boss_id = boss_info["boss"]["id"]
