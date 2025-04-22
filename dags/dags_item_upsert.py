@@ -15,9 +15,12 @@ from custom_module.item.weapon_func import (
     v2_throwable_process,
 )
 
-from custom_module.item.general_func import v2_rig_process, v2_armor_vest_process
+from custom_module.item.general_func import (
+    v2_rig_process,
+    v2_armor_vest_process,
+)
+from custom_module.item.headwear_func import v2_headwear_process
 
-# from custom_module.item.headwear_function import new_process_headwear
 # from custom_module.item.headset_function import new_process_headset
 # from custom_module.item.backpack_function import new_process_backpack
 # from custom_module.item.container_function import new_process_container
@@ -244,6 +247,41 @@ with DAG(
                     )
             conn.commit()
 
+    def upsert_headwear(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Headwear")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(sql, v2_headwear_process(item_en, item_ko, item_ja))
+            conn.commit()
+
     # def upsert_headset(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
     #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
@@ -257,18 +295,6 @@ with DAG(
     #                 cursor.execute(sql, new_process_headset(item))
     #         conn.commit()
     #
-    # def upsert_headwear(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Headwear")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_headwear(item))
-    #         conn.commit()
 
     # def upsert_backpack(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
@@ -462,6 +488,14 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
+
+    upsert_headwear_task = PythonOperator(
+        task_id="upsert_headwear",
+        python_callable=upsert_headwear,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     # upsert_headset_task = PythonOperator(
     #     task_id="upsert_headset",
     #     python_callable=upsert_headset,
@@ -469,12 +503,6 @@ with DAG(
     #     provide_context=True,
     # )
     #
-    # upsert_headwear_task = PythonOperator(
-    #     task_id="upsert_headwear",
-    #     python_callable=upsert_headwear,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
 
     #
     # upsert_backpack_task = PythonOperator(
@@ -560,8 +588,8 @@ with DAG(
         upsert_throwable_task,
         upsert_rig_task,
         upsert_armor_vest_task,
+        upsert_headwear_task,
         # upsert_headset_task,
-        # upsert_headwear_task,
         # upsert_backpack_task,
         # upsert_container_task,
         # upsert_key_task,
