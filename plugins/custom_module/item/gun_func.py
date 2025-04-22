@@ -23,7 +23,7 @@ def v2_gun_process(item_en, item_ko, item_ja):
 
     if properties:
         caliber = properties.get("caliber")
-        default_ammo = properties.get("defaultAmmo", {}).get("name")
+        default_ammo = properties.get("defaultAmmo", {"name": ""}).get("name")
         modes = {
             "modes_en": item_en.get("properties").get("fireMods"),
             "modes_ko": item_ko.get("properties").get("fireMods"),
