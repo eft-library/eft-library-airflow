@@ -1,15 +1,15 @@
-INSERT INTO tkl_hideout_bonus (
+INSERT INTO hideout_bonus_i18n (
     level_id,
     type,
-    name_en,
+    name,
     value,
-    skill_name_en,
+    skill_name,
     update_time
 ) VALUES (
     %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (level_id, "type") DO UPDATE SET
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     value = EXCLUDED.value,
-    skill_name_en = EXCLUDED.skill_name_en,
+    skill_name = EXCLUDED.skill_name,
     update_time = EXCLUDED.update_time;

@@ -1,8 +1,8 @@
-INSERT INTO tkl_hideout_skill_require (
+INSERT INTO hideout_skill_require_i18n (
     id,
     level_id,
     level,
-    name_en,
+    name,
     update_time
 ) VALUES (
     %s, %s, %s, %s, %s
@@ -10,5 +10,5 @@ INSERT INTO tkl_hideout_skill_require (
 ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
     level = EXCLUDED.level,
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     update_time = EXCLUDED.update_time;

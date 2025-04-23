@@ -1,8 +1,8 @@
-INSERT INTO tkl_hideout_station_require (
+INSERT INTO hideout_station_require_i18n (
     id,
     level_id,
     level,
-    name_en,
+    name,
     station_master_id,
     update_time
 ) VALUES (
@@ -11,6 +11,6 @@ INSERT INTO tkl_hideout_station_require (
 ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
     level = EXCLUDED.level,
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name_en,
     station_master_id = EXCLUDED.station_master_id,
     update_time = EXCLUDED.update_time;
