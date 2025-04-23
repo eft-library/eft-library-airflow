@@ -1,5 +1,3 @@
-import copy
-
 import pendulum
 import json
 
@@ -42,22 +40,9 @@ def v2_medical_process(item_en, item_ko, item_ja):
         if painkiller_duration is not None
         else None
     )
-    merged_stim_effects = []
-
-    for se_en, se_ko, se_ja in zip(
-        en_properties.get("stimEffects", []),
-        ko_properties.get("stimEffects", []),
-        ja_properties.get("stimEffects", []),
-    ):
-        merged = copy.deepcopy(se_en)
-        merged["skill_name_en"] = se_en.get("skillName", "")
-        merged["skill_name_ko"] = se_ko.get("skillName", "")
-        merged["skill_name_ja"] = se_ja.get("skillName", "")
-        merged.pop("skillName", None)
-        merged_stim_effects.append(merged)
-
-    buff = get_buff(merged_stim_effects)
-    debuff = get_debuff(merged_stim_effects)
+    stim_effects = en_properties.get("stimEffects")
+    buff = get_buff(stim_effects)
+    debuff = get_debuff(stim_effects)
 
     info = json.dumps(
         {
@@ -85,57 +70,6 @@ def v2_medical_process(item_en, item_ko, item_ja):
         image_height,
         update_time,
     )
-
-
-def process_stim_effect(stim_effects):
-    """
-    stim effect 효과 추가
-    """
-    new_effects = stim_effects
-    kr_skill = {
-        "Intellect": "지력",
-        "Attention": "주의력",
-        "Recoil Control": "반동 제어",
-        "Stress Resistance": "스트레스 저항력",
-        "Endurance": "지구력",
-        "Mag Drills": "탄창 훈련",
-        "Strength": "근력",
-        "Metabolism": "신진대사",
-        "Memory": "기억력",
-        "Health": "체력",
-        "Vitality": "활력",
-        "Immunity": "면역력",
-        "Perception": "인지능력",
-        "Charisma": "카리스마",
-    }
-
-    kr_type = {
-        "Antidote": "해독제",
-        "BodyTemperature": "체온",
-        "DamageModifier": "받은 피해량 (머리 제외)",
-        "energyImpact": "에너지",
-        "hydrationImpact": "수분",
-        "MaxStamina": "최대 스태미나",
-        "Pain": "고통",
-        "StaminaRate": "스태미나 회복",
-        "Removeallbloodlosses": "출혈 멈춤 & 추가 출혈 방지",
-        "QuantumTunnelling": "터널 효과",
-        "WeightLimit": "무게 제한",
-        "painkillerDuration": "진통제",
-        "EnergyRate": "에너지 회복",
-        "HealthRate": "체력 재생",
-        "HandsTremor": "손 떨림",
-        "HydrationRate": "수분 회복",
-    }
-
-    for effects in new_effects:
-        if effects["type"] == "Skill" and effects["skillName"] in kr_skill:
-            effects["krSkill"] = kr_skill[effects["skillName"]]
-        else:
-            if effects["type"] in kr_type:
-                effects["krSkill"] = kr_type[effects["type"]]
-
-    return new_effects
 
 
 def get_buff(stim_effect):
