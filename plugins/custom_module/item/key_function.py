@@ -16,6 +16,7 @@ def v2_key_process(item_en, item_ko, item_ja, en_key_map, ko_key_map, ja_key_map
     category = "Key"
     weight = item_en.get("weight")
     properties = item_en.get("properties") or {}
+    uses = properties.get("uses")
 
     info = json.dumps(
         {
@@ -25,7 +26,7 @@ def v2_key_process(item_en, item_ko, item_ja, en_key_map, ko_key_map, ja_key_map
                 "ja": ja_key_map.get(item_id),
             },
             "weight": weight,
-            "uses": properties.get("uses"),
+            "uses": uses,
         }
     )
     image = item_en.get("gridImageLink")

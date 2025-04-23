@@ -579,7 +579,7 @@ with DAG(
         item_en_dict = {item["id"]: item for item in item_en_list["items"]}
         item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
         item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
-        filtered_items = check_category(item_en_list["items"], "Ammo")
+        filtered_items = check_category(item_en_list["items"], "Key")
 
         en_key_map = process_key_map(item_en_list["maps"])
         ko_key_map = process_key_map(item_ko_list["maps"])

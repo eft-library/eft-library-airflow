@@ -14,7 +14,7 @@ def v2_ammo_process(item_en, item_ko, item_ja):
         "ja": item_ja.get("name"),
     }
     category = "Ammo"
-    efficiency = get_efficiency(name)
+    efficiency = get_efficiency(item_en.get("name"))
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
     image_height = item_en.get("height")
