@@ -13,6 +13,7 @@ from custom_module.hideout_func import (
     v2_hideout_master_process,
     v2_hideout_level_process,
     v2_hideout_item_require_process,
+    v2_hideout_trader_process,
 )
 
 
@@ -208,7 +209,7 @@ with DAG(
                         ):
                             cursor.execute(
                                 sql,
-                                v2_hideout_master_process(
+                                v2_hideout_trader_process(
                                     level_en.get("id"), trader_en, trader_ko, trader_ja
                                 ),
                             )
