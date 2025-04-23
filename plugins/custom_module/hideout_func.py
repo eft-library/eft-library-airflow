@@ -255,18 +255,20 @@ def v2_hideout_crafts_process(item_en, item_ko, item_ja):
     update_time = pendulum.now("Asia/Seoul")
     lev_id = item_en.get("id")
     name = {
-        "en": item_en.get("rewardItems")[0].get("name"),
-        "ko": item_en.get("rewardItems")[0].get("name"),
-        "ja": item_en.get("rewardItems")[0].get("name"),
+        "en": item_en.get("rewardItems")[0].get("item").get("name"),
+        "ko": item_en.get("rewardItems")[0].get("item").get("name"),
+        "ja": item_en.get("rewardItems")[0].get("item").get("name"),
     }
     station_id = item_en["station"].get("id") if item_en.get("station") else None
     level = item_en.get("level")
-    width = item_en.get("rewardItems")[0].get("width")
-    height = item_en.get("rewardItems")[0].get("height")
+    reward_item = item_en.get("rewardItems")[0].get("item")
+
+    width = reward_item.get("width")
+    height = reward_item.get("height")
     duration = item_en.get("duration")
-    image = item_en.get("rewardItems")[0].get("gridImageLink")
-    quantity = item_en.get("rewardItems")[0].get("quantity")
-    reward_item_id = item_en.get("rewardItems")[0].get("id")
+    image = reward_item.get("gridImageLink")
+    quantity = reward_item.get("quantity")
+    reward_item_id = reward_item.get("id")
     merged_required_items = []
 
     for req_en, req_ko, req_ja in zip(
