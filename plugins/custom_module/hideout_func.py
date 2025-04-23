@@ -131,22 +131,24 @@ def v2_hideout_level_process(item_en):
 
 
 def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
+    print(item_en)
+    print(item_ko)
     """
     hideout item_require 가공
     """
     update_time = pendulum.now("Asia/Seoul")
     lev_id = item_en.get("id")
-    name = {
-        "en": item_en.get("name"),
-        "ko": item_ko.get("name"),
-        "ja": item_ja.get("name"),
-    }
     quantity = item_en.get("quantity")
     count = item_en.get("count")
 
     item_info = item_en["item"]
     image = item_info.get("gridImageLink")
     item_id = item_info.get("id")
+    name = {
+        "en": item_info.get("name"),
+        "ko": item_info.get("name"),
+        "ja": item_info.get("name"),
+    }
 
     return (
         lev_id,
