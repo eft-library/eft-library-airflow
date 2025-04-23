@@ -39,8 +39,8 @@ def v2_medical_process(item_en, item_ko, item_ja):
         else None
     )
     stim_effects = en_properties.get("stimEffects")
-    buff = get_buff(stim_effects)
-    debuff = get_debuff(stim_effects)
+    buff = get_buff(stim_effects) if stim_effects is not None else None
+    debuff = get_debuff(stim_effects) if stim_effects is not None else None
 
     info = json.dumps(
         {
