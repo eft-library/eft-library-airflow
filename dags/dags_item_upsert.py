@@ -29,9 +29,9 @@ from custom_module.item.ricochet_item_func import (
     v2_face_cover_process,
 )
 from custom_module.item.ammo_func import v2_ammo_process
-from custom_module.item.key_function import v2_key_process, process_key_map
-from custom_module.item.provisions_function import v2_provisions_process
-from custom_module.item.medical_function import v2_medical_process
+from custom_module.item.key_func import v2_key_process, process_key_map
+from custom_module.item.provisions_func import v2_provisions_process
+from custom_module.item.medical_func import v2_medical_process
 
 default_args = {
     "owner": "airflow",

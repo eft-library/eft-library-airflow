@@ -3,7 +3,7 @@ import pendulum
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-from custom_module.psql_function import read_sql
+from custom_module.psql_func import read_sql
 
 default_args = {
     "owner": "airflow",

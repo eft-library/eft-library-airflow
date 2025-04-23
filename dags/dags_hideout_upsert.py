@@ -6,8 +6,8 @@ import pendulum
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-from custom_module.psql_function import read_sql
-from custom_module.graphql_function import get_graphql
+from custom_module.psql_func import read_sql
+from custom_module.graphql_func import get_graphql
 from custom_module.hideout_func import (
     generate_hideout_stations_graphql,
     v2_hideout_master_process,
