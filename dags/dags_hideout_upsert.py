@@ -1,4 +1,5 @@
 import json
+import os
 
 from airflow import DAG
 import pendulum
@@ -8,7 +9,7 @@ from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
 from custom_module.hideout_func import generate_hideout_stations_graphql
-from custom_module.hideout.master_function import v2_hideout_master_process
+from custom_module.hideout.master_func import v2_hideout_master_process
 
 # from custom_module.hideout.level_function import process_level
 # from custom_module.hideout.item_require_function import process_item_require
@@ -90,6 +91,23 @@ with DAG(
                         sql, v2_hideout_master_process(item_en, item_ko, item_ja)
                     )
             conn.commit()
+
+    def remove_json_files(**kwargs):
+        files = [
+            en_path,
+            ko_path,
+            ja_path,
+        ]
+
+        for path in files:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"Deleted: {path}")
+                else:
+                    print(f"File not found: {path}")
+            except Exception as e:
+                print(f"Error deleting {path}: {e}")
 
     # def upsert_hideout_level(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
@@ -262,6 +280,12 @@ with DAG(
     #     provide_context=True,
     # )
 
+    remove_json_files_task = PythonOperator(
+        task_id="remove_json_files",
+        python_callable=remove_json_files,
+        provide_context=True,
+    )
+
     (
         fetch_data
         >> [
@@ -274,4 +298,5 @@ with DAG(
             # upsert_hideout_bonus_task,
             # upsert_hideout_crafts_task,
         ]
+        >> remove_json_files_task
     )

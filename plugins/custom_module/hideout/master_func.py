@@ -16,7 +16,7 @@ def v2_hideout_master_process(item_en, item_ko, item_ja):
     level_ids = get_level_ids(item_en.get("levels"))
     update_time = pendulum.now("Asia/Seoul")
 
-    return (id, json.dumps(name), level_ids, update_time)
+    return (item_id, json.dumps(name), level_ids, update_time)
 
 
 def get_level_ids(levels):
