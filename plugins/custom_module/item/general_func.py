@@ -85,7 +85,6 @@ def v2_armor_vest_process(item_en, item_ko, item_ja):
     image_height = item_en.get("height")
     update_time = pendulum.now("Asia/Seoul")
     weight = item_en.get("weight")
-
     properties = item_en.get("properties") or {}
 
     # 공통 필드 추출
@@ -115,6 +114,243 @@ def v2_armor_vest_process(item_en, item_ko, item_ja):
             "ergo_penalty": ergo_penalty,
             "speed_penalty": speed_penalty,
             "zones": zones,
+        }
+    )
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_headset_process(item_en, item_ko, item_ja):
+    """
+    headset 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    weight = item_en.get("weight")
+    category = "Headset"
+    image = item_en.get("gridImageLink")
+    distance_modifier = (
+        item_en["properties"].get("distanceModifier")
+        if item_en.get("properties")
+        else None
+    )
+    info = json.dumps({"weight": weight, "distance_modifier": distance_modifier})
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_backpack_process(item_en, item_ko, item_ja):
+    """
+    backpack 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    category = "Backpack"
+    weight = item_en.get("weight")
+
+    properties = item_en.get("properties") or {}
+    turn_penalty = properties.get("turnPenalty")
+    ergo_penalty = properties.get("ergoPenalty")
+    speed_penalty = properties.get("speedPenalty")
+    capacity = properties.get("capacity")
+    grids = properties.get("grids")
+
+    info = json.dumps(
+        {
+            "weight": weight,
+            "capacity": capacity,
+            "turn_penalty": turn_penalty,
+            "ergo_penalty": ergo_penalty,
+            "speed_penalty": speed_penalty,
+            "grids": grids,
+        }
+    )
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_container_process(item_en, item_ko, item_ja):
+    """
+    container 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    category = "Container"
+    weight = item_en.get("weight")
+    width = item_en.get("width")
+    height = item_en.get("height")
+
+    properties = item_en.get("properties") or {}
+    capacity = properties.get("capacity")
+    grids = properties.get("grids")
+
+    info = json.dumps(
+        {
+            "width": width,
+            "height": height,
+            "weight": weight,
+            "capacity": capacity,
+            "grids": grids,
+        }
+    )
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_loot_process(item_en, item_ko, item_ja):
+    """
+    loot 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    category = "Loot"
+    loot_category = item_en["category"].get("name") if item_en.get("category") else None
+    weight = item_en.get("weight")
+    info = json.dumps(
+        {
+            "loot_category": loot_category,
+            "weight": weight,
+        }
+    )
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_arm_band_process(item_en, item_ko, item_ja):
+    """
+    arm_band 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    weight = item_en.get("weight")
+    category = "Armband"
+    info = json.dumps({"weight": weight})
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_glasses_process(item_en, item_ko, item_ja):
+    """
+    glasses 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    weight = item_en.get("weight")
+    category = "Glasses"
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+    properties = item_en.get("properties") or {}
+    class_value = properties.get("class")
+    durability = properties.get("durability")
+    blindness_protection = properties.get("blindnessProtection")
+    material = properties.get("material")
+
+    info = json.dumps(
+        {
+            "weight": weight,
+            "class_value": class_value,
+            "durability": durability,
+            "material": material,
+            "blindness_protection": blindness_protection,
         }
     )
 
