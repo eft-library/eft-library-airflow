@@ -131,8 +131,6 @@ def v2_hideout_level_process(item_en):
 
 
 def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
-    print(item_en)
-    print(item_ko)
     """
     hideout item_require 가공
     """
@@ -141,7 +139,7 @@ def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
     quantity = item_en.get("quantity")
     count = item_en.get("count")
 
-    item_info = item_en["item"]
+    item_info = item_en["item"] or {}
     image = item_info.get("gridImageLink")
     item_id = item_info.get("id")
     name = {
@@ -158,5 +156,31 @@ def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
         count,
         image,
         item_id,
+        update_time,
+    )
+
+
+def v2_hideout_trader_process(level_id, item_en, item_ko, item_ja):
+    """
+    hideout trader 가공
+    """
+    update_time = pendulum.now("Asia/Seoul")
+    item_id = item_en.get("id")
+    value = item_en.get("value")
+    trader = item_en["trader"] or {}
+
+    image = trader.get("imageLink")
+    name = {
+        "en": item_en["trader"].get("name"),
+        "ko": item_ko["trader"].get("name"),
+        "ja": item_ja["trader"].get("name"),
+    }
+
+    return (
+        item_id,
+        level_id,
+        json.dumps(name),
+        value,
+        image,
         update_time,
     )
