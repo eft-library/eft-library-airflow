@@ -24,8 +24,6 @@ def v2_medical_process(item_en, item_ko, item_ja):
     medical_category = check_item["category"].get("name")
 
     en_properties = check_item.get("properties") or {}
-    ko_properties = item_ko.get("properties") or {}
-    ja_properties = item_ja.get("properties") or {}
 
     cures = en_properties.get("cures")
     energy_impact = en_properties.get("energyImpact")
