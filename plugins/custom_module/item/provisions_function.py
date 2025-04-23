@@ -1,3 +1,4 @@
+import copy
 import json
 import pendulum
 
@@ -19,14 +20,28 @@ def v2_provisions_process(item_en, item_ko, item_ja):
     weight = item_en.get("weight")
     update_time = pendulum.now("Asia/Seoul")
 
-    properties = item_en.get("properties") or {}
-    units = properties.get("units")
-    hydration = properties.get("hydration")
-    energy = properties.get("energy")
-    stim_effects = properties.get("stimEffects")
+    en_properties = item_en.get("properties") or {}
+    ko_properties = item_ko.get("properties") or {}
+    ja_properties = item_ja.get("properties") or {}
 
-    update_stime_effects = process_stim_effect(stim_effects)
-    result_stim_effects = add_painkiller(update_stime_effects, item_en.get("name"))
+    units = en_properties.get("units")
+    hydration = en_properties.get("hydration")
+    energy = en_properties.get("energy")
+    merged_stim_effects = []
+
+    for se_en, se_ko, se_ja in zip(
+        en_properties.get("stimEffects", []),
+        ko_properties.get("stimEffects", []),
+        ja_properties.get("stimEffects", []),
+    ):
+        merged = copy.deepcopy(se_en)
+        merged["skill_name_en"] = se_en.get("skillName", "")
+        merged["skill_name_ko"] = se_ko.get("skillName", "")
+        merged["skill_name_ja"] = se_ja.get("skillName", "")
+        merged.pop("skillName", None)
+        merged_stim_effects.append(merged)
+
+    result_stim_effects = add_painkiller(merged_stim_effects, item_en.get("name"))
     info = json.dumps(
         {
             "stim_effects": result_stim_effects,
@@ -47,47 +62,6 @@ def v2_provisions_process(item_en, item_ko, item_ja):
         image_height,
         update_time,
     )
-
-
-def process_stim_effect(stim_effects):
-    """
-    stim effect 효과 추가
-    """
-    new_effects = stim_effects
-    kr_skill = {
-        "Intellect": "지력",
-        "Attention": "주의력",
-        "Stress Resistance": "스트레스 저항력",
-        "Endurance": "지구력",
-        "Mag Drills": "탄창 훈련",
-        "Strength": "근력",
-        "Metabolism": "신진대사",
-        "Memory": "기억력",
-        "Health": "체력",
-        "Vitality": "활력",
-        "Immunity": "면역력",
-        "Perception": "인지능력",
-        "Charisma": "카리스마",
-    }
-
-    kr_type = {
-        "Energy recovery": "에너지 회복",
-        "Health regeneration": "체력 재생",
-        "HandsTremor": "손 떨림",
-        "Hydration recovery": "수분 회복",
-        "EnergyRate": "에너지 회복",
-        "HydrationRate": "수분 회복",
-        "HealthRate": "체력 재생",
-    }
-
-    for effects in new_effects:
-        if effects["type"] == "Skill" and effects["skillName"] in kr_skill:
-            effects["krSkill"] = kr_skill[effects["skillName"]]
-        else:
-            if effects["type"] in kr_type:
-                effects["krSkill"] = kr_type[effects["type"]]
-
-    return new_effects
 
 
 def add_painkiller(stim_effects, name):
