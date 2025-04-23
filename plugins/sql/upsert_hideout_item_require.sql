@@ -1,4 +1,4 @@
-INSERT INTO hideout_item_require_ㅑ18ㅜ (
+INSERT INTO hideout_item_require_i18n (
     id,
     level_id,
     name,
