@@ -4,7 +4,7 @@ from airflow.operators.python import BranchPythonOperator
 from airflow.operators.dummy import DummyOperator
 import datetime
 import pendulum
-from custom_module.data_dump_function import dump_script, remove_old_file_script
+from custom_module.data_dump_func import dump_script, remove_old_file_script
 
 
 # xcom으로 data_dump_task 성공 여부를 가져옴
