@@ -145,9 +145,9 @@ def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
     image = item_info.get("gridImageLink")
     item_id = item_info.get("id")
     name = {
-        "en": item_info.get("name"),
-        "ko": item_info.get("name"),
-        "ja": item_info.get("name"),
+        "en": item_en["item"].get("name"),
+        "ko": item_ko["item"].get("name"),
+        "ja": item_ja["item"].get("name"),
     }
 
     return (
