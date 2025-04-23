@@ -1,3 +1,4 @@
+import copy
 import json
 import pendulum
 
@@ -243,5 +244,59 @@ def v2_hideout_bonus_process(level_id, item_en, item_ko, item_ja):
         json.dumps(name),
         value,
         json.dumps(skill_name),
+        update_time,
+    )
+
+
+def v2_hideout_crafts_process(item_en, item_ko, item_ja):
+    """
+    hideout crafts 가공
+    """
+    update_time = pendulum.now("Asia/Seoul")
+    lev_id = item_en.get("id")
+    name = {
+        "en": item_en.get("rewardItems")[0].get("name"),
+        "ko": item_en.get("rewardItems")[0].get("name"),
+        "ja": item_en.get("rewardItems")[0].get("name"),
+    }
+    station_id = item_en["station"].get("id") if item_en.get("station") else None
+    level = item_en.get("level")
+    width = item_en.get("rewardItems")[0].get("width")
+    height = item_en.get("rewardItems")[0].get("height")
+    duration = item_en.get("duration")
+    image = item_en.get("rewardItems")[0].get("gridImageLink")
+    quantity = item_en.get("rewardItems").get("quantity")
+    reward_item_id = item_en.get("rewardItems")[0].get("id")
+    merged_required_items = []
+
+    for req_en, req_ko, req_ja in zip(
+        item_en.get("requiredItems", []),
+        item_ko.get("requiredItems", []),
+        item_ja.get("requiredItems", []),
+    ):
+        merged_req = copy.deepcopy(req_en)  # 영어 기준 구조 복사
+        item = req_en["item"]
+
+        # 다국어 이름 병합
+        item["name_en"] = req_en["item"].get("name", "")
+        item["name_ko"] = req_ko["item"].get("name", "")
+        item["name_ja"] = req_ja["item"].get("name", "")
+        del item["name"]
+
+        merged_req["item"] = item
+        merged_required_items.append(merged_req)
+
+    return (
+        lev_id,
+        f"{station_id}-{level}",
+        level,
+        width,
+        height,
+        json.dumps(name),
+        duration,
+        json.dumps(merged_required_items),
+        image,
+        quantity,
+        reward_item_id,
         update_time,
     )

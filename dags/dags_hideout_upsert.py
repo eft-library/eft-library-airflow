@@ -17,10 +17,9 @@ from custom_module.hideout_func import (
     v2_hideout_station_require_process,
     v2_hideout_skill_require_process,
     v2_hideout_bonus_process,
+    v2_hideout_crafts_process,
 )
 
-
-# from custom_module.hideout.crafts_function import process_crafts
 
 default_args = {
     "owner": "airflow",
@@ -360,19 +359,46 @@ with DAG(
 
             conn.commit()
 
-    # def upsert_hideout_crafts(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_tkl_hideout_crafts.sql")
-    #     data_list = hideout_list["data"]["hideoutStations"]
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for hideout in data_list:
-    #                 for level in hideout["crafts"]:
-    #                     cursor.execute(sql, process_crafts(level))
-    #         conn.commit()
+    def upsert_hideout_crafts(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
+
+        item_ids = (
+            set(item_en_dict.keys())
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_hideout_crafts.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    for level_en, level_ko, level_ja in zip(
+                        item_en["crafts"], item_ko["crafts"], item_ja["crafts"]
+                    ):
+                        cursor.execute(
+                            sql,
+                            v2_hideout_crafts_process(level_en, level_ko, level_ja),
+                        )
+
+            conn.commit()
 
     def remove_json_files(**kwargs):
         files = [
@@ -444,12 +470,12 @@ with DAG(
         provide_context=True,
     )
 
-    # upsert_hideout_crafts_task = PythonOperator(
-    #     task_id="upsert_hideout_crafts",
-    #     python_callable=upsert_hideout_crafts,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+    upsert_hideout_crafts_task = PythonOperator(
+        task_id="upsert_hideout_crafts",
+        python_callable=upsert_hideout_crafts,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
@@ -467,7 +493,7 @@ with DAG(
             upsert_hideout_station_require_task,
             upsert_hideout_skill_require_task,
             upsert_hideout_bonus_task,
-            # upsert_hideout_crafts_task,
+            upsert_hideout_crafts_task,
         ]
         >> remove_json_files_task
     )

@@ -1,10 +1,10 @@
-INSERT INTO tkl_hideout_crafts (
+INSERT INTO hideout_crafts_i18n (
     id,
     level_id,
     level,
     width,
     height,
-    name_en,
+    name,
     duration,
     req_item,
     image,
@@ -19,7 +19,7 @@ ON CONFLICT (id) DO UPDATE SET
     level = EXCLUDED.level,
     width = EXCLUDED.width,
     height = EXCLUDED.height,
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     duration = EXCLUDED.duration,
     req_item = EXCLUDED.req_item,
     image = EXCLUDED.image,
