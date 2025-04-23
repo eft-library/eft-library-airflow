@@ -7,7 +7,7 @@ def v2_headwear_process(item_en, item_ko, item_ja):
     """
     headwear 데이터 가공
     """
-    item_en_id = item_en.get("id")
+    item_id = item_en.get("id")
     name = {
         "en": item_en.get("name"),
         "ko": item_ko.get("name"),
@@ -63,7 +63,76 @@ def v2_headwear_process(item_en, item_ko, item_ja):
     )
 
     return (
-        item_en_id,
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        update_time,
+    )
+
+
+def v2_face_cover_process(item_en, item_ko, item_ja):
+    """
+    face_cover 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    category = "FaceCover"
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+    weight = item_en.get("weight")
+
+    properties = item_en.get("properties") or {}
+    turn_penalty = properties.get("turnPenalty")
+    ergo_penalty = properties.get("ergoPenalty")
+    speed_penalty = properties.get("speedPenalty")
+    material = properties.get("material")
+
+    class_value = properties.get("class")
+    zones = None
+    durability = None
+    ricochet_result = None
+
+    if class_value:
+        zones = {
+            "zones_en": item_en.get("properties").get("headZones"),
+            "zones_ko": item_ko.get("properties").get("headZones"),
+            "zones_ja": item_ja.get("properties").get("headZones"),
+        }
+        durability = properties.get("durability")
+        en_ricochet_chance = properties.get("ricochetY")
+        ricochet_chance = ricochet_chance_edit(item_en.get("name"), en_ricochet_chance)
+        ricochet_result = {
+            "ricochet_chance_en": ricochet_chance_en(ricochet_chance),
+            "ricochet_chance_ko": ricochet_chance_kr(ricochet_chance),
+            "ricochet_chance_ja": ricochet_chance_ja(ricochet_chance),
+        }
+
+    info = json.dumps(
+        {
+            "weight": weight,
+            "class_value": class_value,
+            "zones": zones,
+            "material": material,
+            "turn_penalty": turn_penalty,
+            "ergo_penalty": ergo_penalty,
+            "speed_penalty": speed_penalty,
+            "ricochet_chance": ricochet_result,
+            "durability": durability,
+        }
+    )
+
+    return (
+        item_id,
         json.dumps(name),
         category,
         info,

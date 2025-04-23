@@ -22,15 +22,17 @@ from custom_module.item.general_func import (
     v2_container_process,
     v2_loot_process,
     v2_arm_band_process,
+    v2_glasses_process,
 )
-from custom_module.item.headwear_func import v2_headwear_process
+from custom_module.item.ricochet_item_func import (
+    v2_headwear_process,
+    v2_face_cover_process,
+)
+from custom_module.item.ammo_func import v2_ammo_process
+from custom_module.item.key_function import v2_key_process, process_key_map
 
-# from custom_module.item.key_function import new_process_key, process_key_map
 # from custom_module.item.provisions_function import new_process_provisions
 # from custom_module.item.medical_function import new_process_medical
-# from custom_module.item.ammo_function import new_process_ammo
-# from custom_module.item.face_cover_function import new_process_face_cover
-# from custom_module.item.glasses_function import new_process_glasses
 
 default_args = {
     "owner": "airflow",
@@ -456,19 +458,162 @@ with DAG(
                     cursor.execute(sql, v2_arm_band_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    # def upsert_key(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Key")
-    #     key_map = process_key_map(item_list["data"]["maps"])
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_key(item, key_map))
-    #         conn.commit()
+    def upsert_glasses(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Vis. observ. device")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(sql, v2_glasses_process(item_en, item_ko, item_ja))
+            conn.commit()
+
+    def upsert_face_cover(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Face Cover")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(
+                        sql, v2_face_cover_process(item_en, item_ko, item_ja)
+                    )
+            conn.commit()
+
+    def upsert_ammo(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Ammo")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(sql, v2_ammo_process(item_en, item_ko, item_ja))
+            conn.commit()
+
+    def upsert_key(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Ammo")
+
+        en_key_map = process_key_map(item_en_list["maps"])
+        ko_key_map = process_key_map(item_ko_list["maps"])
+        ja_key_map = process_key_map(item_ja_list["maps"])
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(
+                        sql,
+                        v2_key_process(
+                            item_en,
+                            item_ko,
+                            item_ja,
+                            en_key_map,
+                            ko_key_map,
+                            ja_key_map,
+                        ),
+                    )
+            conn.commit()
+
     #
 
     # def upsert_provisions(postgres_conn_id, **kwargs):
@@ -497,48 +642,12 @@ with DAG(
     #                 cursor.execute(sql, new_process_medical(item))
     #         conn.commit()
     #
-    # def upsert_ammo(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Ammo")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_ammo(item))
-    #         conn.commit()
+
     #
 
     #
-    # def upsert_face_cover(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Face Cover")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_face_cover(item))
-    #         conn.commit()
-    #
 
     #
-    # def upsert_glasses(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Vis. observ. device")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_glasses(item))
-    #         conn.commit()
     #
     # def update_item_url_mapping(postgres_conn_id, **kwargs):
     #     postgres_hook = PostgresHook(postgres_conn_id)
@@ -642,12 +751,34 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
-    # upsert_key_task = PythonOperator(
-    #     task_id="upsert_key",
-    #     python_callable=upsert_key,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
+    upsert_glasses_task = PythonOperator(
+        task_id="upsert_glasses",
+        python_callable=upsert_glasses,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    upsert_face_cover_task = PythonOperator(
+        task_id="upsert_face_cover",
+        python_callable=upsert_face_cover,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    upsert_ammo_task = PythonOperator(
+        task_id="upsert_ammo",
+        python_callable=upsert_ammo,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    upsert_key_task = PythonOperator(
+        task_id="upsert_key",
+        python_callable=upsert_key,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
     #
     # upsert_provisions_task = PythonOperator(
     #     task_id="upsert_provisions",
@@ -663,30 +794,15 @@ with DAG(
     #     provide_context=True,
     # )
     #
-    # upsert_ammo_task = PythonOperator(
-    #     task_id="upsert_ammo",
-    #     python_callable=upsert_ammo,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
     #
 
     #
-    # upsert_face_cover_task = PythonOperator(
-    #     task_id="upsert_face_cover",
-    #     python_callable=upsert_face_cover,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
     #
 
     #
-    # upsert_glasses_task = PythonOperator(
-    #     task_id="upsert_glasses",
-    #     python_callable=upsert_glasses,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
     #
     # update_item_url_mapping_task = PythonOperator(
     #     task_id="update_item_url_mapping",
@@ -707,12 +823,12 @@ with DAG(
         upsert_container_task,
         upsert_loot_task,
         upsert_arm_band_task,
-        # upsert_key_task,
+        upsert_glasses_task,
+        upsert_face_cover_task,
+        upsert_ammo_task,
+        upsert_key_task,
         # upsert_provisions_task,
         # upsert_medical_task,
-        # upsert_ammo_task,
-        # upsert_face_cover_task,
-        # upsert_glasses_task,
     ]
 
     remove_json_files_task = PythonOperator(
