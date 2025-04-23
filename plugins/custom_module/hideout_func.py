@@ -267,7 +267,7 @@ def v2_hideout_crafts_process(item_en, item_ko, item_ja):
     height = reward_item.get("height")
     duration = item_en.get("duration")
     image = reward_item.get("gridImageLink")
-    quantity = reward_item.get("quantity")
+    quantity = item_en.get("rewardItems")[0].get("quantity")
     reward_item_id = reward_item.get("id")
     merged_required_items = []
 
