@@ -8,10 +8,14 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_function import read_sql
 from custom_module.graphql_function import get_graphql
-from custom_module.hideout_func import generate_hideout_stations_graphql
-from custom_module.hideout.master_func import v2_hideout_master_process
+from custom_module.hideout_func import (
+    generate_hideout_stations_graphql,
+    v2_hideout_master_process,
+    v2_hideout_level_process,
+    v2_hideout_item_require_process,
+)
 
-# from custom_module.hideout.level_function import process_level
+
 # from custom_module.hideout.item_require_function import process_item_require
 # from custom_module.hideout.trader_require_function import process_trader_require
 # from custom_module.hideout.station_require_function import process_station_require
@@ -92,53 +96,79 @@ with DAG(
                     )
             conn.commit()
 
-    def remove_json_files(**kwargs):
-        files = [
-            en_path,
-            ko_path,
-            ja_path,
-        ]
+    def upsert_hideout_level(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
-        for path in files:
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-                    print(f"Deleted: {path}")
-                else:
-                    print(f"File not found: {path}")
-            except Exception as e:
-                print(f"Error deleting {path}: {e}")
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
 
-    # def upsert_hideout_level(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_tkl_hideout_level.sql")
-    #     data_list = hideout_list["data"]["hideoutStations"]
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for hideout in data_list:
-    #                 for level in hideout["levels"]:
-    #                     cursor.execute(sql, process_level(level))
-    #         conn.commit()
-    #
-    # def upsert_hideout_item_require(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     hideout_list = ti.xcom_pull(task_ids="fetch_hideout_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_tkl_hideout_item_require.sql")
-    #     data_list = hideout_list["data"]["hideoutStations"]
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for hideout in data_list:
-    #                 for level in hideout["levels"]:
-    #                     for require in level["itemRequirements"]:
-    #                         cursor.execute(
-    #                             sql, process_item_require(level.get("id"), require)
-    #                         )
-    #         conn.commit()
+        item_en_dict = {item["id"]: item for item in item_en_list}
+
+        item_ids = set(item_en_dict.keys())
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_hideout_level.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    for level in item_en["levels"]:
+                        cursor.execute(sql, v2_hideout_level_process(level))
+            conn.commit()
+
+    def upsert_hideout_item_require(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
+
+        item_ids = (
+            set(item_en_dict.keys())
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_hideout_item_require.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    for level_en, level_ko, level_ja in zip(
+                        item_en["levels"], item_ko["levels"], item_ja["levels"]
+                    ):
+                        for require_en, require_ko, require_ja in zip(
+                            level_en["itemRequirements"],
+                            level_ko["itemRequirements"],
+                            level_ja["itemRequirements"],
+                        ):
+                            cursor.execute(
+                                sql,
+                                v2_hideout_item_require_process(
+                                    level_en.get("id"),
+                                    require_en,
+                                    require_ko,
+                                    require_ja,
+                                ),
+                            )
+
+            conn.commit()
+
     #
     # def upsert_hideout_trader_require(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
@@ -220,6 +250,23 @@ with DAG(
     #                     cursor.execute(sql, process_crafts(level))
     #         conn.commit()
 
+    def remove_json_files(**kwargs):
+        files = [
+            en_path,
+            ko_path,
+            ja_path,
+        ]
+
+        for path in files:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"Deleted: {path}")
+                else:
+                    print(f"File not found: {path}")
+            except Exception as e:
+                print(f"Error deleting {path}: {e}")
+
     fetch_data = PythonOperator(
         task_id="fetch_hideout_list", python_callable=fetch_hideout_list
     )
@@ -230,20 +277,20 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
-    #
-    # upsert_hideout_level_task = PythonOperator(
-    #     task_id="upsert_hideout_level",
-    #     python_callable=upsert_hideout_level,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
-    #
-    # upsert_hideout_item_require_task = PythonOperator(
-    #     task_id="upsert_hideout_item_require",
-    #     python_callable=upsert_hideout_item_require,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
+    upsert_hideout_level_task = PythonOperator(
+        task_id="upsert_hideout_level",
+        python_callable=upsert_hideout_level,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
+    upsert_hideout_item_require_task = PythonOperator(
+        task_id="upsert_hideout_item_require",
+        python_callable=upsert_hideout_item_require,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
     #
     # upsert_hideout_trader_require_task = PythonOperator(
     #     task_id="upsert_hideout_trader_require",
@@ -290,8 +337,8 @@ with DAG(
         fetch_data
         >> [
             upsert_hideout_master_task,
-            # upsert_hideout_level_task,
-            # upsert_hideout_item_require_task,
+            upsert_hideout_level_task,
+            upsert_hideout_item_require_task,
             # upsert_hideout_trader_require_task,
             # upsert_hideout_station_require_task,
             # upsert_hideout_skill_require_task,

@@ -1,4 +1,4 @@
-INSERT INTO tkl_hideout_level (
+INSERT INTO hideout_level_i18n (
     id,
     level,
     construction_time,
