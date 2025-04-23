@@ -1,12 +1,12 @@
-INSERT INTO tkl_hideout_master (
+INSERT INTO hideout_master_i18n (
     id,
-    name_en,
+    name,
     level_ids,
     update_time
 ) VALUES (
     %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     level_ids = EXCLUDED.level_ids,
     update_time = EXCLUDED.update_time;

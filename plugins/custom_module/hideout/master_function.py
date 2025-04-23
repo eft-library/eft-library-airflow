@@ -1,17 +1,22 @@
+import json
+
 import pendulum
 
 
-def process_master(item):
+def v2_hideout_master_process(item_en, item_ko, item_ja):
     """
     hideout master 가공
     """
-    id = item.get("id")
-    name_en = item.get('name')
-    level_ids = get_level_ids(item.get("levels"))
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    level_ids = get_level_ids(item_en.get("levels"))
     update_time = pendulum.now("Asia/Seoul")
-    return (
-        id, name_en, level_ids, update_time
-    )
+
+    return (id, json.dumps(name), level_ids, update_time)
 
 
 def get_level_ids(levels):

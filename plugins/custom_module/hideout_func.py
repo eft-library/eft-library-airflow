@@ -1,87 +1,87 @@
-hideout_graphql = """
-{
-  hideoutStations {
+def generate_hideout_stations_graphql(lang: str) -> str:
+    return f"""
+{{
+  hideoutStations(lang: {lang}) {{
     id
     name
-    levels {
+    levels {{
       id
-      itemRequirements {
+      itemRequirements {{
         id
-        item {
+        item {{
           id
           name
           gridImageLink
-        }
+        }}
         quantity
         count
-      }
-      skillRequirements {
+      }}
+      skillRequirements {{
         id
         name
         level
-        skill {
+        skill {{
           id
           name
-        }
-      }
-      traderRequirements {
+        }}
+      }}
+      traderRequirements {{
         id
         requirementType
         value
-        trader {
+        trader {{
           name
           imageLink
-        }
+        }}
         compareMethod
-      }
-      stationLevelRequirements {
+      }}
+      stationLevelRequirements {{
         id
         level
-        station {
+        station {{
           id
           name
           imageLink
-        }
-      }
-      id
+        }}
+      }}
       level
-      bonuses {
+      bonuses {{
         type
         name
         value
         skillName
-      }
+      }}
       constructionTime
-    }
+    }}
     imageLink
-    crafts {
+    crafts {{
       id
-      station {
+      station {{
         id
-      }
+      }}
       level
-      rewardItems {
-        item {
+      rewardItems {{
+        item {{
           id
           name
           width
           height
           gridImageLink
-        }
+        }}
         quantity
-      }
+      }}
       duration
-      requiredItems {
-        item {
+      requiredItems {{
+        item {{
           id
           name
           gridImageLink
           width
           height
-        }
+        }}
         quantity
-      }
-    }
-  }
-}
+      }}
+    }}
+  }}
+}}
 """
