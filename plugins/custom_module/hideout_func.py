@@ -184,3 +184,64 @@ def v2_hideout_trader_process(level_id, item_en, item_ko, item_ja):
         image,
         update_time,
     )
+
+
+def v2_hideout_station_require_process(level_id, item_en, item_ko, item_ja):
+    """
+    hideout station_require 가공
+    """
+    lev_id = item_en.get("id")
+    level = item_en.get("level")
+    station = item_en["station"]
+    station_master_id = station.get("id")
+    name = {
+        "en": item_en["station"].get("name"),
+        "ko": item_ko["station"].get("name"),
+        "ja": item_ja["station"].get("name"),
+    }
+    update_time = pendulum.now("Asia/Seoul")
+
+    return (lev_id, level_id, level, json.dumps(name), station_master_id, update_time)
+
+
+def v2_hideout_skill_require_process(level_id, item_en, item_ko, item_ja):
+    """
+    hideout skill require 가공
+    """
+    update_time = pendulum.now("Asia/Seoul")
+    lev_id = item_en.get("id")
+    level = item_en.get("level")
+    name = {
+        "en": item_en["skill"].get("name"),
+        "ko": item_ko["skill"].get("name"),
+        "ja": item_ja["skill"].get("name"),
+    }
+    return (lev_id, level_id, level, json.dumps(name), update_time)
+
+
+def v2_hideout_bonus_process(level_id, item_en, item_ko, item_ja):
+    """
+    hideout bonus 가공
+    """
+    update_time = pendulum.now("Asia/Seoul")
+    type = item_en.get("type")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    value = item_en.get("value")
+    skill_name = {
+        "en": item_en.get("skillName"),
+        "ko": item_ko.get("skillName"),
+        "ja": item_ja.get("skillName"),
+    }
+
+    return (
+        level_id,
+        type,
+        json.dumps(name),
+        value,
+        json.dumps(skill_name),
+        update_time,
+    )
