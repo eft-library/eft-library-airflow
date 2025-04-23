@@ -1,68 +1,89 @@
+import copy
+
 import pendulum
 import json
 
 
-def new_process_medical(item):
+def v2_medical_process(item_en, item_ko, item_ja):
     """
     medical 데이터 가공
     """
-    check_item = check_morphine(item)
+    check_item = check_morphine(item_en)
 
-    item_id = item.get("id")
-    name_en = item.get("name")
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    add_painkiller(item_en)
     category = "Medical"
-    image = item.get("gridImageLink")
-    image_width = item.get("width")
-    image_height = item.get("height")
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    weight = item_en.get("weight")
     update_time = pendulum.now("Asia/Seoul")
-
-
-    cures_en = check_item["properties"].get("cures")
-    cures_kr = None
-    if cures_en is not None:
-        cures_kr = get_cures_kr(cures_en)
     medical_category = check_item["category"].get("name")
-    stim_effect = check_item["properties"].get("stimEffects")
-    add_painkiller(item)
-    buff = None
-    debuff = None
-    if stim_effect is not None:
-        new_stim_effect = process_stim_effect(stim_effect)
-        buff = get_buff(new_stim_effect)
-        debuff = get_debuff(new_stim_effect)
-    energy_impact = check_item["properties"].get("energyImpact")
-    hydration_impact = check_item["properties"].get("hydrationImpact")
-    painkiller_duration = check_item["properties"].get("painkillerDuration")
-    hitpoints = check_item["properties"].get("hitpoints")
-    update_duration = None
-    if painkiller_duration is not None:
-        update_duration = update_painkiller_duration(painkiller_duration, name_en)
-    use_time = check_item["properties"].get("useTime")
-    uses = check_item["properties"].get("uses")
 
+    en_properties = check_item.get("properties") or {}
+    ko_properties = item_ko.get("properties") or {}
+    ja_properties = item_ja.get("properties") or {}
 
-    info = json.dumps({"cures_en": cures_en,
-                       "cures_kr": cures_kr,
-                       "buff": buff if buff is not "null" else None,
-                       "debuff": debuff if debuff is not "null" else None,
-                       "medical_category": medical_category,
-                       "use_time": use_time,
-                       "weight": item.get("weight"),
-                       "uses": uses,
-                       "energy_impact": energy_impact,
-                       "hydration_impact": hydration_impact,
-                       "painkiller_duration": update_duration,
-                       "hitpoints": hitpoints})
+    cures = en_properties.get("cures")
+    energy_impact = en_properties.get("energyImpact")
+    hydration_impact = en_properties.get("hydrationImpact")
+    painkiller_duration = en_properties.get("painkillerDuration")
+    hitpoints = en_properties.get("hitpoints")
+    use_time = en_properties.get("useTime")
+    uses = en_properties.get("uses")
+
+    update_duration = (
+        update_painkiller_duration(painkiller_duration, item_en.get("name"))
+        if painkiller_duration is not None
+        else None
+    )
+    merged_stim_effects = []
+
+    for se_en, se_ko, se_ja in zip(
+        en_properties.get("stimEffects", []),
+        ko_properties.get("stimEffects", []),
+        ja_properties.get("stimEffects", []),
+    ):
+        merged = copy.deepcopy(se_en)
+        merged["skill_name_en"] = se_en.get("skillName", "")
+        merged["skill_name_ko"] = se_ko.get("skillName", "")
+        merged["skill_name_ja"] = se_ja.get("skillName", "")
+        merged.pop("skillName", None)
+        merged_stim_effects.append(merged)
+
+    buff = get_buff(merged_stim_effects)
+    debuff = get_debuff(merged_stim_effects)
+
+    info = json.dumps(
+        {
+            "cures": cures,
+            "buff": buff,
+            "debuff": debuff,
+            "medical_category": medical_category,
+            "use_time": use_time,
+            "weight": weight,
+            "uses": uses,
+            "energy_impact": energy_impact,
+            "hydration_impact": hydration_impact,
+            "painkiller_duration": update_duration,
+            "hitpoints": hitpoints,
+        }
+    )
 
     return (
         item_id,
-        name_en,
+        json.dumps(name),
         category,
         info,
         image,
         image_width,
         image_height,
-        update_time
+        update_time,
     )
 
 
@@ -115,6 +136,7 @@ def process_stim_effect(stim_effects):
                 effects["krSkill"] = kr_type[effects["type"]]
 
     return new_effects
+
 
 def get_buff(stim_effect):
     """
@@ -250,32 +272,6 @@ def get_debuff(stim_effect):
                 debuff_list.append(effect)
 
     return debuff_list
-
-
-def get_cures_kr(cures):
-    """
-    cures kr 값 반환
-    """
-
-    kr_list = {
-        "Pain": "고통 제거",
-        "Contusion": "뇌진탕 제거",
-        "LightBleeding": "가벼운 출혈 제거",
-        "HeavyBleeding": "깊은 출혈 제거",
-        "Fracture": "골절 제거",
-        "EnergyRate": "에너지 회복",
-        "HydrationRate": "수분 회복",
-        "HealthRate": "체력 재생",
-        "HandsTremor": "손 떨림"
-    }
-
-    kr_result = []
-
-    for heal in cures:
-        if heal in kr_list:
-            kr_result.append(kr_list[heal])
-
-    return kr_result
 
 
 def add_painkiller(item):
