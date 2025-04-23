@@ -1,7 +1,7 @@
-INSERT INTO tkl_hideout_item_require (
+INSERT INTO hideout_item_require_ㅑ18ㅜ (
     id,
     level_id,
-    name_en,
+    name,
     quantity,
     "count",
     image,
@@ -12,7 +12,7 @@ INSERT INTO tkl_hideout_item_require (
 )
 ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
-    name_en = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     quantity = EXCLUDED.quantity,
     "count" = EXCLUDED.count,
     image = EXCLUDED.image,
