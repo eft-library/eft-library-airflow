@@ -256,8 +256,8 @@ def v2_hideout_crafts_process(item_en, item_ko, item_ja):
     lev_id = item_en.get("id")
     name = {
         "en": item_en.get("rewardItems")[0].get("item").get("name"),
-        "ko": item_en.get("rewardItems")[0].get("item").get("name"),
-        "ja": item_en.get("rewardItems")[0].get("item").get("name"),
+        "ko": item_ko.get("rewardItems")[0].get("item").get("name"),
+        "ja": item_ja.get("rewardItems")[0].get("item").get("name"),
     }
     station_id = item_en["station"].get("id") if item_en.get("station") else None
     level = item_en.get("level")
