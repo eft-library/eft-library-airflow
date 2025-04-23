@@ -11,6 +11,6 @@ INSERT INTO hideout_station_require_i18n (
 ON CONFLICT (id) DO UPDATE SET
     level_id = EXCLUDED.level_id,
     level = EXCLUDED.level,
-    name = EXCLUDED.name_en,
+    name = EXCLUDED.name,
     station_master_id = EXCLUDED.station_master_id,
     update_time = EXCLUDED.update_time;

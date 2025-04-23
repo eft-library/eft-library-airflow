@@ -305,7 +305,7 @@ with DAG(
                         ):
                             cursor.execute(
                                 sql,
-                                v2_hideout_station_require_process(
+                                v2_hideout_skill_require_process(
                                     level_en.get("id"), trader_en, trader_ko, trader_ja
                                 ),
                             )
