@@ -11,18 +11,18 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-with (DAG(
-    dag_id="dags_tkl_search_update",
+with DAG(
+    dag_id="dags_search_update",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
     schedule_interval="15 0 * * *",
-    tags=['postgresql', "tarkov-dev-api"],
+    tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
-) as dag):
+) as dag:
 
     def update_search(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("update_tkl_search.sql")
+        sql = read_sql("update_search.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
