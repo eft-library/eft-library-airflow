@@ -9,9 +9,9 @@ WITH ranked_items AS (
     FROM (
         SELECT
             id,
-            trim(both '-' from regexp_replace(lower(name_en), '[^a-z0-9]+', '-', 'g')) AS base_url,
+            trim(both '-' from regexp_replace(lower(name->>'en'), '[^a-z0-9]+', '-', 'g')) AS base_url,
             ROW_NUMBER() OVER (PARTITION BY
-                trim(both '-' from regexp_replace(lower(name_en), '[^a-z0-9]+', '-', 'g'))
+                trim(both '-' from regexp_replace(lower(name->>'en'), '[^a-z0-9]+', '-', 'g'))
                 ORDER BY id
             ) AS rn
         FROM item_i18n
