@@ -34,9 +34,9 @@ def v2_headwear_process(item_en, item_ko, item_ja):
 
     if class_value:
         zones = {
-            "zones_en": item_en.get("properties").get("zones"),
-            "zones_ko": item_ko.get("properties").get("zones"),
-            "zones_ja": item_ja.get("properties").get("zones"),
+            "zones_en": item_en.get("properties").get("headZones"),
+            "zones_ko": item_ko.get("properties").get("headZones"),
+            "zones_ja": item_ja.get("properties").get("headZones"),
         }
         durability = properties.get("durability")
         en_ricochet_chance = properties.get("ricochetY")

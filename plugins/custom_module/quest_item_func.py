@@ -28,7 +28,7 @@ def v2_quest_item_process(item_en, item_ko, item_ja):
     }
     category = "Loot"
     image = item_en.get("gridImageLink")
-    info = json.dumps({"loot_category": "Quest items"})
+    info = json.dumps({"weight": 0, "loot_category": "Quest items"})
     image_width = item_en.get("width")
     image_height = item_en.get("height")
     update_time = pendulum.now("Asia/Seoul")
