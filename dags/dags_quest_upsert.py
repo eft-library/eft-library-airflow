@@ -81,14 +81,14 @@ with DAG(
                     cursor.execute(sql, v2_quest_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    # def update_quest_url_mapping(postgres_conn_id, **kwargs):
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("update_quest_url_mapping.sql")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             cursor.execute(sql)
-    #         conn.commit()
+    def update_quest_url_mapping(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("update_quest_url_mapping.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
 
     def remove_json_files(**kwargs):
         files = [
@@ -124,11 +124,16 @@ with DAG(
         provide_context=True,
     )
 
-    # update_quest_url_mapping_task = PythonOperator(
-    #     task_id="update_quest_url_mapping",
-    #     python_callable=update_quest_url_mapping,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+    update_quest_url_mapping_task = PythonOperator(
+        task_id="update_quest_url_mapping",
+        python_callable=update_quest_url_mapping,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
 
-    fetch_data >> upsert_quest_task >> remove_json_files_task
+    (
+        fetch_data
+        >> upsert_quest_task
+        >> update_quest_url_mapping_task
+        >> remove_json_files_task
+    )
