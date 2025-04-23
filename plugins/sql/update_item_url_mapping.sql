@@ -14,10 +14,10 @@ WITH ranked_items AS (
                 trim(both '-' from regexp_replace(lower(name_en), '[^a-z0-9]+', '-', 'g'))
                 ORDER BY id
             ) AS rn
-        FROM tkl_item
+        FROM item_i18n
     ) AS sub
 )
-UPDATE tkl_item
+UPDATE item_i18n
 SET url_mapping = ranked_items.final_url
 FROM ranked_items
-WHERE tkl_item.id = ranked_items.id;
+WHERE item_i18n.id = ranked_items.id;
