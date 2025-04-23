@@ -21,8 +21,6 @@ def v2_rig_process(item_en, item_ko, item_ja):
     update_time = pendulum.now("Asia/Seoul")
 
     properties = item_en.get("properties") or {}
-
-    # 공통 필드 추출
     turn_penalty = properties.get("turnPenalty")
     ergo_penalty = properties.get("ergoPenalty")
     speed_penalty = properties.get("speedPenalty")

@@ -2,38 +2,52 @@ import json
 import pendulum
 
 
-def new_process_provisions(item):
+def v2_provisions_process(item_en, item_ko, item_ja):
     """
     provisions 데이터 가공
     """
-    item_id = item.get("id")
-    name_en = item.get("name")
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
     category = "Provisions"
-    image = item.get("gridImageLink")
-    image_width = item.get("width")
-    image_height = item.get("height")
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    weight = item_en.get("weight")
     update_time = pendulum.now("Asia/Seoul")
-    stim_effects = (
-        item["properties"].get("stimEffects") if item.get("properties") else None
+
+    properties = item_en.get("properties") or {}
+    units = properties.get("units")
+    hydration = properties.get("hydration")
+    energy = properties.get("energy")
+    stim_effects = properties.get("stimEffects")
+
+    update_stime_effects = process_stim_effect(stim_effects)
+    result_stim_effects = add_painkiller(update_stime_effects, item_en.get("name"))
+    info = json.dumps(
+        {
+            "stim_effects": result_stim_effects,
+            "weight": weight,
+            "units": units,
+            "hydration": hydration,
+            "energy": energy,
+        }
     )
-    new_stim_effects = process_stim_effect(stim_effects)
-    info = json.dumps({"stim_effects": add_painkiller(new_stim_effects, name_en),
-                       "weight": item.get("weight"),
-                       "units": item["properties"].get("units") if item.get("properties") else None,
-                       "hydration": item["properties"].get("hydration") if item.get("properties") else None,
-                       "energy": item["properties"].get("energy") if item.get("properties") else None
-                       })
 
     return (
         item_id,
-        name_en,
+        json.dumps(name),
         category,
         info,
         image,
         image_width,
         image_height,
-        update_time
+        update_time,
     )
+
 
 def process_stim_effect(stim_effects):
     """

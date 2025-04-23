@@ -30,8 +30,8 @@ from custom_module.item.ricochet_item_func import (
 )
 from custom_module.item.ammo_func import v2_ammo_process
 from custom_module.item.key_function import v2_key_process, process_key_map
+from custom_module.item.provisions_function import v2_provisions_process
 
-# from custom_module.item.provisions_function import new_process_provisions
 # from custom_module.item.medical_function import new_process_medical
 
 default_args = {
@@ -614,20 +614,43 @@ with DAG(
                     )
             conn.commit()
 
-    #
+    def upsert_provisions(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
-    # def upsert_provisions(postgres_conn_id, **kwargs):
-    #     ti = kwargs["ti"]
-    #     item_list = ti.xcom_pull(task_ids="fetch_item_list")
-    #     postgres_hook = PostgresHook(postgres_conn_id)
-    #     sql = read_sql("upsert_item.sql")
-    #     data_list = check_category(item_list["data"]["items"], "Provisions")
-    #
-    #     with closing(postgres_hook.get_conn()) as conn:
-    #         with closing(conn.cursor()) as cursor:
-    #             for item in data_list:
-    #                 cursor.execute(sql, new_process_provisions(item))
-    #         conn.commit()
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Provisions")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(
+                        sql, v2_provisions_process(item_en, item_ko, item_ja)
+                    )
+            conn.commit()
+
     #
     # def upsert_medical(postgres_conn_id, **kwargs):
     #     ti = kwargs["ti"]
@@ -779,13 +802,13 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
         provide_context=True,
     )
-    #
-    # upsert_provisions_task = PythonOperator(
-    #     task_id="upsert_provisions",
-    #     python_callable=upsert_provisions,
-    #     op_kwargs={"postgres_conn_id": "tkl_db"},
-    #     provide_context=True,
-    # )
+
+    upsert_provisions_task = PythonOperator(
+        task_id="upsert_provisions",
+        python_callable=upsert_provisions,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
     #
     # upsert_medical_task = PythonOperator(
     #     task_id="upsert_medical",
@@ -827,7 +850,7 @@ with DAG(
         upsert_face_cover_task,
         upsert_ammo_task,
         upsert_key_task,
-        # upsert_provisions_task,
+        upsert_provisions_task,
         # upsert_medical_task,
     ]
 
