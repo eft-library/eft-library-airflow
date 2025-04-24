@@ -20,6 +20,7 @@ def generate_quest_graphql(lang: str) -> str:
       task {{
         id
         name
+        normalizedName
       }}
     }}
     objectives {{
@@ -30,6 +31,7 @@ def generate_quest_graphql(lang: str) -> str:
         questItem {{
           id
           name
+          normalizedName
           gridImageLink
         }}
         count
@@ -38,6 +40,7 @@ def generate_quest_graphql(lang: str) -> str:
         items {{
           id
           name
+          normalizedName
           gridImageLink
         }}
         count
@@ -49,6 +52,7 @@ def generate_quest_graphql(lang: str) -> str:
         item {{
           id
           name
+          normalizedName
           gridImageLink
         }}
         count
