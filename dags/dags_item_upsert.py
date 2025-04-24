@@ -685,15 +685,6 @@ with DAG(
                     cursor.execute(sql, v2_medical_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def update_item_url_mapping(postgres_conn_id, **kwargs):
-        postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("update_item_url_mapping.sql")
-
-        with closing(postgres_hook.get_conn()) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(sql)
-            conn.commit()
-
     def remove_json_files(**kwargs):
         files = [en_path, ko_path, ja_path]
 
@@ -830,13 +821,6 @@ with DAG(
         provide_context=True,
     )
 
-    update_item_url_mapping_task = PythonOperator(
-        task_id="update_item_url_mapping",
-        python_callable=update_item_url_mapping,
-        op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
-    )
-
     upsert_tasks = [
         upsert_gun_task,
         upsert_knife_task,
@@ -863,4 +847,4 @@ with DAG(
         provide_context=True,
     )
 
-    fetch_data >> upsert_tasks >> update_item_url_mapping_task >> remove_json_files_task
+    fetch_data >> upsert_tasks >> remove_json_files_task
