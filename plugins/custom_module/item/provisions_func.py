@@ -14,6 +14,7 @@ def v2_provisions_process(item_en, item_ko, item_ja):
         "ja": item_ja.get("name"),
     }
     category = "Provisions"
+    url_mapping = item_en.get("normalizedName")
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
     image_height = item_en.get("height")
@@ -60,6 +61,7 @@ def v2_provisions_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 

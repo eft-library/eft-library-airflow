@@ -4,6 +4,7 @@ def generate_item_graphql(lang: str) -> str:
   items(lang: {lang}) {{
     id
     name
+    normalizedName
     weight
     gridImageLink
     width
@@ -18,11 +19,13 @@ def generate_item_graphql(lang: str) -> str:
       ... on ItemPropertiesWeapon {{
         allowedAmmo {{
           name
+          normalizedName
           gridImageLink
         }}
         caliber
         defaultAmmo {{
           name
+          normalizedName
           gridImageLink
         }}
         fireModes

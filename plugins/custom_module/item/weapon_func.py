@@ -13,6 +13,7 @@ def v2_gun_process(item_en, item_ko, item_ja):
         "ja": item_ja.get("name"),
     }
     category = "Gun"
+    url_mapping = item_en.get("normalizedName")
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
     weight = item_en.get("weight")
@@ -71,6 +72,7 @@ def v2_gun_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -85,6 +87,7 @@ def v2_knife_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     category = "Knife"
     weight = item_en.get("weight")
     image = item_en.get("gridImageLink")
@@ -122,6 +125,7 @@ def v2_knife_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -136,6 +140,7 @@ def v2_throwable_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     weight = item_en.get("weight")
     category = "Throwable"
     image = item_en.get("gridImageLink")
@@ -183,5 +188,6 @@ def v2_throwable_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )

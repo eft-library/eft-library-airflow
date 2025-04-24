@@ -13,6 +13,7 @@ def v2_rig_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     category = "Rig"
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
@@ -63,6 +64,7 @@ def v2_rig_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -77,6 +79,7 @@ def v2_armor_vest_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     category = "ArmorVest"
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
@@ -123,6 +126,7 @@ def v2_armor_vest_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -137,6 +141,7 @@ def v2_headset_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     weight = item_en.get("weight")
     category = "Headset"
     image = item_en.get("gridImageLink")
@@ -158,6 +163,7 @@ def v2_headset_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -174,6 +180,7 @@ def v2_backpack_process(item_en, item_ko, item_ja):
     }
     category = "Backpack"
     weight = item_en.get("weight")
+    url_mapping = item_en.get("normalizedName")
 
     properties = item_en.get("properties") or {}
     turn_penalty = properties.get("turnPenalty")
@@ -205,6 +212,7 @@ def v2_backpack_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -219,6 +227,7 @@ def v2_container_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     category = "Container"
     weight = item_en.get("weight")
     width = item_en.get("width")
@@ -250,6 +259,7 @@ def v2_container_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -276,6 +286,7 @@ def v2_loot_process(item_en, item_ko, item_ja):
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
     image_height = item_en.get("height")
+    url_mapping = item_en.get("normalizedName")
     update_time = pendulum.now("Asia/Seoul")
 
     return (
@@ -286,6 +297,7 @@ def v2_loot_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -300,6 +312,7 @@ def v2_arm_band_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     weight = item_en.get("weight")
     category = "Armband"
     info = json.dumps({"weight": weight})
@@ -316,6 +329,7 @@ def v2_arm_band_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -330,6 +344,7 @@ def v2_glasses_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     weight = item_en.get("weight")
     category = "Glasses"
     image = item_en.get("gridImageLink")
@@ -360,5 +375,6 @@ def v2_glasses_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )

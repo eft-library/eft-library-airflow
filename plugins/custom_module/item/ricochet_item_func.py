@@ -19,6 +19,7 @@ def v2_headwear_process(item_en, item_ko, item_ja):
     image_height = item_en.get("height")
     update_time = pendulum.now("Asia/Seoul")
     weight = item_en.get("weight")
+    url_mapping = item_en.get("normalizedName")
 
     properties = item_en.get("properties") or {}
     turn_penalty = properties.get("turnPenalty")
@@ -70,6 +71,7 @@ def v2_headwear_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
@@ -85,6 +87,7 @@ def v2_face_cover_process(item_en, item_ko, item_ja):
         "ja": item_ja.get("name"),
     }
     category = "FaceCover"
+    url_mapping = item_en.get("normalizedName")
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
     image_height = item_en.get("height")
@@ -139,6 +142,7 @@ def v2_face_cover_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 

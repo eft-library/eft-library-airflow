@@ -6,9 +6,10 @@ INSERT INTO item_i18n (
     image,
     image_width,
     image_height,
+    url_mapping,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -17,4 +18,5 @@ ON CONFLICT (id) DO UPDATE SET
     image = EXCLUDED.image,
     image_width = EXCLUDED.image_width,
     image_height = EXCLUDED.image_height,
+    url_mapping = EXCLUDED.url_mapping,
     update_time = EXCLUDED.update_time;

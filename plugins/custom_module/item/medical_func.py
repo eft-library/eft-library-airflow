@@ -21,6 +21,7 @@ def v2_medical_process(item_en, item_ko, item_ja):
     image_height = item_en.get("height")
     weight = item_en.get("weight")
     update_time = pendulum.now("Asia/Seoul")
+    url_mapping = item_en.get("normalizedName")
     medical_category = check_item["category"].get("name")
 
     en_properties = check_item.get("properties") or {}
@@ -66,6 +67,7 @@ def v2_medical_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 

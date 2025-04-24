@@ -13,6 +13,7 @@ def v2_key_process(item_en, item_ko, item_ja, en_key_map, ko_key_map, ja_key_map
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     category = "Key"
     weight = item_en.get("weight")
     properties = item_en.get("properties") or {}
@@ -42,6 +43,7 @@ def v2_key_process(item_en, item_ko, item_ja, en_key_map, ko_key_map, ja_key_map
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 

@@ -19,6 +19,7 @@ def v2_ammo_process(item_en, item_ko, item_ja):
     image_width = item_en.get("width")
     image_height = item_en.get("height")
     update_time = pendulum.now("Asia/Seoul")
+    url_mapping = item_en.get("normalizedName")
 
     properties = item_en.get("properties") or {}
     damage = properties.get("damage")
@@ -50,6 +51,7 @@ def v2_ammo_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )
 
