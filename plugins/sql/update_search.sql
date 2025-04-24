@@ -22,8 +22,8 @@ FROM (SELECT *,
             FROM map_group_i18n
             UNION ALL
             SELECT (name ->> 'ko'),
-                   '/boss/' || id,
-                   id,
+                   '/boss/' || url_mapping,
+                   url_mapping,
                    'BOSS',
                    'ko' AS lang
             FROM boss_i18n
@@ -65,8 +65,8 @@ FROM (SELECT *,
             FROM map_group_i18n
             UNION ALL
             SELECT (name ->> 'en'),
-                   '/boss/' || id,
-                   id,
+                   '/boss/' || url_mapping,
+                   url_mapping,
                    'BOSS',
                    'en' AS lang
             FROM boss_i18n
@@ -108,8 +108,8 @@ FROM (SELECT *,
             FROM map_group_i18n
             UNION ALL
             SELECT (name ->> 'ja'),
-                   '/boss/' || id,
-                   id,
+                   '/boss/' || url_mapping,
+                   url_mapping,
                    'BOSS',
                    'ja' AS lang
             FROM boss_i18n
