@@ -20,4 +20,4 @@ WITH ranked_items AS (
 UPDATE quest_i18n
 SET url_mapping = ranked_items.final_url
 FROM ranked_items
-WHERE api_quest_i18n.id = ranked_items.id;
+WHERE quest_i18n.id = ranked_items.id;
