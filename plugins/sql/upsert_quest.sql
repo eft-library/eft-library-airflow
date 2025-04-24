@@ -1,4 +1,4 @@
-INSERT INTO api_quest_i18n (
+INSERT INTO quest_i18n (
     id,
     name,
     npc_id,

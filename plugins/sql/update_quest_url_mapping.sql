@@ -14,10 +14,10 @@ WITH ranked_items AS (
                 PARTITION BY trim(both '-' from regexp_replace(lower(name->>'en'), '[^a-z0-9]+', '-', 'g'))
                 ORDER BY id
             ) AS rn
-        FROM api_quest_i18n
+        FROM quest_i18n
     ) AS sub
 )
-UPDATE api_quest_i18n
+UPDATE quest_i18n
 SET url_mapping = ranked_items.final_url
 FROM ranked_items
 WHERE api_quest_i18n.id = ranked_items.id;
