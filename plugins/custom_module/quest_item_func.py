@@ -8,6 +8,7 @@ def generate_quest_item_graphql(lang: str) -> str:
   questItems(lang: {lang}) {{
     id
     name
+    normalizedName
     width
     height
     gridImageLink
@@ -26,6 +27,7 @@ def v2_quest_item_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     category = "Loot"
     image = item_en.get("gridImageLink")
     info = json.dumps({"weight": 0, "loot_category": "Quest items"})
@@ -41,5 +43,6 @@ def v2_quest_item_process(item_en, item_ko, item_ja):
         image,
         image_width,
         image_height,
+        url_mapping,
         update_time,
     )

@@ -16,6 +16,7 @@ def generate_trader_graphql(lang: str) -> str:
         item {{
           id
           name
+          normalizedName
           gridImageLink
         }}
         quantity
@@ -24,6 +25,7 @@ def generate_trader_graphql(lang: str) -> str:
         item {{
           id
           name
+          normalizedName
           gridImageLink
         }}
         quantity

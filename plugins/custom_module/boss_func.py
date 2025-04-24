@@ -10,6 +10,7 @@ def generate_boss_graphql(lang: str) -> str:
   bosses(lang: {lang}) {{
     id
     name
+    normalizedName
     imagePortraitLink
     equipment {{
       item {{
@@ -49,6 +50,7 @@ def v2_boss_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     image = item_en.get("imagePortraitLink")
     merged_equipment = []
 
@@ -71,7 +73,14 @@ def v2_boss_process(item_en, item_ko, item_ja):
 
     update_time = pendulum.now("Asia/Seoul")
 
-    return (boss_id, json.dumps(name), image, json.dumps(merged_equipment), update_time)
+    return (
+        boss_id,
+        json.dumps(name),
+        image,
+        json.dumps(merged_equipment),
+        url_mapping,
+        update_time,
+    )
 
 
 def spawn_list_process(item_en, item_ko, item_ja):

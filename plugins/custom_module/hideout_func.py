@@ -16,6 +16,7 @@ def generate_hideout_stations_graphql(lang: str) -> str:
         item {{
           id
           name
+          normalizedName
           gridImageLink
         }}
         quantity
@@ -71,6 +72,7 @@ def generate_hideout_stations_graphql(lang: str) -> str:
           name
           width
           height
+          normalizedName
           gridImageLink
         }}
         quantity
@@ -80,6 +82,7 @@ def generate_hideout_stations_graphql(lang: str) -> str:
         item {{
           id
           name
+          normalizedName
           gridImageLink
           width
           height
