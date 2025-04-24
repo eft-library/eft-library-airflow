@@ -9,6 +9,7 @@ def generate_quest_graphql(lang: str) -> str:
   tasks(lang: {lang}) {{
     id
     name
+    normalizedName
     kappaRequired
     lightkeeperRequired
     wikiLink
@@ -69,6 +70,7 @@ def v2_quest_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
+    url_mapping = item_en.get("normalizedName")
     npc_id = (
         item_en.get("trader").get("id") if item_en.get("trader").get("id") else None
     )
@@ -162,5 +164,6 @@ def v2_quest_process(item_en, item_ko, item_ja):
         json.dumps(merged_objectives),
         wiki_url,
         json.dumps(merged_finish_rewards),
+        url_mapping,
         update_time,
     )
