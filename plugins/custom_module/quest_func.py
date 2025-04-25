@@ -12,6 +12,7 @@ def generate_quest_graphql(lang: str) -> str:
     normalizedName
     kappaRequired
     lightkeeperRequired
+    minPlayerLevel
     wikiLink
     trader {{
       id
@@ -78,6 +79,7 @@ def v2_quest_process(item_en, item_ko, item_ja):
     npc_id = (
         item_en.get("trader").get("id") if item_en.get("trader").get("id") else None
     )
+    min_player_level = item_en.get("minPlayerLevel")
     wiki_url = item_en.get("wikiLink")
     lightkeeper_required = item_en.get("lightkeeperRequired")
     kappa_required = item_en.get("kappaRequired")
@@ -169,5 +171,6 @@ def v2_quest_process(item_en, item_ko, item_ja):
         wiki_url,
         json.dumps(merged_finish_rewards),
         url_mapping,
+        min_player_level,
         update_time,
     )

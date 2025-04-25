@@ -9,9 +9,10 @@ INSERT INTO quest_i18n (
     wiki_url,
     finish_rewards,
     url_mapping,
+    min_player_level,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -23,4 +24,5 @@ ON CONFLICT (id) DO UPDATE SET
     wiki_url = EXCLUDED.wiki_url,
     url_mapping = EXCLUDED.url_mapping,
     finish_rewards = EXCLUDED.finish_rewards,
+    min_player_level = EXCLUDED.min_player_level,
     update_time = EXCLUDED.update_time
