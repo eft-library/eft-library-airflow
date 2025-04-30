@@ -194,6 +194,13 @@ with DAG(
         provide_context=True,
     )
 
+    update_pipe_eye_spawn_task = PythonOperator(
+        task_id="update_pipe_eye_spawn",
+        python_callable=update_pipe_eye_spawn,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
@@ -205,6 +212,6 @@ with DAG(
         >> upsert_boss_task
         >> fetch_spawn_data
         >> upsert_boss_spawn_task
-        >> update_pipe_eye_spawn
+        >> update_pipe_eye_spawn_task
         >> remove_json_files_task
     )
