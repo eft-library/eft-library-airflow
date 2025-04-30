@@ -150,6 +150,15 @@ with DAG(
 
             conn.commit()
 
+    def update_pipe_eye_spawn(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("update_pipe_eye_spawn.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     def remove_json_files(**kwargs):
         files = [en_path, ko_path, ja_path, spawn_en_path, spawn_ja_path, spawn_ko_path]
 
@@ -196,5 +205,6 @@ with DAG(
         >> upsert_boss_task
         >> fetch_spawn_data
         >> upsert_boss_spawn_task
+        >> update_pipe_eye_spawn
         >> remove_json_files_task
     )
