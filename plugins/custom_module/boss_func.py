@@ -17,6 +17,7 @@ def generate_boss_graphql(lang: str) -> str:
         id
         name
         gridImageLink
+        normalizedName
       }}
       count
       quantity
