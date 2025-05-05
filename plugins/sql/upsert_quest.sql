@@ -5,14 +5,14 @@ INSERT INTO quest_i18n (
     lightkeeper_required,
     kappa_required,
     task_requirements,
-    objectives,
+--     objectives,
     wiki_url,
     finish_rewards,
     url_mapping,
     min_player_level,
     update_time
 ) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -20,7 +20,7 @@ ON CONFLICT (id) DO UPDATE SET
     lightkeeper_required = EXCLUDED.lightkeeper_required,
     kappa_required = EXCLUDED.kappa_required,
     task_requirements = EXCLUDED.task_requirements,
-    objectives = EXCLUDED.objectives,
+--     objectives = EXCLUDED.objectives,
     wiki_url = EXCLUDED.wiki_url,
     url_mapping = EXCLUDED.url_mapping,
     finish_rewards = EXCLUDED.finish_rewards,

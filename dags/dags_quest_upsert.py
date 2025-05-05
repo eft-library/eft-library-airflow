@@ -90,6 +90,15 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
+    def insert_roadmap_node(postgres_conn_id, **kwargs):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("insert_roadmap_node.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     def remove_json_files(**kwargs):
         files = [
             en_path,
@@ -131,9 +140,17 @@ with DAG(
         provide_context=True,
     )
 
+    insert_roadmap_node = PythonOperator(
+        task_id="insert_roadmap_node",
+        python_callable=insert_roadmap_node,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     (
         fetch_data
         >> upsert_quest_task
         >> update_quest_next_task
+        >> insert_roadmap_node
         >> remove_json_files_task
     )
