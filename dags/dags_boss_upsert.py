@@ -151,7 +151,7 @@ with DAG(
                         sql,
                         (
                             json.dumps(spawn_info),
-                            json.dumps(make_boss_spawn_map(spawn_info)),
+                            make_boss_spawn_map(spawn_info),
                             boss_name,
                         ),
                     )
