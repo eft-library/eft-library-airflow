@@ -127,3 +127,30 @@ def make_boss_spawn_dict(maps):
     # 딕셔너리를 일반 dict로 변환 (옵션)
     boss_spawn_dict = dict(boss_spawn_dict)
     return boss_spawn_dict
+
+
+def make_boss_spawn_map(item_en):
+    map_dict = {
+        "Factory": "FACTORY",
+        "Night Factory": "FACTORY",
+        "Customs": "CUSTOMS",
+        "Woods": "WOODS",
+        "Lighthouse": "LIGHT_HOUSE",
+        "Shoreline": "SHORELINE",
+        "Reserve": "RESERVE",
+        "Interchange": "INTERCHANGE",
+        "Streets of Tarkov": "STREET_OF_TARKOV",
+        "The Lab": "THE_LAB",
+        "Ground Zero": "GROUND_ZERO",
+        "Ground Zero 21+": "GROUND_ZERO",
+    }
+
+    result = list(
+        {
+            map_dict[item["name_en"]]
+            for item in item_en.get("spawnChance")
+            if item["name_en"] in map_dict
+        }
+    )
+
+    return result

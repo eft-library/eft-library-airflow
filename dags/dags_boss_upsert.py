@@ -13,6 +13,7 @@ from custom_module.boss_func import (
     generate_boss_spawn_graphql,
     spawn_list_process,
     make_boss_spawn_dict,
+    make_boss_spawn_map,
 )
 import json
 
@@ -146,7 +147,14 @@ with DAG(
                 boss_spawn_dict = make_boss_spawn_dict(process_spawn_list)
 
                 for boss_name, spawn_info in boss_spawn_dict.items():
-                    cursor.execute(sql, (json.dumps(spawn_info), boss_name))
+                    cursor.execute(
+                        sql,
+                        (
+                            json.dumps(spawn_info),
+                            json.dumps(make_boss_spawn_map(spawn_info)),
+                            boss_name,
+                        ),
+                    )
 
             conn.commit()
 
