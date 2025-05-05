@@ -146,11 +146,7 @@ def make_boss_spawn_map(item_en):
     }
 
     result = list(
-        {
-            map_dict[item["name_en"]]
-            for item in item_en.get("spawnChance")
-            if item["name_en"] in map_dict
-        }
+        {map_dict[item["name_en"]] for item in item_en if item["name_en"] in map_dict}
     )
 
     return result
