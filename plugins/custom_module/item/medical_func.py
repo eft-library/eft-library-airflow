@@ -1,3 +1,5 @@
+import copy
+
 import pendulum
 import json
 
@@ -25,8 +27,15 @@ def v2_medical_process(item_en, item_ko, item_ja):
     medical_category = check_item["category"].get("name")
 
     en_properties = check_item.get("properties") or {}
+    ko_properties = item_ko.get("properties") or {}
+    ja_properties = item_ja.get("properties") or {}
 
-    cures = en_properties.get("cures")
+    cures = {
+        "en": en_properties.get("cures"),
+        "ko": ko_properties.get("cures"),
+        "ja": ja_properties.get("cures"),
+    }
+
     energy_impact = en_properties.get("energyImpact")
     hydration_impact = en_properties.get("hydrationImpact")
     painkiller_duration = en_properties.get("painkillerDuration")
@@ -40,14 +49,24 @@ def v2_medical_process(item_en, item_ko, item_ja):
         else None
     )
     stim_effects = en_properties.get("stimEffects")
-    buff = get_buff(stim_effects) if stim_effects is not None else None
-    debuff = get_debuff(stim_effects) if stim_effects is not None else None
+    merged_stim_effects = []
+
+    for se_en, se_ko, se_ja in zip(
+        en_properties.get("stimEffects", []),
+        ko_properties.get("stimEffects", []),
+        ja_properties.get("stimEffects", []),
+    ):
+        merged = copy.deepcopy(se_en)
+        merged["skill_name_en"] = se_en.get("skillName", "")
+        merged["skill_name_ko"] = se_ko.get("skillName", "")
+        merged["skill_name_ja"] = se_ja.get("skillName", "")
+        merged.pop("skillName", None)
+        merged_stim_effects.append(merged)
 
     info = json.dumps(
         {
             "cures": cures,
-            "buff": buff,
-            "debuff": debuff,
+            "stim_effects": merged_stim_effects,
             "medical_category": medical_category,
             "use_time": use_time,
             "weight": weight,
@@ -70,142 +89,6 @@ def v2_medical_process(item_en, item_ko, item_ja):
         url_mapping,
         update_time,
     )
-
-
-def get_buff(stim_effect):
-    """
-    buff 분류
-    """
-
-    buff_list = []
-
-    for effect in stim_effect:
-        if effect.get("type") == "Antidote":
-            buff_list.append(effect)
-        elif effect.get("type") == "BodyTemperature" and effect.get("value") < 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "EnergyRate" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "HealthRate" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "HydrationRate" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "MaxStamina" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "StaminaRate" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "WeightLimit" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "energyImpact" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "hydrationImpact" and effect.get("value") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "painkillerDuration" and effect.get("duration") > 0:
-            buff_list.append(effect)
-        elif effect.get("type") == "Removeallbloodlosses":
-            buff_list.append(effect)
-        elif effect.get("type") == "Skill":
-            if effect.get("skillName") == "Health" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Strength" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Vitality" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Metabolism" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Endurance" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif (
-                effect.get("skillName") == "Recoil Control" and effect.get("value") > 0
-            ):
-                buff_list.append(effect)
-            elif (
-                effect.get("skillName") == "Stress Resistance"
-                and effect.get("value") > 0
-            ):
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Perception" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Immunity" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Attention" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Intellect" and effect.get("value") > 0:
-                buff_list.append(effect)
-            elif effect.get("skillName") == "Charisma" and effect.get("value") > 0:
-                buff_list.append(effect)
-
-    return buff_list
-
-
-def get_debuff(stim_effect):
-    """
-    debuff 분류
-    """
-
-    debuff_list = []
-
-    for effect in stim_effect:
-        if effect.get("type") == "BodyTemperature" and effect.get("value") > 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "DamageModifier":
-            debuff_list.append(effect)
-        elif effect.get("type") == "HandsTremor":
-            debuff_list.append(effect)
-        elif effect.get("type") == "Pain":
-            debuff_list.append(effect)
-        elif effect.get("type") == "QuantumTunnelling":
-            debuff_list.append(effect)
-        elif effect.get("type") == "EnergyRate" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "HealthRate" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "HydrationRate" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "MaxStamina" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "StaminaRate" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "WeightLimit" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "energyImpact" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "hydrationImpact" and effect.get("value") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "painkillerDuration" and effect.get("duration") < 0:
-            debuff_list.append(effect)
-        elif effect.get("type") == "Skill":
-            if effect.get("skillName") == "Health" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Strength" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Vitality" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Metabolism" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Endurance" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif (
-                effect.get("skillName") == "Recoil Control" and effect.get("value") < 0
-            ):
-                debuff_list.append(effect)
-            elif (
-                effect.get("skillName") == "Stress Resistance"
-                and effect.get("value") < 0
-            ):
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Perception" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Immunity" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Attention" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Intellect" and effect.get("value") < 0:
-                debuff_list.append(effect)
-            elif effect.get("skillName") == "Charisma" and effect.get("value") < 0:
-                debuff_list.append(effect)
-
-    return debuff_list
 
 
 def add_painkiller(item):
