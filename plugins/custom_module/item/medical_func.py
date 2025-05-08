@@ -25,6 +25,16 @@ status_dict = {
     "Pain": {"ko": "고통 제거", "ja": "痛み"},
 }
 
+injury_dict = {
+    "LightBleeding": {"ko": "가벼운 출혈 치료", "ja": "軽度出血を治療"},
+    "HeavyBleeding": {"ko": "과다 출혈 치료", "ja": "重度出血を止血"},
+    "Fracture": {"ko": "골절 치료", "ja": "骨折を治療"},
+    "Contusion": {
+        "ko": "타박상",
+        "ja": "脳震とう",  # 뇌진탕(=뇌타박)으로 일본어가 표현된 점 참고
+    },
+}
+
 
 def v2_medical_process(item_en, item_ko, item_ja):
     """
@@ -52,8 +62,8 @@ def v2_medical_process(item_en, item_ko, item_ja):
 
     cures = {
         "en": en_properties.get("cures"),
-        "ko": ko_properties.get("cures"),
-        "ja": ja_properties.get("cures"),
+        "ko": get_cures_i18n(en_properties.get("cures"), "ko"),
+        "ja": get_cures_i18n(en_properties.get("cures"), "ja"),
     }
 
     energy_impact = en_properties.get("energyImpact")
@@ -136,3 +146,14 @@ def update_painkiller_duration(duration, name):
         return update_list[name]
 
     return duration
+
+
+def get_cures_i18n(cures_en, locale):
+    result = []
+    for cure in cures_en:
+        translations = injury_dict.get(cure)
+        if translations:
+            result.append(translations.get(locale, cure))  # locale이 없으면 영어 그대로
+        else:
+            result.append(cure)  # 딕셔너리에 없는 키면 영어 그대로
+    return result
