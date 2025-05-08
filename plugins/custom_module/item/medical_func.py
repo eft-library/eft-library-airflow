@@ -3,6 +3,27 @@ import copy
 import pendulum
 import json
 
+status_dict = {
+    "HealthRate": {"ko": "체력 재생", "ja": "体力回復"},
+    "HandsTremor": {"ko": "손 떨림", "ja": "手の震え"},
+    "QuantumTunnelling": {"ko": "터널 효과", "ja": "視野狭窄"},
+    "EnergyRate": {"ko": "에너지 회복", "ja": "エネルギー回復"},
+    "HydrationRate": {"ko": "수분 회복", "ja": "水分回復"},
+    "MaxStamina": {"ko": "최대 스태미나", "ja": "最大スタミナ"},
+    "StaminaRate": {"ko": "스태미나 회복", "ja": "スタミナ回復"},
+    "Removeallbloodlosses": {
+        "ko": "출혈 멈춤 & 추가 출혈 방지",
+        "ja": "出血を止める/防ぐ",
+    },
+    "WeightLimit": {"ko": "무게 제한", "ja": "重量制限"},
+    "DamageModifier": {
+        "ko": "받은 피해량 (머리 제외)",
+        "ja": "受けるダメージが増加(頭部以外)",
+    },
+    "Antidote": {"ko": "해독제", "ja": "解毒剤"},
+    "BodyTemperature": {"ko": "체온", "ja": "体温"},
+    "Pain": {"ko": "고통 제거", "ja": "痛み"},
+}
 
 def v2_medical_process(item_en, item_ko, item_ja):
     """
@@ -48,7 +69,6 @@ def v2_medical_process(item_en, item_ko, item_ja):
         if painkiller_duration is not None
         else None
     )
-    stim_effects = en_properties.get("stimEffects")
     merged_stim_effects = []
 
     for se_en, se_ko, se_ja in zip(
@@ -57,9 +77,17 @@ def v2_medical_process(item_en, item_ko, item_ja):
         ja_properties.get("stimEffects", []),
     ):
         merged = copy.deepcopy(se_en)
-        merged["skill_name_en"] = se_en.get("skillName", "")
-        merged["skill_name_ko"] = se_ko.get("skillName", "")
-        merged["skill_name_ja"] = se_ja.get("skillName", "")
+        effect_type = se_en.get("type")
+
+        if effect_type in status_dict:
+            merged["skill_name_en"] = effect_type
+            merged["skill_name_ko"] = status_dict[effect_type]["ko"]
+            merged["skill_name_ja"] = status_dict[effect_type]["ja"]
+        else:
+            merged["skill_name_en"] = se_en.get("skillName", "")
+            merged["skill_name_ko"] = se_ko.get("skillName", "")
+            merged["skill_name_ja"] = se_ja.get("skillName", "")
+
         merged.pop("skillName", None)
         merged_stim_effects.append(merged)
 
