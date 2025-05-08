@@ -101,10 +101,14 @@ def v2_medical_process(item_en, item_ko, item_ja):
         merged.pop("skillName", None)
         merged_stim_effects.append(merged)
 
+    painkiller_add_stim_effects = add_painkiller(
+        item_en.get("name"), merged_stim_effects
+    )
+
     info = json.dumps(
         {
             "cures": cures,
-            "stim_effects": merged_stim_effects,
+            "stim_effects": painkiller_add_stim_effects,
             "medical_category": medical_category,
             "use_time": use_time,
             "weight": weight,
@@ -147,6 +151,59 @@ def update_painkiller_duration(duration, name):
         return update_list[name]
 
     return duration
+
+
+def add_painkiller(name_en, stim_effects):
+    """
+    진통제 추가
+    """
+    pain_list = {
+        "L1 (Norepinephrine) injector": {
+            "duration": 120,
+            "skill_name_en": "Painkiller",
+            "skill_name_ko": "진통제",
+            "skill_name_ja": "鎮痛剤",
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+        "Trimadol stimulant injector": {
+            "duration": 185,
+            "skill_name_en": "Painkiller",
+            "skill_name_ko": "진통제",
+            "skill_name_ja": "鎮痛剤",
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+        "Adrenaline injector": {
+            "duration": 65,
+            "skill_name_en": "Painkiller",
+            "skill_name_ko": "진통제",
+            "skill_name_ja": "鎮痛剤",
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+        "Propital regenerative stimulant injector": {
+            "duration": 245,
+            "skill_name_en": "Painkiller",
+            "skill_name_ko": "진통제",
+            "skill_name_ja": "鎮痛剤",
+            "type": "painkillerDuration",
+            "delay": 0,
+            "value": 0,
+            "chance": 1,
+        },
+    }
+
+    if name_en in pain_list:
+        stim_effects.append(pain_list[name_en])
+
+    return stim_effects
 
 
 def get_cures_i18n(cures_en, locale):
