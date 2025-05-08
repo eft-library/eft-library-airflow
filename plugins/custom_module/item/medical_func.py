@@ -25,11 +25,11 @@ status_dict = {
     "Pain": {"ko": "고통 제거", "ja": "痛み"},
 }
 
+
 def v2_medical_process(item_en, item_ko, item_ja):
     """
     medical 데이터 가공
     """
-    check_item = check_morphine(item_en)
 
     item_id = item_en.get("id")
     name = {
@@ -37,7 +37,6 @@ def v2_medical_process(item_en, item_ko, item_ja):
         "ko": item_ko.get("name"),
         "ja": item_ja.get("name"),
     }
-    add_painkiller(item_en)
     category = "Medical"
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
@@ -45,9 +44,9 @@ def v2_medical_process(item_en, item_ko, item_ja):
     weight = item_en.get("weight")
     update_time = pendulum.now("Asia/Seoul")
     url_mapping = item_en.get("normalizedName")
-    medical_category = check_item["category"].get("name")
+    medical_category = item_en["category"].get("name")
 
-    en_properties = check_item.get("properties") or {}
+    en_properties = item_en.get("properties") or {}
     ko_properties = item_ko.get("properties") or {}
     ja_properties = item_ja.get("properties") or {}
 
@@ -119,49 +118,6 @@ def v2_medical_process(item_en, item_ko, item_ja):
     )
 
 
-def add_painkiller(item):
-    """
-    진통제 추가
-    """
-    pain_list = {
-        "L1 (Norepinephrine) injector": {
-            "duration": 120,
-            "skillName": None,
-            "type": "painkillerDuration",
-            "delay": 0,
-            "value": 0,
-            "chance": 1,
-        },
-        "Trimadol stimulant injector": {
-            "duration": 185,
-            "skillName": None,
-            "type": "painkillerDuration",
-            "delay": 0,
-            "value": 0,
-            "chance": 1,
-        },
-        "Adrenaline injector": {
-            "duration": 65,
-            "skillName": None,
-            "type": "painkillerDuration",
-            "delay": 0,
-            "value": 0,
-            "chance": 1,
-        },
-        "Propital regenerative stimulant injector": {
-            "duration": 245,
-            "skillName": None,
-            "type": "painkillerDuration",
-            "delay": 0,
-            "value": 0,
-            "chance": 1,
-        },
-    }
-
-    if item.get("name") in pain_list:
-        item["properties"].get("stimEffects").append(pain_list[item.get("name")])
-
-
 def update_painkiller_duration(duration, name):
     """
     진통제 지속시간 수정
@@ -180,49 +136,3 @@ def update_painkiller_duration(duration, name):
         return update_list[name]
 
     return duration
-
-
-def check_morphine(item):
-    """
-    morphine은 drug에서 주사기로 변경
-    처음에 값 자체를 받아서 수정하는 것으로
-    """
-    morphine = [
-        {
-            "duration": 305,
-            "skillName": None,
-            "type": "painkillerDuration",
-            "delay": 0,
-            "value": 0,
-            "chance": 1,
-        },
-        {
-            "duration": 0,
-            "skillName": None,
-            "type": "energyImpact",
-            "delay": 0,
-            "value": -10,
-            "chance": 1,
-        },
-        {
-            "duration": 0,
-            "skillName": None,
-            "type": "hydrationImpact",
-            "delay": 0,
-            "value": -15,
-            "chance": 1,
-        },
-    ]
-
-    if item.get("name") == "Morphine injector":
-        del item["properties"]["cures"]
-        del item["properties"]["useTime"]
-        del item["properties"]["uses"]
-        del item["properties"]["energyImpact"]
-        del item["properties"]["hydrationImpact"]
-        del item["properties"]["painkillerDuration"]
-        item["category"]["name"] = "Stimulant"
-        item["properties"]["stimEffects"] = morphine
-        return item
-
-    return item
