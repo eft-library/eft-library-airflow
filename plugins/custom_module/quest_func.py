@@ -28,6 +28,9 @@ def generate_quest_graphql(lang: str) -> str:
       id
       type
       description
+      ... on TaskObjectiveShoot {{
+        count
+      }}
       ... on TaskObjectiveQuestItem {{
         questItem {{
           id
@@ -167,7 +170,7 @@ def v2_quest_process(item_en, item_ko, item_ja):
         lightkeeper_required,
         kappa_required,
         json.dumps(merged_task_requirements),
-        # json.dumps(merged_objectives),
+        json.dumps(merged_objectives),
         wiki_url,
         json.dumps(merged_finish_rewards),
         url_mapping,
