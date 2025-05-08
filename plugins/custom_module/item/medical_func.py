@@ -61,9 +61,9 @@ def v2_medical_process(item_en, item_ko, item_ja):
     ja_properties = item_ja.get("properties") or {}
 
     cures = {
-        "en": en_properties.get("cures"),
-        "ko": get_cures_i18n(en_properties.get("cures"), "ko"),
-        "ja": get_cures_i18n(en_properties.get("cures"), "ja"),
+        "en": en_properties.get("cures", []),
+        "ko": get_cures_i18n(en_properties.get("cures", []), "ko"),
+        "ja": get_cures_i18n(en_properties.get("cures", []), "ja"),
     }
 
     energy_impact = en_properties.get("energyImpact")
