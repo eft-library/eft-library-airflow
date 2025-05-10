@@ -96,6 +96,7 @@ def generate_quest_graphql(lang: str) -> str:
             gridImageLink
             normalizedName
           }}
+          quantity
         }}
       }}
     }}
