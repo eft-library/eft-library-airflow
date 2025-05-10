@@ -13,6 +13,7 @@ def generate_quest_graphql(lang: str) -> str:
     lightkeeperRequired
     minPlayerLevel
     normalizedName
+    wikiLink
     trader {{
       id
       name
