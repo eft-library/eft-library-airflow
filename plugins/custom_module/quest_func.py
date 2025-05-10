@@ -237,12 +237,16 @@ def v2_quest_process(item_en, item_ko, item_ja):
                 r_ko["rewardItems"],
                 r_ja["rewardItems"],
             ):
-                reward_item = i_en["item"]
-                reward_item["name_en"] = i_en["item"].get("name", "")
-                reward_item["name_ko"] = i_ko["item"].get("name", "")
-                reward_item["name_ja"] = i_ja["item"].get("name", "")
-                del reward_item["name"]
-                merged_reward_items.append({"item": reward_item})
+                merged_item = copy.deepcopy(i_en)
+                item = merged_item["item"]
+                item["name_en"] = i_en["item"].get("name", "")
+                item["name_ko"] = i_ko["item"].get("name", "")
+                item["name_ja"] = i_ja["item"].get("name", "")
+                del item["name"]
+                merged_item["item"] = item
+
+                # quantity는 그대로 유지됨
+                merged_reward_items.append(merged_item)
 
             merged_r["rewardItems"] = merged_reward_items
             merged_craft_unlock.append(merged_r)
