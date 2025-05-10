@@ -11,6 +11,8 @@ def generate_quest_graphql(lang: str) -> str:
     name
     kappaRequired
     lightkeeperRequired
+    minPlayerLevel
+    normalizedName
     trader {{
       id
       name
