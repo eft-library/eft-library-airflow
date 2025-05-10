@@ -9,19 +9,16 @@ def generate_quest_graphql(lang: str) -> str:
   tasks(lang: {lang}) {{
     id
     name
-    normalizedName
     kappaRequired
     lightkeeperRequired
-    minPlayerLevel
-    wikiLink
     trader {{
       id
+      name
     }}
     taskRequirements {{
       task {{
         id
         name
-        normalizedName
       }}
     }}
     objectives {{
@@ -35,7 +32,6 @@ def generate_quest_graphql(lang: str) -> str:
         questItem {{
           id
           name
-          normalizedName
           gridImageLink
         }}
         count
@@ -44,7 +40,6 @@ def generate_quest_graphql(lang: str) -> str:
         items {{
           id
           name
-          normalizedName
           gridImageLink
         }}
         count
@@ -56,11 +51,49 @@ def generate_quest_graphql(lang: str) -> str:
         item {{
           id
           name
-          normalizedName
           gridImageLink
         }}
         count
         quantity
+      }}
+      traderStanding {{
+        standing
+        trader {{
+          id
+          name
+          imageLink
+          normalizedName
+        }}
+      }}
+      offerUnlock {{
+        trader {{
+          id
+          name
+          imageLink
+          normalizedName
+        }}
+        item {{
+          id
+          name
+          gridImageLink
+          normalizedName
+        }}
+        level
+      }}
+      craftUnlock {{
+        station {{
+          id
+          name
+        }}
+        level
+        rewardItems {{
+          item {{
+            id
+            name
+            gridImageLink
+            normalizedName
+          }}
+        }}
       }}
     }}
   }}
@@ -104,9 +137,11 @@ def v2_quest_process(item_en, item_ko, item_ja):
         merged_req["task"] = task
         merged_task_requirements.append(merged_req)
 
+    # 기존 finishRewards 복사
     merged_finish_rewards = copy.deepcopy(item_en["finishRewards"])
-    merged_items = []
 
+    # 1. items 병합
+    merged_items = []
     for r_en, r_ko, r_ja in zip(
         item_en["finishRewards"]["items"],
         item_ko["finishRewards"]["items"],
@@ -122,6 +157,92 @@ def v2_quest_process(item_en, item_ko, item_ja):
         merged_items.append(merged_r)
 
     merged_finish_rewards["items"] = merged_items
+
+    # 2. traderStanding 병합
+    if "traderStanding" in item_en["finishRewards"]:
+        merged_trader_standing = []
+        for r_en, r_ko, r_ja in zip(
+            item_en["finishRewards"]["traderStanding"],
+            item_ko["finishRewards"]["traderStanding"],
+            item_ja["finishRewards"]["traderStanding"],
+        ):
+            merged_r = copy.deepcopy(r_en)
+            trader = r_en["trader"]
+            trader["name_en"] = r_en["trader"].get("name", "")
+            trader["name_ko"] = r_ko["trader"].get("name", "")
+            trader["name_ja"] = r_ja["trader"].get("name", "")
+            del trader["name"]
+            merged_r["trader"] = trader
+            merged_trader_standing.append(merged_r)
+
+        merged_finish_rewards["traderStanding"] = merged_trader_standing
+
+    # 3. offerUnlock 병합
+    if "offerUnlock" in item_en["finishRewards"]:
+        merged_offer_unlock = []
+        for r_en, r_ko, r_ja in zip(
+            item_en["finishRewards"]["offerUnlock"],
+            item_ko["finishRewards"]["offerUnlock"],
+            item_ja["finishRewards"]["offerUnlock"],
+        ):
+            merged_r = copy.deepcopy(r_en)
+
+            # trader 이름 병합
+            trader = r_en["trader"]
+            trader["name_en"] = r_en["trader"].get("name", "")
+            trader["name_ko"] = r_ko["trader"].get("name", "")
+            trader["name_ja"] = r_ja["trader"].get("name", "")
+            del trader["name"]
+            merged_r["trader"] = trader
+
+            # item 이름 병합
+            item = r_en["item"]
+            item["name_en"] = r_en["item"].get("name", "")
+            item["name_ko"] = r_ko["item"].get("name", "")
+            item["name_ja"] = r_ja["item"].get("name", "")
+            del item["name"]
+            merged_r["item"] = item
+
+            merged_offer_unlock.append(merged_r)
+
+        merged_finish_rewards["offerUnlock"] = merged_offer_unlock
+
+    # 4. craftUnlock 병합
+    if "craftUnlock" in item_en["finishRewards"]:
+        merged_craft_unlock = []
+        for r_en, r_ko, r_ja in zip(
+            item_en["finishRewards"]["craftUnlock"],
+            item_ko["finishRewards"]["craftUnlock"],
+            item_ja["finishRewards"]["craftUnlock"],
+        ):
+            merged_r = copy.deepcopy(r_en)
+
+            # station 이름 병합
+            station = r_en["station"]
+            station["name_en"] = r_en["station"].get("name", "")
+            station["name_ko"] = r_ko["station"].get("name", "")
+            station["name_ja"] = r_ja["station"].get("name", "")
+            del station["name"]
+            merged_r["station"] = station
+
+            # rewardItems 병합
+            merged_reward_items = []
+            for i_en, i_ko, i_ja in zip(
+                r_en["rewardItems"],
+                r_ko["rewardItems"],
+                r_ja["rewardItems"],
+            ):
+                reward_item = i_en["item"]
+                reward_item["name_en"] = i_en["item"].get("name", "")
+                reward_item["name_ko"] = i_ko["item"].get("name", "")
+                reward_item["name_ja"] = i_ja["item"].get("name", "")
+                del reward_item["name"]
+                merged_reward_items.append({"item": reward_item})
+
+            merged_r["rewardItems"] = merged_reward_items
+            merged_craft_unlock.append(merged_r)
+
+        merged_finish_rewards["craftUnlock"] = merged_craft_unlock
 
     merged_objectives = []
 
