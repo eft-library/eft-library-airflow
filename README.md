@@ -12,60 +12,57 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 - Tarkov Dev **API는 GraphQL 형식**이며, **Airflow에서 JSON 데이터를 요청**하여 가져온 후 **DB에 적재**한다.
 - 수작업을 최소화하기 위해, Tarkov Dev에서 데이터를 가져온 후 **필요한 부분만 수정**하는 방식을 채택했다.
-- 데이터는 모두 영어이므로, **한글로 자동 변환**한다. 예: 회복 아이템의 버프 및 디버프 정의
-- Next.js의 **SSG 방식 렌더링을 고려**하여, 데이터 변경이 바로 반영되지 않는 문제를 해결하기 위해 **DAG에서 매일 08:00에 Front를 Reboot**한다.
-- DB 데이터 덤프는 매일 00:20에 실행된다.
+- 데이터는 모두 영어이므로, **한글이나 일본어가 없는 경우 코드 내에서 변환**합니다. 예: 회복 아이템의 버프 및 디버프 정의
+- DB 데이터 덤프는 매일 00:20에 실행되며, 아이템 시세와 같은 데이터가 많은 테이블은 제외 후 진행합니다.
 
 
-## 환경
+## 환경 및 패키지 정보
 
-- Rocky Linux 8
+- Ubuntu 22.04.5 LTS
+- RAM DDR4 32GB
+- CPU Ryzen 5 3600, 6 core / 12 thread
 - Python 3.9
-- Airflow 2.9.1
+- Airflow 2.10.5
 
 ## 구조
 
 - **dags**
   - **data dump** : DB Dump
-  - **server rebuild** : Front Reboot
+  - **boss upsert** : 보스 정보 갱신
   - **hideout upsert** : 은신처 정보 갱신
-  - **item upsert** : 모든 아이템 정보 갱신
+  - **item upsert** : 아이템 정보 갱신
   - **quest item upsert** : 퀘스트 관련 아이템 정보 갱신
+  - **item price upsert** : 아이템 현재 시세 정보 및 history 갱신 및 적재
+  - **item price delete** : 아이템 시세 history 2주 지난 데이터는 삭제 처리
   - **quest upsert** : 퀘스트 갱신
+  - **trader upsert** : NPC 상인 정보 갱신
   - **search update** : 메인 페이지 검색 기능 데이터 갱신
-- **plugins**
-  - **hideout** : 모든 은신처 관련 함수들
-  - **item** : 모든 아이템 관련 함수들
-  - **data dump** : DB Data Dump 관련 함수
-  - **quest item** : 퀘스트 아이템 관련 함수
-  - **boss** : 보스 관련 함수
-  - **quest** : 퀘스트 관련 함수
  
 ![스크린샷 2025-02-10 오전 9 09 27](https://github.com/user-attachments/assets/6b36e8ab-03fe-4bee-8b27-923fec0d2f5a)
 
 
 ## 흐름
 
-현재 Dag는 2가지 흐름으로 되어 있다.
+현재 Dag는 2가지 흐름으로 되어 있습니다.
 
-대부분의 DAG는 GraphQL **API를 통해 데이터를 요청한 후**, 여러 개의 **Task로 분리하여 처리한 후 DB에 적재**하는 방식을 따른다.
+대부분의 DAG는 **GraphQL API를 통해 일본어, 한국어, 영어 데이터를 각각 요청한 뒤**, 이를 개별 JSON 파일로 저장합니다.
+
+이후 각 태스크에서 해당 파일들을 읽어 들여 언어별 데이터를 하나의 딕셔너리로 통합한 후, 이를 DB에 적재하는 방식으로 동작합니다.
 
 ![flow1](https://github.com/user-attachments/assets/36c56423-a362-4266-a3cc-a9838f2bfa07)
 
-
-DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Task를 동적으로 선택**하는 방식을 사용한다.
+DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Task를 동적으로 선택**하는 방식을 사용합니다.
 
 ![flow2](https://github.com/user-attachments/assets/b25d9ebe-6b87-49dc-be4c-267700580694)
 
 
-**첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump 할 때만 사용하고 있다.
+**첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump 할 때만 사용하고 있습니다.
 
 ## 운영 중 발생한 문제 및 해결 과정
 
 ### 1. 데이터 불일치 문제  
 
-Tarkov Dev **API에서 반환하는 데이터와 게임내의 데이터가 일치하지 않는 경우가 발생**하여,  
-수작업으로 조절하여 값을 넣어야 하는 경우가 많음.  
+Tarkov Dev **API에서 반환하는 데이터와 게임내의 데이터가 일치하지 않는 경우가 발생**하여, 수작업으로 조절하여 값을 넣어야 하는 경우가 많았습니다.  
 
 **✔ 해결:**  
 - Airflow Task 내부 함수에서 특정 값에 대한 보정 로직 추가
