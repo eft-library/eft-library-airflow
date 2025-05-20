@@ -4,7 +4,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 주기적으로 데�
 
 이 페이지는 Airflow에 대하여 설명한다.
 
-![airflow](https://github.com/user-attachments/assets/800b7340-4d64-4b7f-af61-6dc17e937f8f)
+![architecture](https://github.com/user-attachments/assets/e14049e2-188a-4166-8494-2c2ded7cfbc3)
 
 
 
