@@ -93,11 +93,7 @@ API의 Graphql 형식에 따라 언어를 다르게 조회하려면 한번에 �
 
 ![save_json](https://github.com/user-attachments/assets/ea648ce7-919b-49d0-a493-c3011c8c2baf)
 
-**Task에서 json을 읽은 후 동일한 ID 데이터 Mapping**
-
-![mapping_data](https://github.com/user-attachments/assets/6d17bc40-b98f-4c52-9681-682eedff95b6)
-
-**데이터 가공 함수에 언어별 데이터 전송**
+**Task에서 json을 읽은 후 동일한 ID 데이터 Mapping 및 데이터 가공 함수에 전송**
 
 ![send_lang_data](https://github.com/user-attachments/assets/56b23d4d-5526-4a97-8af4-6aad694be06a)
 
