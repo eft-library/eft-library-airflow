@@ -1,10 +1,19 @@
+- [EFT Library의 Airflow 운영 방식](#eft-library의-airflow-운영-방식)
+  * [주요 사항](#주요-사항)
+  * [패키지 정보](#패키지-정보)
+  * [구조](#구조)
+  * [흐름](#흐름)
+  * [운영 중 발생한 문제 및 해결 과정](#운영-중-발생한-문제-및-해결-과정)
+    + [1. 데이터 불일치 문제](#1-데이터-불일치-문제)
+    + [2. 1일 단위 Upsert 문제](#2-1일-단위-upsert-문제)
+    + [3. 다국어 데이터 매핑 및 처리 데이터 양 증가의 문제](#3-다국어-데이터-매핑-및-처리-데이터-양-증가의-문제)
+    + [4. 불안정한 다국어 데이터의 처리](#4-불안정한-다국어-데이터의-처리)
+
 # EFT Library의 Airflow 운영 방식
 
 EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
 
 ![architecture](https://github.com/user-attachments/assets/4e7b9a40-e298-430b-a7c7-8854bc5423f2)
-
-
 
 ## 주요 사항
 
@@ -15,7 +24,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
 - DB 데이터 덤프는 매일 00:20에 실행되며, 아이템 시세와 같은 데이터가 많은 테이블은 제외 후 진행합니다.
 
 
-## 환경 및 패키지 정보
+## 패키지 정보
 
 - Python 3.9
 - Airflow 2.10.5
