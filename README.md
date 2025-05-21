@@ -2,7 +2,7 @@
 
 EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
 
-![architecture](https://github.com/user-attachments/assets/e14049e2-188a-4166-8494-2c2ded7cfbc3)
+![architecture](https://github.com/user-attachments/assets/4e7b9a40-e298-430b-a7c7-8854bc5423f2)
 
 
 
@@ -33,7 +33,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
   - **trader upsert** : NPC 상인 정보 갱신
   - **search update** : 메인 페이지 검색 기능 데이터 갱신
  
-![스크린샷 2025-02-10 오전 9 09 27](https://github.com/user-attachments/assets/6b36e8ab-03fe-4bee-8b27-923fec0d2f5a)
+![airflow_main](https://github.com/user-attachments/assets/523a62e3-45c1-4d9c-9efd-d346b6ef4b39)
 
 
 ## 흐름
@@ -44,7 +44,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
 
 이후 각 태스크에서 해당 파일들을 읽어 들여 언어별 데이터를 하나의 딕셔너리로 통합한 후, 이를 DB에 적재하는 방식으로 동작합니다.
 
-![flow1](https://github.com/user-attachments/assets/36c56423-a362-4266-a3cc-a9838f2bfa07)
+![hiedout](https://github.com/user-attachments/assets/e5337b3e-7cbe-499d-b3b9-a5fc7dac1672)
 
 DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Task를 동적으로 선택**하는 방식을 사용합니다.
 
@@ -61,7 +61,8 @@ Tarkov Dev **API에서 반환하는 데이터와 게임내의 데이터가 일�
 
 **✔ 해결:**  
 - Airflow Task 내부 함수에서 특정 값에 대한 보정 로직 추가
-- ![스크린샷 2025-01-31 오전 10 54 00](https://github.com/user-attachments/assets/a49fed2f-4a83-424e-a82c-db3dc54e5d55)
+
+![different_data](https://github.com/user-attachments/assets/a1e838ea-22ce-4c0d-a235-bf7f45e85d0c)
 
 
 ### 2. 1일 단위 Upsert 문제  
@@ -79,16 +80,40 @@ API의 Graphql 형식에 따라 언어를 다르게 조회하려면 한번에 �
 
 데이터를 읽은 뒤 동일한 id로 매핑을 해서 함수에 전달하는 방식을 적용했고, 함수에서 언어 데이터만 추가로 병합하는 과정을 진행했습니다.
 
+**언어를 입력받아 요청하는 Json을 만드는 함수**
+
+![get_lang](https://github.com/user-attachments/assets/39117784-784d-45a3-aeb8-91b377687aba)
+
+**lang별 저장소 위치 선언**
+
+![define_lang_data](https://github.com/user-attachments/assets/2c46b761-2d51-4d9d-8f08-147fbd9f42cc)
+
+**API 응답결과 파일 저장**
+
+![save_json](https://github.com/user-attachments/assets/ea648ce7-919b-49d0-a493-c3011c8c2baf)
+
+**Task에서 json을 읽은 후 동일한 ID 데이터 Mapping**
+
+![mapping_data](https://github.com/user-attachments/assets/6d17bc40-b98f-4c52-9681-682eedff95b6)
+
+**데이터 가공 함수에 언어별 데이터 전송**
+
+![send_lang_data](https://github.com/user-attachments/assets/56b23d4d-5526-4a97-8af4-6aad694be06a)
+
+**3개의 언어 데이터를 Mapping하여 반환**
+
+![mapping_data](https://github.com/user-attachments/assets/69cb5a02-92bd-4eef-bfe4-b463a9ecb645)
 
 
 **✔ 해결:**  
-- 데이터 매핑 자동화를 적용하여 해결했으나, 좀 더 효율적인 방법이 필요하다고 생각합니다.
-- ![스크린샷 2025-01-31 오전 10 51 54](https://github.com/user-attachments/assets/5775d0b7-981d-4b2a-8d64-d5f25d05a66f)
-- ![스크린샷 2025-01-31 오전 10 52 33](https://github.com/user-attachments/assets/6e900826-9e74-4096-88f7-addc4d213fe3)
+- 데이터를 언어별로 개별 요청하여 Json파일로 저장한 후 동일한 ID끼리 Mapping 하여 적재
 
 ### 4. 불안정한 다국어 데이터의 처리  
 
 다국어 데이터를 받아오지만 데이터 자체가 아직 미번역되어 영어로 된 데이터가 많아서 해당 값들은 코드내에서 수정하는 방식을 사용했습니다.
+
+![not_translate](https://github.com/user-attachments/assets/16d34905-c981-485f-9b19-e5f42ef8bb76)
+
 
 **✔ 해결:**  
 - 데이터 매핑을 만들어 일정 부분 자동화를 진행했습니다.    
