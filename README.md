@@ -48,7 +48,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
 
 DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Task를 동적으로 선택**하는 방식을 사용합니다.
 
-![flow2](https://github.com/user-attachments/assets/b25d9ebe-6b87-49dc-be4c-267700580694)
+![스크린샷 2025-05-21 오전 9 20 51](https://github.com/user-attachments/assets/6cf84d60-7e56-43da-a59a-07cee0da86f0)
 
 
 **첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump 할 때만 사용하고 있습니다.
