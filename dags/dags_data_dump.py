@@ -1,13 +1,13 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
+from airflow.operators.email import EmailOperator
 from airflow.operators.dummy import DummyOperator
 import datetime
 import pendulum
-from custom_module.data_dump_func import dump_script, remove_old_file_script
+from custom_module.data_dump_func import dump_script, remove_old_file_script, get_today
 
 
-# xcom으로 data_dump_task 성공 여부를 가져옴
 def choose_branch(**kwargs):
     task_instance = kwargs["ti"]
     bash_return_code = task_instance.xcom_pull(task_ids="data_dump")
@@ -17,6 +17,9 @@ def choose_branch(**kwargs):
         return "failure_task"
 
 
+today = get_today()
+backup_file_path = f"/opt/airflow/latest_data/{today}_backup.sql"
+
 with DAG(
     dag_id="dags_data_dump",
     schedule="50 0 * * *",
@@ -25,6 +28,7 @@ with DAG(
     dagrun_timeout=datetime.timedelta(minutes=60),
     tags=["postgresql", "data_dump"],
 ) as dag:
+
     data_dump_task = BashOperator(
         task_id="data_dump",
         bash_command=dump_script(),
@@ -34,7 +38,6 @@ with DAG(
     branch_task = BranchPythonOperator(
         task_id="branch_task",
         python_callable=choose_branch,
-        provide_context=True,
     )
 
     success_task = BashOperator(
@@ -42,8 +45,17 @@ with DAG(
         bash_command=remove_old_file_script(),
     )
 
-    failure_task = DummyOperator(
-        task_id="failure_task",
+    send_email = EmailOperator(
+        task_id="send_email",
+        to=["poeynus@gmail.com"],
+        cc=["moonjipsa@gmail.com"],
+        subject=f"✅ {today} PostgreSQL 데이터 Dump 완료",
+        html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
+        files=[backup_file_path],
     )
 
-    data_dump_task >> branch_task >> [success_task, failure_task]
+    failure_task = DummyOperator(task_id="failure_task")
+
+    data_dump_task >> branch_task
+    branch_task >> success_task >> send_email
+    branch_task >> failure_task

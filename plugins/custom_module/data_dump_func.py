@@ -30,7 +30,7 @@ def dump_script():
 
 def remove_old_file_script():
     """
-    7일 지난 백업 파일들 제거 하기
+    3일 지난 백업 파일들 제거 하기
     """
 
-    return "find /opt/airflow/latest_data -type f -mtime +3 -delete"
+    return "find /opt/airflow/latest_data -type f -mtime +2 -delete"
