@@ -60,6 +60,7 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 **첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump 할 때만 사용하고 있습니다.
 
 ## 개발 History
+- 🪤 [Airflow 구축하기 (Nas, Ubuntu)](https://github.com/eft-library/eft-library-history/blob/main/airflow/airflow.md)
 - ⚠️ [데이터 불일치](https://github.com/eft-library/eft-library-history/blob/main/airflow/different_data.md)
 - 🌐 [다국어 데이터 매핑 및 처리량 증가 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/i18n_mapping.md)
 - 🔹 [다국어 원천 데이터의 신뢰도 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/untranslated_data.md)
