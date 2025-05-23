@@ -49,9 +49,10 @@ with DAG(
         task_id="send_email",
         to=["poeynus@gmail.com"],
         cc=["moonjipsa@gmail.com"],
-        subject=f"✅ {today} PostgreSQL 데이터 Dump 완료",
+        # subject=f"✅ {today} PostgreSQL 데이터 Dump 완료",
+        subject=f"메일 전송 테스트",
         html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
-        files=[backup_file_path],
+        # files=[backup_file_path],
     )
 
     failure_task = DummyOperator(task_id="failure_task")
