@@ -53,6 +53,7 @@ with DAG(
         subject=f"메일 전송 테스트",
         html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
         # files=[backup_file_path],
+        conn="smtp_gmail",
     )
 
     failure_task = DummyOperator(task_id="failure_task")
