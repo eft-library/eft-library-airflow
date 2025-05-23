@@ -13,19 +13,19 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id="health_check_with_email_log",
+    dag_id="dags_health_check",
     default_args=default_args,
     schedule_interval="*/5 * * * *",
     start_date=days_ago(1),
     catchup=False,
 )
 
-log_path = "/home/airflow/scripts/logs/health_check.log"
+log_path = "/opt/airflow/health_check/logs/health_check.log"
 
 # 1. health_check.sh 실행
 run_health_check = BashOperator(
     task_id="run_health_check",
-    bash_command="/home/airflow/scripts/health_check.sh",
+    bash_command="/opt/airflow/health_check/health_check.sh",
     dag=dag,
 )
 
