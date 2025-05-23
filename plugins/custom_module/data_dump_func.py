@@ -34,3 +34,10 @@ def remove_old_file_script():
     """
 
     return "find /opt/airflow/latest_data -type f -mtime +2 -delete"
+
+
+def compress_backup_script(file_path: str):
+    """
+    백업된 .sql 파일을 gzip으로 압축
+    """
+    return f"gzip -f {file_path}"
