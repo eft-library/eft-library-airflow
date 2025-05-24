@@ -63,7 +63,7 @@ with DAG(
         to=["poeynus@gmail.com"],
         cc=["moonjipsa@gmail.com", "jjy2mn@gmail.com"],
         subject="🚨 테스트용입니다. (이선엽)",
-        html_content="{{ task_instance.xcom_pull(task_ids='prepare_email_body', key='email_body') }}",
+        html_content="서버 테스트",
         conn_id="smtp_gmail",
     )
 
