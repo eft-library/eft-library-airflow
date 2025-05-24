@@ -214,6 +214,8 @@ def v2_quest_process(item_en, item_ko, item_ja):
 
             merged_offer_unlock.append(merged_r)
 
+        merged_finish_rewards["offerUnlock"] = merged_offer_unlock
+
     # 4. skillLevelReward 병합
     if "skillLevelReward" in item_en["finishRewards"]:
         merged_skill_rewards = []
@@ -313,7 +315,6 @@ def v2_quest_process(item_en, item_ko, item_ja):
 
         merged_objectives.append(merged_obj)
 
-    print(json.dumps(merged_finish_rewards, indent=2, ensure_ascii=False))
     return (
         id,
         json.dumps(name),
