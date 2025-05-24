@@ -26,37 +26,38 @@ with DAG(
     # 1. health_check.sh 실행
     run_health_check = BashOperator(
         task_id="run_health_check",
-        bash_command=r'bash /opt/airflow/health_check/health_check.sh',
+        bash_command='bash /opt/airflow/health_check/health_check.sh',
     )
 
-    # 2. 로그를 <pre>로 감싸서 XCom 저장
+    # 2. 로그 내용 검사 (FAIL 포함 여부)
+    def check_fail_in_log(**kwargs):
+        if os.path.exists(log_path):
+            with open(log_path) as f:
+                content = f.read()
+                if "FAIL" in content:
+                    return "prepare_email_body"
+        return "success_action"
+
+    check_log_result = BranchPythonOperator(
+        task_id="check_log_result",
+        python_callable=check_fail_in_log,
+    )
+
+    # 3. 실패한 경우: 로그 내용을 읽어 XCom으로 전달
     def prepare_email_content(**kwargs):
-        task_instance = kwargs["ti"]
+        ti = kwargs["ti"]
         if os.path.exists(log_path):
             with open(log_path) as f:
                 content = f.read()
                 html_content = f"<pre>{content}</pre>"
-                task_instance.xcom_push(key="email_body", value=html_content)
+                ti.xcom_push(key="email_body", value=html_content)
 
     prepare_email_body = PythonOperator(
         task_id="prepare_email_body",
         python_callable=prepare_email_content,
     )
 
-    # 3. 로그에 FAIL이 있는지 판단하여 분기
-    def should_send_email(**kwargs):
-        if os.path.exists(log_path):
-            with open(log_path) as f:
-                if "FAIL" in f.read():
-                    return "send_email"
-        return "no_action"
-
-    decide_to_email = BranchPythonOperator(
-        task_id="decide_to_email",
-        python_callable=should_send_email,
-    )
-
-    # 4. Email 전송
+    # 4. 이메일 전송 (FAIL이 있을 때만 실행됨)
     send_email = EmailOperator(
         task_id="send_email",
         to=["poeynus@gmail.com"],
@@ -66,8 +67,10 @@ with DAG(
         conn_id="smtp_gmail",
     )
 
-    # 5. 아무 것도 안함
-    no_action = EmptyOperator(task_id="no_action")
+    # 5. 성공 시 아무 것도 안 함
+    success_action = EmptyOperator(task_id="success_action")
 
-    # DAG 흐름 연결
-    run_health_check >> prepare_email_body >> decide_to_email >> [send_email, no_action]
+    # DAG 연결
+    run_health_check >> check_log_result
+    check_log_result >> prepare_email_body >> send_email
+    check_log_result >> success_action
