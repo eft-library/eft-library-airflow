@@ -218,15 +218,16 @@ def v2_quest_process(item_en, item_ko, item_ja):
     if "skillLevelReward" in item_en["finishRewards"]:
         merged_skill_rewards = []
         for r_en, r_ko, r_ja in zip(
-                r_en["skillLevelReward"],
-                r_ko["skillLevelReward"],
-                r_ja["skillLevelReward"],
+                item_en["finishRewards"]["skillLevelReward"],
+                item_ko["finishRewards"]["skillLevelReward"],
+                item_ja["finishRewards"]["skillLevelReward"],
         ):
             merged_r = copy.deepcopy(r_en)
             merged_r["name_en"] = r_en.get("name", "")
             merged_r["name_ko"] = r_ko.get("name", "")
             merged_r["name_ja"] = r_ja.get("name", "")
-            del merged_r["name"]
+            if "name" in merged_r:
+                del merged_r["name"]
             merged_skill_rewards.append(merged_r)
 
         merged_finish_rewards["skillLevelReward"] = merged_skill_rewards
