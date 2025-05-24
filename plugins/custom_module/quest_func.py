@@ -55,6 +55,7 @@ def generate_quest_graphql(lang: str) -> str:
           id
           name
           gridImageLink
+          normalizedName
         }}
         count
         quantity
