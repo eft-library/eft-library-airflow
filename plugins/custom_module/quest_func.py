@@ -216,25 +216,20 @@ def v2_quest_process(item_en, item_ko, item_ja):
 
     # 4. skillLevelReward 병합
     if "skillLevelReward" in item_en["finishRewards"]:
-        merged_skill_level_reward = []
+        merged_skill_rewards = []
         for r_en, r_ko, r_ja in zip(
-            item_en["finishRewards"]["skillLevelReward"],
-            item_ko["finishRewards"]["skillLevelReward"],
-            item_ja["finishRewards"]["skillLevelReward"],
+                r_en["skillLevelReward"],
+                r_ko["skillLevelReward"],
+                r_ja["skillLevelReward"],
         ):
             merged_r = copy.deepcopy(r_en)
+            merged_r["name_en"] = r_en.get("name", "")
+            merged_r["name_ko"] = r_ko.get("name", "")
+            merged_r["name_ja"] = r_ja.get("name", "")
+            del merged_r["name"]
+            merged_skill_rewards.append(merged_r)
 
-            # skill 이름 병합
-            skill = {}
-            skill["name_en"] = r_en.get("name", "")
-            skill["name_ko"] = r_ko.get("name", "")
-            skill["name_ja"] = r_ja.get("name", "")
-            del r_en["name"]
-            merged_r["skill"] = skill
-
-            merged_skill_level_reward.append(merged_r)
-
-        merged_finish_rewards["skillLevelReward"] = merged_skill_level_reward
+        merged_finish_rewards["skillLevelReward"] = merged_skill_rewards
 
     # 4. craftUnlock 병합
     if "craftUnlock" in item_en["finishRewards"]:
