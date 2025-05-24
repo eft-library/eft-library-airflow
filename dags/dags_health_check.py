@@ -22,13 +22,12 @@ dag = DAG(
 
 log_path = "/opt/airflow/health_check/logs/health_check.log"
 
-# 1. health_check.sh 실행
+# 1. health_check.sh 실행 (Jinja 템플릿 처리 방지 위해 `bash` 명령 포함)
 run_health_check = BashOperator(
     task_id="run_health_check",
-    bash_command="/opt/airflow/health_check/health_check.sh",
+    bash_command="bash /opt/airflow/health_check/health_check.sh",  # 🔧 핵심 수정
     dag=dag,
 )
-
 
 # 2. log를 읽어서 html 형태로 변환
 def prepare_email_content(**kwargs):
@@ -38,14 +37,12 @@ def prepare_email_content(**kwargs):
             html_lines = "<br>".join(line.strip() for line in lines)
             kwargs["ti"].xcom_push(key="email_body", value=html_lines)
 
-
 prepare_email_body = PythonOperator(
     task_id="prepare_email_body",
     python_callable=prepare_email_content,
     provide_context=True,
     dag=dag,
 )
-
 
 # 3. 로그에 FAIL이 있는지 확인
 def should_send_email(**kwargs):
@@ -55,7 +52,6 @@ def should_send_email(**kwargs):
                 return "send_email"
     return "no_action"
 
-
 decide_to_email = BranchPythonOperator(
     task_id="decide_to_email",
     python_callable=should_send_email,
@@ -63,12 +59,7 @@ decide_to_email = BranchPythonOperator(
     dag=dag,
 )
 
-
 # 4. EmailOperator - 로그 내용을 본문에 포함
-def get_email_body(ti):
-    return ti.xcom_pull(task_ids="prepare_email_body", key="email_body")
-
-
 send_email = EmailOperator(
     task_id="send_email",
     to=["poeynus@gmail.com"],
