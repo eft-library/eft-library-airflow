@@ -59,6 +59,10 @@ def generate_quest_graphql(lang: str) -> str:
         count
         quantity
       }}
+      skillLevelReward{{
+        name
+        level
+      }}
       traderStanding {{
         standing
         trader {{
