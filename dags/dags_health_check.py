@@ -26,7 +26,9 @@ with DAG(
     # 1. health_check.sh 실행
     run_health_check = BashOperator(
         task_id="run_health_check",
-        bash_command='bash /opt/airflow/health_check/health_check.sh',
+        bash_command="""
+        bash /opt/airflow/health_check/health_check.sh
+        """,
     )
 
     # 2. 로그 내용 검사 (FAIL 포함 여부)
@@ -63,7 +65,7 @@ with DAG(
         to=["poeynus@gmail.com"],
         cc=["moonjipsa@gmail.com", "jjy2mn@gmail.com"],
         subject="🚨 테스트용입니다. (이선엽)",
-        html_content="서버 테스트",
+        html_content="{{ task_instance.xcom_pull(task_ids='prepare_email_body', key='email_body') }}",
         conn_id="smtp_gmail",
     )
 
