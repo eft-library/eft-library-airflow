@@ -25,9 +25,13 @@ log_path = "/opt/airflow/health_check/logs/health_check.log"
 # 1. health_check.sh 실행 (Jinja 템플릿 처리 방지 위해 `bash` 명령 포함)
 run_health_check = BashOperator(
     task_id="run_health_check",
-    bash_command="bash /opt/airflow/health_check/health_check.sh",  # 🔧 핵심 수정
+    bash_command="bash /opt/airflow/health_check/health_check.sh",
     dag=dag,
+    do_xcom_push=False,
+    template_ext=[],   # ✅ Jinja 템플릿 확장자 비활성화
+    template_fields_renderers={},  # ✅ 템플릿 렌더링 제거
 )
+
 
 # 2. log를 읽어서 html 형태로 변환
 def prepare_email_content(**kwargs):
