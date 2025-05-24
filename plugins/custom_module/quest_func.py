@@ -226,14 +226,13 @@ def v2_quest_process(item_en, item_ko, item_ja):
             merged_r["name_en"] = r_en.get("name", "")
             merged_r["name_ko"] = r_ko.get("name", "")
             merged_r["name_ja"] = r_ja.get("name", "")
-            print(merged_r)
             if "name" in merged_r:
                 del merged_r["name"]
             merged_skill_rewards.append(merged_r)
 
         merged_finish_rewards["skillLevelReward"] = merged_skill_rewards
 
-    # 4. craftUnlock 병합
+    # 5. craftUnlock 병합
     if "craftUnlock" in item_en["finishRewards"]:
         merged_craft_unlock = []
         for r_en, r_ko, r_ja in zip(
@@ -314,6 +313,7 @@ def v2_quest_process(item_en, item_ko, item_ja):
 
         merged_objectives.append(merged_obj)
 
+    print(json.dumps(merged_finish_rewards, indent=2, ensure_ascii=False))
     return (
         id,
         json.dumps(name),
