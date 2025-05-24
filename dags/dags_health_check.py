@@ -26,7 +26,7 @@ with DAG(
     # 1. health_check.sh 실행
     run_health_check = BashOperator(
         task_id="run_health_check",
-        bash_command="bash /opt/airflow/health_check/health_check.sh",
+        bash_command=r'bash /opt/airflow/health_check/health_check.sh',
     )
 
     # 2. 로그를 <pre>로 감싸서 XCom 저장
