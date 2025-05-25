@@ -207,5 +207,22 @@ def check_category(item_list, category):
                 or item["category"]["name"] == "Info"
             )
         ]
+    elif category == "Other":
+        return [
+            item
+            for item in item_list
+            if (
+                item["category"]["parent"]["name"] != "Barter item"
+                and item["category"]["parent"]["name"] != "Special item"
+                and item["category"]["parent"]["name"] != "Lubricant"
+                and item["category"]["name"] != "Info"
+                and item["category"]["parent"]["name"] != 'Key'
+                and item["category"]["parent"]["name"] != 'Meds'
+                and item["category"]["name"] != "Food"
+                and item["category"]["name"] != "Drink"
+                and item["category"]["parent"]["name"] != "Weapon"
+            )
+        ]
     else:
         return [item for item in item_list if item["category"]["name"] == category]
+

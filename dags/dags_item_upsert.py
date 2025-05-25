@@ -23,6 +23,7 @@ from custom_module.item.general_func import (
     v2_loot_process,
     v2_arm_band_process,
     v2_glasses_process,
+    v2_other_process,
 )
 from custom_module.item.ricochet_item_func import (
     v2_headwear_process,
@@ -685,6 +686,41 @@ with DAG(
                     cursor.execute(sql, v2_medical_process(item_en, item_ko, item_ja))
             conn.commit()
 
+    def other_category_item(postgres_conn_id, **kwargs):
+        ti = kwargs["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item_list")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list["items"]}
+        item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
+        item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+        filtered_items = check_category(item_en_list["items"], "Other")
+
+        item_ids = (
+            set(item["id"] for item in filtered_items)
+            & set(item_ko_dict.keys())
+            & set(item_ja_dict.keys())
+        )
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("upsert_item.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for item_id in item_ids:
+                    item_en = item_en_dict[item_id]
+                    item_ko = item_ko_dict[item_id]
+                    item_ja = item_ja_dict[item_id]
+
+                    cursor.execute(sql, v2_other_process(item_en, item_ko, item_ja))
+            conn.commit()
+
     def remove_json_files(**kwargs):
         files = [en_path, ko_path, ja_path]
 
@@ -821,6 +857,13 @@ with DAG(
         provide_context=True,
     )
 
+    upsert_other_task = PythonOperator(
+        task_id="upsert_other",
+        python_callable=other_category_item,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+        provide_context=True,
+    )
+
     upsert_tasks = [
         upsert_gun_task,
         upsert_knife_task,
@@ -839,6 +882,7 @@ with DAG(
         upsert_key_task,
         upsert_provisions_task,
         upsert_medical_task,
+        upsert_other_task,
     ]
 
     remove_json_files_task = PythonOperator(
