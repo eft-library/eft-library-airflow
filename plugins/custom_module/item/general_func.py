@@ -334,6 +334,51 @@ def v2_arm_band_process(item_en, item_ko, item_ja):
     )
 
 
+def v2_glasses_process(item_en, item_ko, item_ja):
+    """
+    glasses 데이터 가공
+    """
+    item_id = item_en.get("id")
+    name = {
+        "en": item_en.get("name"),
+        "ko": item_ko.get("name"),
+        "ja": item_ja.get("name"),
+    }
+    url_mapping = item_en.get("normalizedName")
+    weight = item_en.get("weight")
+    category = "Glasses"
+    image = item_en.get("gridImageLink")
+    image_width = item_en.get("width")
+    image_height = item_en.get("height")
+    update_time = pendulum.now("Asia/Seoul")
+    properties = item_en.get("properties") or {}
+    class_value = properties.get("class")
+    durability = properties.get("durability")
+    blindness_protection = properties.get("blindnessProtection")
+    material = properties.get("material")
+
+    info = json.dumps(
+        {
+            "weight": weight,
+            "class_value": class_value,
+            "durability": durability,
+            "material": material,
+            "blindness_protection": blindness_protection,
+        }
+    )
+
+    return (
+        item_id,
+        json.dumps(name),
+        category,
+        info,
+        image,
+        image_width,
+        image_height,
+        url_mapping,
+        update_time,
+    )
+
 def v2_other_process(item_en, item_ko, item_ja):
     """
     other 데이터 가공
