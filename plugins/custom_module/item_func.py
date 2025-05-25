@@ -221,6 +221,22 @@ def check_category(item_list, category):
                 and item["category"]["name"] != "Food"
                 and item["category"]["name"] != "Drink"
                 and item["category"]["parent"]["name"] != "Weapon"
+                and item["category"]["name"] != "Gun"
+                and item["category"]["name"] != "Knife"
+                and item["category"]["name"] != "Throwable weapon"
+                and item["category"]["name"] != "Chest rig"
+                and item["category"]["name"] != "Armor"
+                and item["category"]["name"] != "Headwear"
+                and item["category"]["name"] != "Headphones"
+                and item["category"]["name"] != "Backpack"
+                and item["category"]["name"] != "Common container"
+                and item["category"]["name"] != "Loot"
+                and item["category"]["name"] != "Arm Band"
+                and item["category"]["name"] != "Vis. observ. device"
+                and item["category"]["name"] != "Face Cover"
+                and item["category"]["name"] != "Ammo"
+                and item["category"]["name"] != "Key"
+                and item["category"]["name"] != "Provisions"
             )
         ]
     else:
