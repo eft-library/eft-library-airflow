@@ -1,7 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.utils.task_group import TaskGroup
 from contextlib import closing
 import pendulum
 from custom_module.psql_func import read_sql
@@ -45,7 +44,8 @@ with DAG(
             with closing(conn.cursor()) as cursor:
                 for start in range(0, total_count, BATCH_SIZE):
                     end = start + BATCH_SIZE
-                    cursor.execute(sql, {"offset_count": start, "limit": end})
+                    sql.format(offset_count=start, limit=end)
+                    cursor.execute(sql)
             conn.commit()
 
     get_total_count_task = PythonOperator(
