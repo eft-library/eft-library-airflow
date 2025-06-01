@@ -1,0 +1,1 @@
+select count(*) from item_i18n;
