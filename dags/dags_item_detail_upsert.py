@@ -66,8 +66,6 @@ with DAG(
                 )
         return tg
 
-    from airflow.operators.python import PythonVirtualenvOperator
-
     # TaskGroup을 동적으로 생성하는 작업
     generate_tasks = PythonOperator(
         task_id="generate_batches",
