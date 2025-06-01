@@ -9,7 +9,7 @@ INSERT INTO item_detail_i18n (id,
                               required_by_quest_item_array)
 WITH target_item AS (SELECT *
                      FROM item_i18n
-                     offset {offset_count} limit {limit}),
+                     offset %s limit %s),
 
      -- 📦 바터 정보
      filtered_barters AS (SELECT n.id                      AS npc_id,

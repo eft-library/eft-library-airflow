@@ -44,8 +44,7 @@ with DAG(
             with closing(conn.cursor()) as cursor:
                 for start in range(0, total_count, BATCH_SIZE):
                     end = start + BATCH_SIZE
-                    sql.format(offset_count=start, limit=end)
-                    cursor.execute(sql)
+                    cursor.execute(sql, (start, end))
             conn.commit()
 
     get_total_count_task = PythonOperator(
