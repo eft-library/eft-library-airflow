@@ -2,6 +2,7 @@ from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 import pendulum
+from custom_module.psql_func import read_sql
 
 BATCH_SIZE = 500
 
