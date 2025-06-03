@@ -1,12 +1,3 @@
-INSERT INTO item_detail_i18n (id,
-                              hideout_items,
-                              used_in_crafts,
-                              rewarded_by_npcs,
-                              rewarded_by_quests,
-                              rewarded_by_quests_offer_unlock,
-                              rewarded_by_quests_craft_unlock,
-                              required_by_quest_item,
-                              required_by_quest_item_array)
 WITH target_item AS (SELECT *
                      FROM item_i18n
                      offset %s limit %s),
@@ -71,13 +62,14 @@ WITH target_item AS (SELECT *
                                                left join npc_i18n tn on qa.npc_id = tn.id),
 
      -- 🧩 craftUnlock.rewardItems[*].item.id에 포함된 경우 (finish_rewards 안)
-     filtered_quests_craft_unlock AS (SELECT qa.id    AS quest_id,
+     filtered_quests_craft_unlock AS (SELECT qa.id                          AS quest_id,
                                              qa.name,
                                              qa.npc_id,
                                              qa.url_mapping,
-                                             tn.name  as npc_name,
-                                             tn.image AS npc_image,
-                                             reward_item
+                                             tn.name                        AS npc_name,
+                                             tn.image                       AS npc_image,
+                                             reward_item,
+                                             reward_item -> 'item' ->> 'id' AS item_id -- ✨
                                       FROM quest_i18n qa
                                                LEFT JOIN npc_i18n tn ON qa.npc_id = tn.id
                                                LEFT JOIN LATERAL jsonb_array_elements(qa.finish_rewards -> 'craftUnlock') AS craft_unlock
@@ -99,19 +91,19 @@ WITH target_item AS (SELECT *
                                        WHERE obj ->> 'type' IN ('findQuestItem', 'giveQuestItem')),
 
      -- ❗ items 배열에 포함된 경우 (예: giveItem, plantItem, findItem)
-     required_quests_by_items_array AS (SELECT q.id     AS quest_id,
+     required_quests_by_items_array AS (SELECT q.id          AS quest_id,
                                                q.name,
                                                q.url_mapping,
-                                               tn.name  as npc_name,
-                                               tn.image AS npc_image,
-                                               obj      AS objective
+                                               tn.name       AS npc_name,
+                                               tn.image      AS npc_image,
+                                               obj           AS objective,
+                                               item ->> 'id' AS item_id -- ✨
                                         FROM quest_i18n q
+                                                 LEFT JOIN npc_i18n tn ON q.npc_id = tn.id
                                                  LEFT JOIN LATERAL jsonb_array_elements(q.objectives) AS obj ON TRUE
-                                                 LEFT JOIN npc_i18n tn on q.npc_id = tn.id
+                                                 LEFT JOIN LATERAL jsonb_array_elements(obj -> 'items') AS item ON TRUE
                                         WHERE obj ->> 'type' IN ('plantItem', 'giveItem', 'findItem')
-                                          AND EXISTS (SELECT 1
-                                                      FROM jsonb_array_elements(obj -> 'items') AS item
-                                                      WHERE item ->> 'id' in (SELECT id FROM target_item))),
+                                          AND item ->> 'id' IN (SELECT id FROM target_item)),
 
      item_with_details AS (SELECT ti.id,
 
@@ -252,8 +244,8 @@ WITH target_item AS (SELECT *
                                               ON rqi.objective -> 'questItem' ->> 'id' = ti.id
                                     LEFT JOIN filtered_quests_offer_unlock fqon
                                               ON fqon.reward_elem -> 'item' ->> 'id' = ti.id
-                                    LEFT JOIN filtered_quests_craft_unlock fqc ON TRUE
-                                    LEFT JOIN required_quests_by_items_array rqa ON TRUE
+                                    LEFT JOIN filtered_quests_craft_unlock fqc ON fqc.item_id = ti.id
+                                    LEFT JOIN required_quests_by_items_array rqa ON rqa.item_id = ti.id
                            GROUP BY ti.id, ti.name, ti.name, ti.category, ti.image,
                                     ti.image_width, ti.image_height, ti.info, ti.update_time, ti.url_mapping)
 
@@ -267,13 +259,3 @@ SELECT id,
        required_by_quest_item,
        required_by_quest_item_array
 FROM item_with_details
-ON CONFLICT (id) DO UPDATE
-    SET hideout_items                   = EXCLUDED.hideout_items,
-        used_in_crafts                  = EXCLUDED.used_in_crafts,
-        rewarded_by_npcs                = EXCLUDED.rewarded_by_npcs,
-        rewarded_by_quests              = EXCLUDED.rewarded_by_quests,
-        rewarded_by_quests_offer_unlock = EXCLUDED.rewarded_by_quests_offer_unlock,
-        rewarded_by_quests_craft_unlock = EXCLUDED.rewarded_by_quests_craft_unlock,
-        required_by_quest_item          = EXCLUDED.required_by_quest_item,
-        required_by_quest_item_array    = EXCLUDED.required_by_quest_item_array;
-
