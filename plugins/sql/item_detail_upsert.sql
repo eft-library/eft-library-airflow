@@ -1,3 +1,12 @@
+INSERT INTO item_detail_i18n (id,
+                              hideout_items,
+                              used_in_crafts,
+                              rewarded_by_npcs,
+                              rewarded_by_quests,
+                              rewarded_by_quests_offer_unlock,
+                              rewarded_by_quests_craft_unlock,
+                              required_by_quest_item,
+                              required_by_quest_item_array)
 WITH target_item AS (SELECT *
                      FROM item_i18n
                      offset %s limit %s),
@@ -259,3 +268,13 @@ SELECT id,
        required_by_quest_item,
        required_by_quest_item_array
 FROM item_with_details
+ON CONFLICT (id) DO UPDATE
+    SET hideout_items                   = EXCLUDED.hideout_items,
+        used_in_crafts                  = EXCLUDED.used_in_crafts,
+        rewarded_by_npcs                = EXCLUDED.rewarded_by_npcs,
+        rewarded_by_quests              = EXCLUDED.rewarded_by_quests,
+        rewarded_by_quests_offer_unlock = EXCLUDED.rewarded_by_quests_offer_unlock,
+        rewarded_by_quests_craft_unlock = EXCLUDED.rewarded_by_quests_craft_unlock,
+        required_by_quest_item          = EXCLUDED.required_by_quest_item,
+        required_by_quest_item_array    = EXCLUDED.required_by_quest_item_array;
+
