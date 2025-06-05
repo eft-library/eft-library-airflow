@@ -67,5 +67,6 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 - 🔹 [다국어 원천 데이터의 신뢰도 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/untranslated_data.md)
 - 📦 [Data Dump 자동화 설정](https://github.com/eft-library/eft-library-history/blob/main/airflow/data_dump.md)
 - 🐹 [시스템 Health Check 구축](https://github.com/eft-library/eft-library-history/blob/main/airflow/health_check.md)
+- 🧠 [아이템 상세 페이지 성능 튜닝 후기](https://github.com/eft-library/eft-library-history/blob/main/airflow/item_detail.md)
 
 
