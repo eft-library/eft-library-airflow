@@ -22,6 +22,7 @@ def generate_quest_graphql(lang: str) -> str:
       task {{
         id
         name
+        normalizedName
       }}
     }}
     objectives {{
