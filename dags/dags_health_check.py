@@ -45,36 +45,21 @@ with DAG(
         }
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_response_time.sql")  # INSERT 문
+        sql = read_sql("insert_response_time.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for service_name, url in services.items():
                     start = time.time()
                     try:
-                        start = time.time()
                         r = requests.get(url, timeout=10)
                         elapsed = time.time() - start
-
-                        data = r.json()
-                        if service_name == "FastAPI":
-                            status_val = data.get("data", {}).get("status", "").lower()
-                        elif service_name == "Next.js":
-                            status_val = data.get("status", "").lower()
-                        else:
-                            status_val = ""
-
-                        status = "OK" if status_val == "ok" else "FAIL"
-
-                        if status == "FAIL":
-                            elapsed = None  # 실패면 응답시간 제거
-
                     except Exception:
-                        elapsed = None
-                        status = "FAIL"
+                        elapsed = None  # 실패 시 NULL 처리
 
-                    cursor.execute(sql, (service_name, status, elapsed, datetime.now()))
+                    cursor.execute(sql, (service_name, elapsed, datetime.now()))
             conn.commit()
+
 
     def save_health_check(postgres_conn_id, **kwargs):
         if not os.path.exists(log_path):
