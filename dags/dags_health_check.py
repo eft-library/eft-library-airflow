@@ -8,7 +8,9 @@ from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.dates import days_ago
 from datetime import datetime
+import time
 import os
+import requests
 
 log_path = "/opt/airflow/health_check/logs/health_check.log"
 
@@ -35,14 +37,36 @@ with DAG(
         """,
     )
 
+    def measure_response_time(postgres_conn_id, **kwargs):
+        services = {
+            "Next.js": "http://eftlibrary.com/health",
+            "FastAPI": "http://back.eftlibrary.com/health",
+        }
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("insert_response_time.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                for service_name, url in services.items():
+                    start = time.time()
+                    try:
+                        r = requests.get(url, timeout=10)
+                        elapsed = time.time() - start
+                        status = 'OK' if r.status_code == 200 else 'FAIL'
+                    except Exception:
+                        elapsed = None
+                        status = 'FAIL'
+
+                    cursor.execute(sql, (service_name, status, elapsed, datetime.now()))
+            conn.commit()
 
     def save_health_check(postgres_conn_id, **kwargs):
         if not os.path.exists(log_path):
             return
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql(
-            "insert_health_check.sql")  # 예: "INSERT INTO health_check_logs (service_name, status, checked_at) VALUES (%s, %s, %s)"
+        sql = read_sql("insert_health_check.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -100,6 +124,12 @@ with DAG(
         python_callable=prepare_email_content,
     )
 
+    measure_response_time_task = PythonOperator(
+        task_id="measure_response_time",
+        python_callable=measure_response_time,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+    )
+
     # 4. 이메일 전송 (FAIL이 있을 때만 실행됨)
     send_email = EmailOperator(
         task_id="send_email",
@@ -114,7 +144,7 @@ with DAG(
     success_action = EmptyOperator(task_id="success_action")
 
     # DAG 연결
-    run_health_check >> save_to_postgres >> check_log_result
+    run_health_check >> save_to_postgres >> measure_response_time_task >> check_log_result
     check_log_result >> prepare_email_body >> send_email
     check_log_result >> success_action
 
