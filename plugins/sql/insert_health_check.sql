@@ -1,2 +1,2 @@
-INSERT INTO health_check (service_name, status, checked_at)
+INSERT INTO health_check (service_name, status, checked_time)
 VALUES (%s, %s, %s)
