@@ -52,11 +52,11 @@ with DAG(
                 for service_name, url in services.items():
                     start = time.time()
                     try:
+                        start = time.time()
                         r = requests.get(url, timeout=10)
                         elapsed = time.time() - start
 
                         data = r.json()
-                        # 서비스별로 status 파싱
                         if service_name == "FastAPI":
                             status_val = data.get("data", {}).get("status", "").lower()
                         elif service_name == "Next.js":
@@ -65,6 +65,9 @@ with DAG(
                             status_val = ""
 
                         status = "OK" if status_val == "ok" else "FAIL"
+
+                        if status == "FAIL":
+                            elapsed = None  # 실패면 응답시간 제거
 
                     except Exception:
                         elapsed = None
