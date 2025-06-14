@@ -51,7 +51,7 @@ with DAG(
                         if not line.strip():
                             continue
 
-                        # 예: [2025-06-14 10:00:00] Next.js: OK
+                        print(line)
                         try:
                             parts = line.strip().split('] ')
                             timestamp_str = parts[0].strip('[')
@@ -92,7 +92,7 @@ with DAG(
     save_to_postgres = PythonOperator(
         task_id="save_to_postgres",
         python_callable=save_health_check,
-        op_kwargs={"postgres_conn_id": "tkl_db"},  # Airflow Connection ID
+        op_kwargs={"postgres_conn_id": "tkl_db"},
     )
 
     prepare_email_body = PythonOperator(
