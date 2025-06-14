@@ -1,9 +1,13 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from contextlib import closing
+from custom_module.psql_func import read_sql
 from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.dates import days_ago
+from datetime import datetime
 import os
 
 log_path = "/opt/airflow/health_check/logs/health_check.log"
@@ -31,6 +35,37 @@ with DAG(
         """,
     )
 
+
+    def save_health_check(postgres_conn_id, **kwargs):
+        if not os.path.exists(log_path):
+            return
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql(
+            "insert_health_check.sql")  # 예: "INSERT INTO health_check_logs (service_name, status, checked_at) VALUES (%s, %s, %s)"
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                with open(log_path, "r") as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+
+                        # 예: [2025-06-14 10:00:00] Next.js: OK
+                        try:
+                            parts = line.strip().split('] ')
+                            timestamp_str = parts[0].strip('[')
+                            log_body = parts[1]
+                            service_name, status = log_body.split(': ')
+                            checked_at = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+
+                            cursor.execute(sql, (service_name.strip(), status.strip(), checked_at))
+                        except Exception as e:
+                            # 에러 로깅 (옵션)
+                            print(f"Error parsing line: {line} -> {e}")
+
+                conn.commit()
+
     # 2. 로그 내용 검사 (FAIL 포함 여부)
     def check_fail_in_log(**kwargs):
         if os.path.exists(log_path):
@@ -40,11 +75,6 @@ with DAG(
                     return "prepare_email_body"
         return "success_action"
 
-    check_log_result = BranchPythonOperator(
-        task_id="check_log_result",
-        python_callable=check_fail_in_log,
-    )
-
     # 3. 실패한 경우: 로그 내용을 읽어 XCom으로 전달
     def prepare_email_content(**kwargs):
         ti = kwargs["ti"]
@@ -53,6 +83,17 @@ with DAG(
                 content = f.read()
                 html_content = f"<pre>{content}</pre>"
                 ti.xcom_push(key="email_body", value=html_content)
+
+    check_log_result = BranchPythonOperator(
+        task_id="check_log_result",
+        python_callable=check_fail_in_log,
+    )
+
+    save_to_postgres = PythonOperator(
+        task_id="save_to_postgres",
+        python_callable=save_health_check,
+        op_kwargs={"postgres_conn_id": "tkl_db"},  # Airflow Connection ID
+    )
 
     prepare_email_body = PythonOperator(
         task_id="prepare_email_body",
@@ -73,6 +114,7 @@ with DAG(
     success_action = EmptyOperator(task_id="success_action")
 
     # DAG 연결
-    run_health_check >> check_log_result
+    run_health_check >> save_to_postgres >> check_log_result
     check_log_result >> prepare_email_body >> send_email
     check_log_result >> success_action
+
