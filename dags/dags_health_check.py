@@ -37,6 +37,7 @@ with DAG(
         """,
     )
 
+
     def measure_response_time(postgres_conn_id, **kwargs):
         services = {
             "Next.js": "http://eftlibrary.com/health",
@@ -44,7 +45,7 @@ with DAG(
         }
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_response_time.sql")
+        sql = read_sql("insert_response_time.sql")  # INSERT 문
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -53,10 +54,21 @@ with DAG(
                     try:
                         r = requests.get(url, timeout=10)
                         elapsed = time.time() - start
-                        status = 'OK' if r.status_code == 200 else 'FAIL'
+
+                        data = r.json()
+                        # 서비스별로 status 파싱
+                        if service_name == "FastAPI":
+                            status_val = data.get("data", {}).get("status", "").lower()
+                        elif service_name == "Next.js":
+                            status_val = data.get("status", "").lower()
+                        else:
+                            status_val = ""
+
+                        status = "OK" if status_val == "ok" else "FAIL"
+
                     except Exception:
                         elapsed = None
-                        status = 'FAIL'
+                        status = "FAIL"
 
                     cursor.execute(sql, (service_name, status, elapsed, datetime.now()))
             conn.commit()
