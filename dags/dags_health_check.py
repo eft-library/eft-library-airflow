@@ -58,7 +58,7 @@ with DAG(
                         elapsed = None
                         status = 'FAIL'
 
-                    cursor.execute(sql, (service_name, status, elapsed, datetime.now()))
+                    cursor.execute(sql, (service_name, elapsed, datetime.now()))
             conn.commit()
 
     def save_health_check(postgres_conn_id, **kwargs):
