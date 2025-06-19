@@ -23,7 +23,7 @@ def dump_script():
     return f"""
         source ~/.bashrc
         echo "Executing PostgreSQL Command - pg_dump"
-        pg_dump -h 192.168.219.102 -p 13245 -U tkl --inserts --exclude-table-data=public.item_detail_i18n --exclude-table-data=public.item_price_i18n --exclude-table-data=public.user_footprint --exclude-table=public.item_i18n --exclude-table=public.search_i18n --exclude-table=public.item_price_history_i18n prd > /opt/airflow/latest_data/{today}_backup.sql
+        pg_dump -h 192.168.219.102 -p 13245 -U tkl --inserts --exclude-table-data=public.item_detail_i18n --exclude-table-data=public.item_price_i18n --exclude-table-data=public.health_check --exclude-table-data=public.response_time --exclude-table-data=public.user_footprint --exclude-table=public.item_i18n --exclude-table=public.search_i18n --exclude-table=public.item_price_history_i18n prd > /opt/airflow/latest_data/{today}_backup.sql
         echo $?
         """
 
