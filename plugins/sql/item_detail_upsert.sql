@@ -6,8 +6,7 @@ INSERT INTO item_detail_i18n (id,
                               rewarded_by_quests_offer_unlock,
                               rewarded_by_quests_craft_unlock,
                               required_by_quest_item,
-                              required_by_quest_item_array,
-                              update_time)
+                              required_by_quest_item_array)
 WITH target_item AS (SELECT *
                      FROM item_i18n
                      offset %s limit %s),
