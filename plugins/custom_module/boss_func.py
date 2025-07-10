@@ -97,6 +97,7 @@ def v2_boss_process(item_en, item_ko, item_ja):
         image,
         json.dumps(merged_equipment),
         url_mapping,
+        json.dumps(merged_health),
         update_time,
     )
 
