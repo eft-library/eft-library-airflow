@@ -69,9 +69,9 @@ def v2_boss_process(item_en, item_ko, item_ja):
         item = eq_en["item"]
 
         # 다국어 이름 병합
-        item["name_en"] = eq_en["health"].get("bodyPart", "")
-        item["name_ko"] = eq_ko["health"].get("bodyPart", "")
-        item["name_ja"] = eq_ja["health"].get("bodyPart", "")
+        item["name_en"] = eq_en["item"].get("name", "")
+        item["name_ko"] = eq_ko["item"].get("name", "")
+        item["name_ja"] = eq_ja["item"].get("name", "")
         del item["name"]
 
         merged_eq["item"] = item
@@ -97,7 +97,6 @@ def v2_boss_process(item_en, item_ko, item_ja):
         image,
         json.dumps(merged_equipment),
         url_mapping,
-        merged_health,
         update_time,
     )
 
