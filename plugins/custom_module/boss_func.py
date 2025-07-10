@@ -12,6 +12,10 @@ def generate_boss_graphql(lang: str) -> str:
     name
     normalizedName
     imagePortraitLink
+    health {{
+      bodyPart
+      max
+    }}
     equipment {{
       item {{
         id
@@ -54,6 +58,7 @@ def v2_boss_process(item_en, item_ko, item_ja):
     url_mapping = item_en.get("normalizedName")
     image = item_en.get("imagePortraitLink")
     merged_equipment = []
+    merged_health = []
 
     for eq_en, eq_ko, eq_ja in zip(
         item_en.get("equipment", []),
@@ -64,13 +69,25 @@ def v2_boss_process(item_en, item_ko, item_ja):
         item = eq_en["item"]
 
         # 다국어 이름 병합
-        item["name_en"] = eq_en["item"].get("name", "")
-        item["name_ko"] = eq_ko["item"].get("name", "")
-        item["name_ja"] = eq_ja["item"].get("name", "")
+        item["name_en"] = eq_en["health"].get("bodyPart", "")
+        item["name_ko"] = eq_ko["health"].get("bodyPart", "")
+        item["name_ja"] = eq_ja["health"].get("bodyPart", "")
         del item["name"]
 
         merged_eq["item"] = item
         merged_equipment.append(merged_eq)
+
+    for h_en, h_ko, h_ja in zip(
+        item_en.get("health", []), item_ko.get("health", []), item_ja.get("health", [])
+    ):
+        merged_health.append(
+            {
+                "bodyPart_en": h_en.get("bodyPart", ""),
+                "bodyPart_ko": h_ko.get("bodyPart", ""),
+                "bodyPart_ja": h_ja.get("bodyPart", ""),
+                "max": h_en.get("max", 0),
+            }
+        )
 
     update_time = pendulum.now("Asia/Seoul")
 
@@ -80,6 +97,7 @@ def v2_boss_process(item_en, item_ko, item_ja):
         image,
         json.dumps(merged_equipment),
         url_mapping,
+        merged_health,
         update_time,
     )
 
