@@ -276,5 +276,6 @@ ON CONFLICT (id) DO UPDATE
         rewarded_by_quests_offer_unlock = EXCLUDED.rewarded_by_quests_offer_unlock,
         rewarded_by_quests_craft_unlock = EXCLUDED.rewarded_by_quests_craft_unlock,
         required_by_quest_item          = EXCLUDED.required_by_quest_item,
-        required_by_quest_item_array    = EXCLUDED.required_by_quest_item_array;
+        required_by_quest_item_array    = EXCLUDED.required_by_quest_item_array,
+        update_time                     = NOW();
 
