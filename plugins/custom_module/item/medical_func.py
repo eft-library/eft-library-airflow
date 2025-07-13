@@ -4,37 +4,89 @@ import pendulum
 import json
 
 status_dict = {
-    "HealthRate": {"ko": "체력 재생", "ja": "体力回復"},
-    "HandsTremor": {"ko": "손 떨림", "ja": "手の震え"},
-    "QuantumTunnelling": {"ko": "터널 효과", "ja": "視野狭窄"},
-    "EnergyRate": {"ko": "에너지 회복", "ja": "エネルギー回復"},
-    "HydrationRate": {"ko": "수분 회복", "ja": "水分回復"},
-    "MaxStamina": {"ko": "최대 스태미나", "ja": "最大スタミナ"},
-    "StaminaRate": {"ko": "스태미나 회복", "ja": "スタミナ回復"},
-    "Removeallbloodlosses": {
+    "Health regeneration": {
+        "ko": "체력 재생",
+        "ja": "体力回復"
+    },
+    "Hands tremor": {
+        "ko": "손 떨림",
+        "ja": "手の震え"
+    },
+    "Tunnel effect": {
+        "ko": "터널 효과",
+        "ja": "視野狭窄"
+    },
+    "Energy recovery": {
+        "ko": "에너지 회복",
+        "ja": "エネルギー回復"
+    },
+    "Hydration recovery": {
+        "ko": "수분 회복",
+        "ja": "水分回復"
+    },
+    "Max stamina": {
+        "ko": "최대 스태미나",
+        "ja": "最大スタミナ"
+    },
+    "Stamina recovery": {
+        "ko": "스태미나 회복",
+        "ja": "スタミナ回復"
+    },
+    "Stops and prevents bleedings": {
         "ko": "출혈 멈춤 & 추가 출혈 방지",
-        "ja": "出血を止める/防ぐ",
+        "ja": "出血を止める/防ぐ"
     },
-    "WeightLimit": {"ko": "무게 제한", "ja": "重量制限"},
-    "DamageModifier": {
+    "Weight limit": {
+        "ko": "무게 제한",
+        "ja": "重量制限"
+    },
+    "Damage taken (except the head)": {
         "ko": "받은 피해량 (머리 제외)",
-        "ja": "受けるダメージが増加(頭部以外)",
+        "ja": "受けるダメージが増加(頭部以外)"
     },
-    "Antidote": {"ko": "해독제", "ja": "解毒剤"},
-    "BodyTemperature": {"ko": "체온", "ja": "体温"},
-    "Pain": {"ko": "고통 제거", "ja": "痛み"},
+    "Antidote": {
+        "ko": "해독제",
+        "ja": "解毒剤"
+    },
+    "Body temperature": {
+        "ko": "체온",
+        "ja": "体温"
+    },
+    "Pain": {
+        "ko": "고통 제거",
+        "ja": "痛み"
+    }
 }
 
+
 injury_dict = {
-    "LightBleeding": {"ko": "가벼운 출혈 치료", "ja": "軽度出血を治療"},
-    "HeavyBleeding": {"ko": "과다 출혈 치료", "ja": "重度出血を止血"},
-    "Fracture": {"ko": "골절 치료", "ja": "骨折を治療"},
-    "Contusion": {
-        "ko": "타박상",
-        "ja": "脳震とう",  # 뇌진탕(=뇌타박)으로 일본어가 표현된 점 참고
+    "LightBleeding": {
+        "en": "Light bleeding treatment",
+        "ko": "가벼운 출혈 치료",
+        "ja": "軽度出血を治療"
     },
-    "Pain": {"ko": "고통 제거", "ja": "痛み"},
+    "HeavyBleeding": {
+        "en": "Heavy bleeding treatment",
+        "ko": "과다 출혈 치료",
+        "ja": "重度出血を止血"
+    },
+    "Fracture": {
+        "en": "Fracture treatment",
+        "ko": "골절 치료",
+        "ja": "骨折を治療"
+    },
+    "Contusion": {
+        "en": "Contusion",
+        "ko": "타박상",
+        "ja": "脳震とう"
+    },
+    "Pain": {
+        "en": "Pain",
+        "ko": "고통 제거",
+        "ja": "痛み"
+    }
 }
+
 
 
 def v2_medical_process(item_en, item_ko, item_ja):
