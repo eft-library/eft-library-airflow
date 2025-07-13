@@ -254,6 +254,10 @@ def get_efficiency(name):
         ".50 AE FMJ": [6, 6, 6, 6, 4, 3],
         "7.62x51mm M80A1": [6, 6, 6, 6, 6, 6],
         "5.45x39mm PPBS gs Igolnik": [6, 6, 6, 6, 6, 6],
+        ".50 BMG HP": [6, 6, 6, 4, 3, 1],
+        ".50 BMG M21": [6, 6, 6, 6, 5, 4],
+        ".50 BMG M33": [6, 6, 6, 6, 6, 5],
+        ".50 BMG M903 SLAP": [6, 6, 6, 6, 6, 6]
     }
 
     if name in efficiency:
