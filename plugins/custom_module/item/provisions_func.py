@@ -318,23 +318,50 @@ def v2_provisions_process(item_en, item_ko, item_ja):
 
     for effect in result_stim_effects:  # effects는 JSON에서 불러온 dict list
         effect_type = effect["type"]
+        effect_skill = effect["skill_name_en"]
         value = effect.get("value", 0)
 
-        info = effect_dict.get(effect_type)
-        if not info:
+        type_info = effect_dict.get(effect_type)
+        skill_info = effect_dict.get(effect_skill)
+
+        if not type_info:
             continue  # 정의되지 않은 타입은 무시
 
         # 1. advantage / malus 분류
-        if info["is_positive"]:
+        if type_info["is_positive"]:
             advantage.append(effect)
         else:
             malus.append(effect)
 
         # 2. buff / de_buff 분류
-        if not info["is_use_value"]:
+        if not type_info["is_use_value"]:
             continue  # 값이 없으면 판단 불가
 
-        if info["is_positive"]:
+        if type_info["is_positive"]:
+            if value > 0:
+                buff.append(effect)
+            elif value < 0:
+                de_buff.append(effect)
+        else:
+            if value > 0:
+                de_buff.append(effect)
+            elif value < 0:
+                buff.append(effect)
+
+        if not skill_info:
+            continue  # 정의되지 않은 타입은 무시
+
+        # 1. advantage / malus 분류
+        if skill_info["is_positive"]:
+            advantage.append(effect)
+        else:
+            malus.append(effect)
+
+        # 2. buff / de_buff 분류
+        if not skill_info["is_use_value"]:
+            continue  # 값이 없으면 판단 불가
+
+        if skill_info["is_positive"]:
             if value > 0:
                 buff.append(effect)
             elif value < 0:
