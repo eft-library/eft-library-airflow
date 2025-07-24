@@ -317,8 +317,7 @@ def v2_provisions_process(item_en, item_ko, item_ja):
     malus = []
 
     for effect in result_stim_effects:
-        print(effect)
-        effect_info = effect["skill_name_en"]
+        effect_info = effect_dict.get(effect["skill_name_en"])
         value = effect.get("value", 0)
         print(effect_info)
         if not effect_info:
