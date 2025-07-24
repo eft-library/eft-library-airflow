@@ -316,7 +316,8 @@ def v2_provisions_process(item_en, item_ko, item_ja):
     advantage = []
     malus = []
 
-    for effect in result_stim_effects:  # effects는 JSON에서 불러온 dict list
+    for effect in result_stim_effects:
+        print(effect)
         effect_info = effect["skill_name_en"]
         value = effect.get("value", 0)
         print(effect_info)
