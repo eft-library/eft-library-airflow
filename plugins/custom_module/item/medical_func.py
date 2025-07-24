@@ -238,25 +238,23 @@ def v2_medical_process(item_en, item_ko, item_ja):
             continue  # 정의되지 않은 타입은 무시
 
         # 1. advantage / malus 분류
-        if not effect_info["is_use_value"] and effect_info["is_positive"]:
-            advantage.append(effect)
-        else:
-            malus.append(effect)
-
-        # 2. buff / de_buff 분류
         if not effect_info["is_use_value"]:
-            continue  # 값이 없으면 판단 불가
-
-        if effect_info["is_positive"]:
-            if value > 0:
-                buff.append(effect)
-            elif value < 0:
-                de_buff.append(effect)
+            if effect_info["is_positive"]:
+                advantage.append(effect)
+            else:
+                malus.append(effect)
+        # 2. buff / de_buff 분류
         else:
-            if value > 0:
-                de_buff.append(effect)
-            elif value < 0:
-                buff.append(effect)
+            if effect_info["is_positive"]:
+                if value > 0:
+                    buff.append(effect)
+                elif value < 0:
+                    de_buff.append(effect)
+            else:
+                if value > 0:
+                    de_buff.append(effect)
+                elif value < 0:
+                    buff.append(effect)
 
     info = json.dumps(
         {
