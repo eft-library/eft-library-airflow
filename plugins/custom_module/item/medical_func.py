@@ -87,6 +87,120 @@ injury_dict = {
     }
 }
 
+effect_dict = {
+    "Antidote": {
+        "is_positive": True,
+        "is_use_value": False,
+    },
+    "Body temperature": {
+        "is_positive": False,
+        "is_use_value": True,
+    },
+    "Damage taken (except the head)": {
+        "is_positive": False,
+        "is_use_value": True,
+    },
+    "Energy recovery": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "energyImpact": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Hands tremor": {
+        "is_positive": False,
+        "is_use_value": False,
+    },
+    "Health regeneration": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Hydration recovery": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "hydrationImpact": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Max stamina": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Pain": {
+        "is_positive": False,
+        "is_use_value": False,
+    },
+    "painkillerDuration": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Attention": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Charisma": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Endurance": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Health": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Immunity": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Intellect": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Metabolism": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Perception": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Recoil Control": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Strength": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Stress Resistance": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Vitality": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Stamina recovery": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Stops and prevents bleedings": {
+        "is_positive": True,
+        "is_use_value": False,
+    },
+    "Tunnel effect": {
+        "is_positive": False,
+        "is_use_value": True,
+    },
+    "Weight limit": {
+        "is_positive": True,
+        "is_use_value": True,
+    }
+}
 
 
 def v2_medical_process(item_en, item_ko, item_ja):
@@ -156,6 +270,38 @@ def v2_medical_process(item_en, item_ko, item_ja):
     painkiller_add_stim_effects = add_painkiller(
         item_en.get("name"), merged_stim_effects
     )
+    buff = []
+    de_buff = []
+    advantage = []
+    malus = []
+
+    for effect in painkiller_add_stim_effects:
+        effect_info = effect_dict.get(effect["skill_name_en"])
+        value = effect.get("value", 0)
+        print(effect_info)
+        if not effect_info:
+            continue  # 정의되지 않은 타입은 무시
+
+        # 1. advantage / malus 분류
+        if effect_info["is_positive"]:
+            advantage.append(effect)
+        else:
+            malus.append(effect)
+
+        # 2. buff / de_buff 분류
+        if not effect_info["is_use_value"]:
+            continue  # 값이 없으면 판단 불가
+
+        if effect_info["is_positive"]:
+            if value > 0:
+                buff.append(effect)
+            elif value < 0:
+                de_buff.append(effect)
+        else:
+            if value > 0:
+                de_buff.append(effect)
+            elif value < 0:
+                buff.append(effect)
 
     info = json.dumps(
         {
@@ -169,6 +315,10 @@ def v2_medical_process(item_en, item_ko, item_ja):
             "hydration_impact": hydration_impact,
             "painkiller_duration": update_duration,
             "hitpoints": hitpoints,
+            "buff": buff,
+            "de_buff": de_buff,
+            "advantage": advantage,
+            "malus": malus,
         }
     )
 
