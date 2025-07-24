@@ -3,58 +3,25 @@ import json
 import pendulum
 
 status_dict = {
-    "Health regeneration": {
-        "ko": "체력 재생",
-        "ja": "体力回復"
-    },
-    "Hands tremor": {
-        "ko": "손 떨림",
-        "ja": "手の震え"
-    },
-    "Tunnel effect": {
-        "ko": "터널 효과",
-        "ja": "視野狭窄"
-    },
-    "Energy recovery": {
-        "ko": "에너지 회복",
-        "ja": "エネルギー回復"
-    },
-    "Hydration recovery": {
-        "ko": "수분 회복",
-        "ja": "水分回復"
-    },
-    "Max stamina": {
-        "ko": "최대 스태미나",
-        "ja": "最大スタミナ"
-    },
-    "Stamina recovery": {
-        "ko": "스태미나 회복",
-        "ja": "スタミナ回復"
-    },
+    "Health regeneration": {"ko": "체력 재생", "ja": "体力回復"},
+    "Hands tremor": {"ko": "손 떨림", "ja": "手の震え"},
+    "Tunnel effect": {"ko": "터널 효과", "ja": "視野狭窄"},
+    "Energy recovery": {"ko": "에너지 회복", "ja": "エネルギー回復"},
+    "Hydration recovery": {"ko": "수분 회복", "ja": "水分回復"},
+    "Max stamina": {"ko": "최대 스태미나", "ja": "最大スタミナ"},
+    "Stamina recovery": {"ko": "스태미나 회복", "ja": "スタミナ回復"},
     "Stops and prevents bleedings": {
         "ko": "출혈 멈춤 & 추가 출혈 방지",
-        "ja": "出血を止める/防ぐ"
+        "ja": "出血を止める/防ぐ",
     },
-    "Weight limit": {
-        "ko": "무게 제한",
-        "ja": "重量制限"
-    },
+    "Weight limit": {"ko": "무게 제한", "ja": "重量制限"},
     "Damage taken (except the head)": {
         "ko": "받은 피해량 (머리 제외)",
-        "ja": "受けるダメージが増加(頭部以外)"
+        "ja": "受けるダメージが増加(頭部以外)",
     },
-    "Antidote": {
-        "ko": "해독제",
-        "ja": "解毒剤"
-    },
-    "Body temperature": {
-        "ko": "체온",
-        "ja": "体温"
-    },
-    "Pain": {
-        "ko": "고통 제거",
-        "ja": "痛み"
-    }
+    "Antidote": {"ko": "해독제", "ja": "解毒剤"},
+    "Body temperature": {"ko": "체온", "ja": "体温"},
+    "Pain": {"ko": "고통 제거", "ja": "痛み"},
 }
 
 effect_dict = {
@@ -169,7 +136,7 @@ effect_dict = {
     "Weight limit": {
         "is_positive": True,
         "is_use_value": True,
-    }
+    },
 }
 
 
@@ -229,12 +196,12 @@ def v2_provisions_process(item_en, item_ko, item_ja):
     for effect in result_stim_effects:
         effect_info = effect_dict.get(effect["skill_name_en"])
         value = effect.get("value", 0)
-        print(effect_info)
+
         if not effect_info:
             continue  # 정의되지 않은 타입은 무시
 
         # 1. advantage / malus 분류
-        if effect_info["is_positive"]:
+        if not effect_info["is_use_value"] and effect_info["is_positive"]:
             advantage.append(effect)
         else:
             malus.append(effect)
