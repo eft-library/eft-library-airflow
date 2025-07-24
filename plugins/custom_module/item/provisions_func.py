@@ -319,7 +319,7 @@ def v2_provisions_process(item_en, item_ko, item_ja):
     for effect in result_stim_effects:  # effects는 JSON에서 불러온 dict list
         effect_info = effect["skill_name_en"]
         value = effect.get("value", 0)
-
+        print(effect_info)
         if not effect_info:
             continue  # 정의되지 않은 타입은 무시
 
