@@ -57,6 +57,211 @@ status_dict = {
     }
 }
 
+effect_dict = {
+    "Antidote": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": False,
+    },
+    "Body temperature": {
+        "is_positive": False,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Damage taken (except the head)": {
+        "is_positive": False,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Energy recovery": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "energyImpact": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Hands tremor": {
+        "is_positive": False,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": False,
+    },
+    "Health regeneration": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Hydration recovery": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "hydrationImpact": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Max stamina": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Pain": {
+        "is_positive": False,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": False,
+    },
+    "painkillerDuration": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": False,
+        "is_use_duration": True,
+        "is_use_value": True,
+    },
+    "Attention": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Charisma": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Endurance": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Health": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Immunity": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Intellect": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Metabolism": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Perception": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Recoil Control": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Strength": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Stress Resistance": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Vitality": {
+        "is_positive": True,
+        "is_use_type": False,
+        "is_use_skill": True,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Stamina recovery": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Stops and prevents bleedings": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": False,
+    },
+    "Tunnel effect": {
+        "is_positive": False,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    },
+    "Weight limit": {
+        "is_positive": True,
+        "is_use_type": True,
+        "is_use_skill": False,
+        "is_use_duration": False,
+        "is_use_value": True,
+    }
+}
+
+
+buff_list = []
+de_buff_list = []
+advantage_list = []
+malus_list = []
+
 
 def v2_provisions_process(item_en, item_ko, item_ja):
     """
@@ -106,6 +311,40 @@ def v2_provisions_process(item_en, item_ko, item_ja):
         merged_stim_effects.append(merged)
 
     result_stim_effects = add_painkiller(merged_stim_effects, item_en.get("name"))
+    buff = []
+    de_buff = []
+    advantage = []
+    malus = []
+
+    for effect in result_stim_effects:  # effects는 JSON에서 불러온 dict list
+        effect_type = effect["type"]
+        value = effect.get("value", 0)
+
+        info = effect_dict.get(effect_type)
+        if not info:
+            continue  # 정의되지 않은 타입은 무시
+
+        # 1. advantage / malus 분류
+        if info["is_positive"]:
+            advantage.append(effect)
+        else:
+            malus.append(effect)
+
+        # 2. buff / de_buff 분류
+        if not info["is_use_value"]:
+            continue  # 값이 없으면 판단 불가
+
+        if info["is_positive"]:
+            if value > 0:
+                buff.append(effect)
+            elif value < 0:
+                de_buff.append(effect)
+        else:
+            if value > 0:
+                de_buff.append(effect)
+            elif value < 0:
+                buff.append(effect)
+
     info = json.dumps(
         {
             "stim_effects": result_stim_effects,
@@ -113,6 +352,10 @@ def v2_provisions_process(item_en, item_ko, item_ja):
             "units": units,
             "hydration": hydration,
             "energy": energy,
+            "buff": buff,
+            "de_buff": de_buff,
+            "advantage": advantage,
+            "malus": malus,
         }
     )
 
