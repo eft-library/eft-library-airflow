@@ -137,6 +137,30 @@ effect_dict = {
         "is_positive": True,
         "is_use_value": True,
     },
+    "Mag Drills": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Memory": {
+        "is_positive": True,
+        "is_use_value": True,
+    },
+    "Contusion": {
+        "is_positive": True,
+        "is_use_value": False,
+    },
+    "LightBleeding": {
+        "is_positive": True,
+        "is_use_value": False,
+    },
+    "HeavyBleeding": {
+        "is_positive": True,
+        "is_use_value": False,
+    },
+    "Fracture": {
+        "is_positive": True,
+        "is_use_value": False,
+    },
 }
 
 
