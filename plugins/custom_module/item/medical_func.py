@@ -282,12 +282,12 @@ def v2_medical_process(item_en, item_ko, item_ja):
 
     info = json.dumps(
         {
-            "cures": cures,
+            "cures": update_cures_for_except(cures, item_en.get("name")),
             "stim_effects": painkiller_add_stim_effects,
             "medical_category": medical_category,
-            "use_time": use_time,
+            "use_time": update_use_time_for_except(use_time, item_en.get("name")),
             "weight": weight,
-            "uses": uses,
+            "uses": update_uses_for_except(uses, item_en.get("name")),
             "energy_impact": energy_impact,
             "hydration_impact": hydration_impact,
             "painkiller_duration": update_duration,
@@ -310,6 +310,62 @@ def v2_medical_process(item_en, item_ko, item_ja):
         url_mapping,
         update_time,
     )
+
+
+def update_use_time_for_except(use_time, name):
+    if name == "Surv12 field surgical kit":
+        return 20
+    elif name == "CMS surgical kit":
+        return 16
+    else:
+        return use_time
+
+
+def update_uses_for_except(uses, name):
+    if name == "Surv12 field surgical kit":
+        return 15
+    elif name == "CMS surgical kit":
+        return 5
+    else:
+        return uses
+
+
+def update_cures_for_except(cures, name):
+    if name == "Surv12 field surgical kit":
+        return {
+            "en": [
+                "Removes: Fracture",
+                "Removes: Destroyed body part (except head and thorax)",
+                "Adds: 60%-72% of maximum part HP",
+            ],
+            "ja": [
+                "除去：骨折",
+                "除去：破壊された部位（頭部と胸部を除く）",
+                "追加：最大部位HPの60%～72%",
+            ],
+            "ko": [
+                "제거: 골절",
+                "제거: 파괴된 신체 부위 (머리와 흉부 제외)",
+                "회복: 최대 부위 체력의 60%~72% 추가",
+            ],
+        }
+    elif name == "CMS surgical kit":
+        return {
+            "en": [
+                "Removes: Destroyed body part (except head and thorax)",
+                "Adds: 25%-45% of maximum part HP",
+            ],
+            "ja": [
+                "除去：破壊された部位（頭部と胸部を除く）",
+                "追加：最大部位HPの25%～45%",
+            ],
+            "ko": [
+                "제거: 파괴된 신체 부위 (머리와 흉부 제외)",
+                "회복: 최대 부위 체력의 25%~45% 추가",
+            ],
+        }
+    else:
+        return cures
 
 
 def update_painkiller_duration(duration, name):
