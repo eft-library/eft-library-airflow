@@ -80,7 +80,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_boss.delete_issue_posts.sql")
+        sql = read_sql("upsert_boss.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -132,7 +132,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_boss_spawn.delete_issue_posts.sql")
+        sql = read_sql("upsert_boss_spawn.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -160,7 +160,7 @@ with DAG(
 
     def update_pipe_eye_spawn(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("update_pipe_eye_spawn.delete_issue_posts.sql")
+        sql = read_sql("update_pipe_eye_spawn.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:

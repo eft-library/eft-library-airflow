@@ -25,7 +25,7 @@ def item_detail_upsert():
     @task
     def get_total_count(postgres_conn_id: str) -> int:
         hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("item_count.delete_issue_posts.sql")
+        sql = read_sql("item_count.sql")
         with closing(hook.get_conn()) as conn, closing(conn.cursor()) as cur:
             cur.execute(sql)
             return cur.fetchone()[0]
@@ -45,7 +45,7 @@ def item_detail_upsert():
     def process_batch(batch: dict, postgres_conn_id: str):
         start, end = batch["start"], batch["end"]
         hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("item_detail_upsert.delete_issue_posts.sql")
+        sql = read_sql("item_detail_upsert.sql")
         with closing(hook.get_conn()) as conn, closing(conn.cursor()) as cur:
             cur.execute(sql, (start, end))
             conn.commit()

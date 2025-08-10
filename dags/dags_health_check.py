@@ -44,7 +44,7 @@ with DAG(
         }
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_response_time.delete_issue_posts.sql")
+        sql = read_sql("insert_response_time.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -64,7 +64,7 @@ with DAG(
             return
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_health_check.delete_issue_posts.sql")
+        sql = read_sql("insert_health_check.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:

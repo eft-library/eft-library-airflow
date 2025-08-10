@@ -22,7 +22,7 @@ with DAG(
 
     def update_search(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("update_search.delete_issue_posts.sql")
+        sql = read_sql("update_search.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:

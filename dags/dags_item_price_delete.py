@@ -22,7 +22,7 @@ with DAG(
 
     def delete_price(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("delete_item_price.delete_issue_posts.sql")
+        sql = read_sql("delete_item_price.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:

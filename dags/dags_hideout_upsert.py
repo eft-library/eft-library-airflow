@@ -80,7 +80,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_master.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_master.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -106,7 +106,7 @@ with DAG(
         item_ids = set(item_en_dict.keys())
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_level.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_level.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -138,7 +138,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_item_require.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_item_require.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -189,7 +189,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_trader_require.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_trader_require.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -237,7 +237,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_station_require.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_station_require.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -285,7 +285,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_skill_require.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_skill_require.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -333,7 +333,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_bonus.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_bonus.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -381,7 +381,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_hideout_crafts.delete_issue_posts.sql")
+        sql = read_sql("upsert_hideout_crafts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
