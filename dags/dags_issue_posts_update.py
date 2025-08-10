@@ -22,7 +22,7 @@ with DAG(
 
     def delete_issue_posts(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("delete_issue_posts.delete_issue_posts.sql")
+        sql = read_sql("delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -31,7 +31,7 @@ with DAG(
 
     def update_issue_posts(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("update_issue_posts.delete_issue_posts.sql")
+        sql = read_sql("update_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
