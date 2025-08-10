@@ -108,7 +108,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_item_price.sql")
+        sql = read_sql("upsert_item_price.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -173,7 +173,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_item_price_history.sql")
+        sql = read_sql("upsert_item_price_history.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:

@@ -37,7 +37,6 @@ with DAG(
         """,
     )
 
-
     def measure_response_time(postgres_conn_id, **kwargs):
         services = {
             "Next.js": "http://eftlibrary.com/health",
@@ -45,7 +44,7 @@ with DAG(
         }
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_response_time.sql")
+        sql = read_sql("insert_response_time.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -60,13 +59,12 @@ with DAG(
                     cursor.execute(sql, (service_name, elapsed, datetime.now()))
             conn.commit()
 
-
     def save_health_check(postgres_conn_id, **kwargs):
         if not os.path.exists(log_path):
             return
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_health_check.sql")
+        sql = read_sql("insert_health_check.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -77,13 +75,17 @@ with DAG(
 
                         print(line)
                         try:
-                            parts = line.strip().split('] ')
-                            timestamp_str = parts[0].strip('[')
+                            parts = line.strip().split("] ")
+                            timestamp_str = parts[0].strip("[")
                             log_body = parts[1]
-                            service_name, status = log_body.split(': ')
-                            checked_at = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                            service_name, status = log_body.split(": ")
+                            checked_at = datetime.strptime(
+                                timestamp_str, "%Y-%m-%d %H:%M:%S"
+                            )
 
-                            cursor.execute(sql, (service_name.strip(), status.strip(), checked_at))
+                            cursor.execute(
+                                sql, (service_name.strip(), status.strip(), checked_at)
+                            )
                         except Exception as e:
                             # 에러 로깅 (옵션)
                             print(f"Error parsing line: {line} -> {e}")
@@ -144,7 +146,11 @@ with DAG(
     success_action = EmptyOperator(task_id="success_action")
 
     # DAG 연결
-    run_health_check >> save_to_postgres >> measure_response_time_task >> check_log_result
+    (
+        run_health_check
+        >> save_to_postgres
+        >> measure_response_time_task
+        >> check_log_result
+    )
     check_log_result >> prepare_email_body >> send_email
     check_log_result >> success_action
-

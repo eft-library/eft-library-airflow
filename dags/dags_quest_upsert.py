@@ -69,7 +69,7 @@ with DAG(
         )
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("upsert_quest.sql")
+        sql = read_sql("upsert_quest.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -83,7 +83,7 @@ with DAG(
 
     def update_quest_next(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("update_quest_next.sql")
+        sql = read_sql("update_quest_next.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -92,7 +92,7 @@ with DAG(
 
     def insert_roadmap_node(postgres_conn_id, **kwargs):
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_roadmap_node.sql")
+        sql = read_sql("insert_roadmap_node.delete_issue_posts.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
