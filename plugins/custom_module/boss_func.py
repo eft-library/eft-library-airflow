@@ -78,7 +78,9 @@ def v2_boss_process(item_en, item_ko, item_ja):
         merged_equipment.append(merged_eq)
 
     for h_en, h_ko, h_ja in zip(
-        item_en.get("health", []), item_ko.get("health", []), item_ja.get("health", [])
+        item_en.get("health") or [],
+        item_ko.get("health") or [],
+        item_ja.get("health") or [],
     ):
         merged_health.append(
             {
