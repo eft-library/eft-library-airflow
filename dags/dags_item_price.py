@@ -37,7 +37,7 @@ with DAG(
     dag_id="dags_item_price_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="15 * * * *",
+    schedule="15 * * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:

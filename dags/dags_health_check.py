@@ -23,7 +23,7 @@ default_args = {
 with DAG(
     dag_id="dags_health_check",
     default_args=default_args,
-    schedule_interval="*/5 * * * *",
+    schedule="*/5 * * * *",
     start_date=days_ago(1),
     catchup=False,
     tags=["health", "monitoring"],

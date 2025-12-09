@@ -10,7 +10,7 @@ BATCH_SIZE = 500
 @dag(
     dag_id="dags_item_detail_upsert",
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="50 0 * * *",
+    schedule="50 0 * * *",
     catchup=False,
     max_active_tasks=10,
     default_args={
