@@ -1,8 +1,8 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import BranchPythonOperator
-from airflow.operators.email import EmailOperator
-from airflow.operators.empty import EmptyOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 import datetime
 import pendulum
 from custom_module.data_dump_func import (
