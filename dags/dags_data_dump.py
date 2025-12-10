@@ -14,12 +14,11 @@ from custom_module.data_dump_func import (
 
 
 def choose_branch(**kwargs):
-    task_instance = kwargs["ti"]
-    bash_return_code = task_instance.xcom_pull(task_ids="data_dump")
-    if bash_return_code == "0":
+    code = kwargs["ti"].xcom_pull(task_ids="data_dump")
+    if code and code.strip() == "0":
         return "compress_backup"
-    else:
-        return "failure_task"
+    return "failure_task"
+
 
 
 today = get_today()
