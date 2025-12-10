@@ -1,4 +1,4 @@
-sql_home_path = "/opt/airflow/eft-library-airflow/plugins/sql/"
+sql_home_path = "/opt/airflow/plugins/sql/"
 
 
 def read_sql(sql_path):
