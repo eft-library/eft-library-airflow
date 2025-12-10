@@ -33,6 +33,7 @@ from custom_module.item.ammo_func import v2_ammo_process
 from custom_module.item.key_func import v2_key_process, process_key_map
 from custom_module.item.provisions_func import v2_provisions_process
 from custom_module.item.medical_func import v2_medical_process
+from airflow.utils.context import get_current_context
 
 default_args = {
     "owner": "airflow",
@@ -71,10 +72,16 @@ with DAG(
             "ja": ja_path,
         }
 
-    def upsert_gun(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+
+    def upsert_gun(postgres_conn_id):
+        # 최신 문법: 컨텍스트는 함수 내부에서 가져온다
+        context = get_current_context()
+        ti = context["ti"]
+
+        # XCom에서 파일 경로 가져오기
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
+        # JSON 로딩
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
         with open(item_paths["ko"], "r") as f:
@@ -82,20 +89,26 @@ with DAG(
         with open(item_paths["ja"], "r") as f:
             item_ja_list = json.load(f)
 
+        # dict 변환
         item_en_dict = {item["id"]: item for item in item_en_list["items"]}
         item_ko_dict = {item["id"]: item for item in item_ko_list["items"]}
         item_ja_dict = {item["id"]: item for item in item_ja_list["items"]}
+
+        # 카테고리 필터
         filtered_items = check_category(item_en_list["items"], "Gun")
 
+        # id 교집합 필터링
         item_ids = (
-            set(item["id"] for item in filtered_items)
-            & set(item_ko_dict.keys())
-            & set(item_ja_dict.keys())
+                set(item["id"] for item in filtered_items)
+                & set(item_ko_dict.keys())
+                & set(item_ja_dict.keys())
         )
 
+        # DB 연결
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_item.sql")
 
+        # UPSERT
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item_id in item_ids:
@@ -103,11 +116,15 @@ with DAG(
                     item_ko = item_ko_dict[item_id]
                     item_ja = item_ja_dict[item_id]
 
-                    cursor.execute(sql, v2_gun_process(item_en, item_ko, item_ja))
+                    cursor.execute(
+                        sql,
+                        v2_gun_process(item_en, item_ko, item_ja),
+                    )
             conn.commit()
 
-    def upsert_knife(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_knife(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -141,8 +158,9 @@ with DAG(
                     cursor.execute(sql, v2_knife_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_throwable(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_throwable(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -176,8 +194,9 @@ with DAG(
                     cursor.execute(sql, v2_throwable_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_rig(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_rig(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -211,8 +230,9 @@ with DAG(
                     cursor.execute(sql, v2_rig_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_armor_vest(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_armor_vest(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -248,8 +268,9 @@ with DAG(
                     )
             conn.commit()
 
-    def upsert_headwear(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_headwear(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -283,8 +304,9 @@ with DAG(
                     cursor.execute(sql, v2_headwear_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_headset(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_headset(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -318,8 +340,9 @@ with DAG(
                     cursor.execute(sql, v2_headset_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_backpack(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_backpack(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -353,8 +376,9 @@ with DAG(
                     cursor.execute(sql, v2_backpack_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_container(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_container(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -388,8 +412,9 @@ with DAG(
                     cursor.execute(sql, v2_container_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_loot(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_loot(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -423,8 +448,9 @@ with DAG(
                     cursor.execute(sql, v2_loot_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_arm_band(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_arm_band(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -458,8 +484,9 @@ with DAG(
                     cursor.execute(sql, v2_arm_band_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_glasses(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_glasses(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -493,8 +520,9 @@ with DAG(
                     cursor.execute(sql, v2_glasses_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_face_cover(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_face_cover(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -530,8 +558,9 @@ with DAG(
                     )
             conn.commit()
 
-    def upsert_ammo(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_ammo(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -565,8 +594,9 @@ with DAG(
                     cursor.execute(sql, v2_ammo_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def upsert_key(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_key(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -614,8 +644,9 @@ with DAG(
                     )
             conn.commit()
 
-    def upsert_provisions(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_provisions(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -651,8 +682,9 @@ with DAG(
                     )
             conn.commit()
 
-    def upsert_medical(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_medical(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -686,8 +718,9 @@ with DAG(
                     cursor.execute(sql, v2_medical_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def other_category_item(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def other_category_item(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item_list")
 
         with open(item_paths["en"], "r") as f:
@@ -721,7 +754,7 @@ with DAG(
                     cursor.execute(sql, v2_other_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def remove_json_files(**kwargs):
+    def remove_json_files():
         files = [en_path, ko_path, ja_path]
 
         for path in files:
@@ -742,126 +775,108 @@ with DAG(
         task_id="upsert_gun",
         python_callable=upsert_gun,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_knife_task = PythonOperator(
         task_id="upsert_knife",
         python_callable=upsert_knife,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_throwable_task = PythonOperator(
         task_id="upsert_throwable",
         python_callable=upsert_throwable,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_rig_task = PythonOperator(
         task_id="upsert_rig",
         python_callable=upsert_rig,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_armor_vest_task = PythonOperator(
         task_id="upsert_armor_vest",
         python_callable=upsert_armor_vest,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_headwear_task = PythonOperator(
         task_id="upsert_headwear",
         python_callable=upsert_headwear,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_headset_task = PythonOperator(
         task_id="upsert_headset",
         python_callable=upsert_headset,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_backpack_task = PythonOperator(
         task_id="upsert_backpack",
         python_callable=upsert_backpack,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_container_task = PythonOperator(
         task_id="upsert_container",
         python_callable=upsert_container,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_loot_task = PythonOperator(
         task_id="upsert_loot",
         python_callable=upsert_loot,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_arm_band_task = PythonOperator(
         task_id="upsert_arm_band",
         python_callable=upsert_arm_band,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_glasses_task = PythonOperator(
         task_id="upsert_glasses",
         python_callable=upsert_glasses,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_face_cover_task = PythonOperator(
         task_id="upsert_face_cover",
         python_callable=upsert_face_cover,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_ammo_task = PythonOperator(
         task_id="upsert_ammo",
         python_callable=upsert_ammo,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_key_task = PythonOperator(
         task_id="upsert_key",
         python_callable=upsert_key,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_provisions_task = PythonOperator(
         task_id="upsert_provisions",
         python_callable=upsert_provisions,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_medical_task = PythonOperator(
         task_id="upsert_medical",
         python_callable=upsert_medical,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_other_task = PythonOperator(
         task_id="upsert_other",
         python_callable=other_category_item,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_tasks = [
@@ -888,7 +903,6 @@ with DAG(
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
-        provide_context=True,
     )
 
     fetch_data >> upsert_tasks >> remove_json_files_task
