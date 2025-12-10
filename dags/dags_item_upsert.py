@@ -33,7 +33,7 @@ from custom_module.item.ammo_func import v2_ammo_process
 from custom_module.item.key_func import v2_key_process, process_key_map
 from custom_module.item.provisions_func import v2_provisions_process
 from custom_module.item.medical_func import v2_medical_process
-from airflow.utils.context import get_current_context
+from airflow.sdk import get_current_context
 
 default_args = {
     "owner": "airflow",
