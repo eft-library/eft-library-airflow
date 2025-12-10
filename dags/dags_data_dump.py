@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.email import EmailOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator
 import datetime
 import pendulum
 from custom_module.data_dump_func import (
@@ -65,7 +65,7 @@ with DAG(
         conn_id="smtp_gmail",
     )
 
-    failure_task = DummyOperator(task_id="failure_task")
+    failure_task = EmptyOperator(task_id="failure_task")
 
     # DAG 흐름 정의
     data_dump_task >> branch_task
