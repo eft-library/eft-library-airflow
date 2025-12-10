@@ -4,6 +4,7 @@ import os
 from airflow import DAG
 import pendulum
 from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
@@ -33,7 +34,6 @@ from custom_module.item.ammo_func import v2_ammo_process
 from custom_module.item.key_func import v2_key_process, process_key_map
 from custom_module.item.provisions_func import v2_provisions_process
 from custom_module.item.medical_func import v2_medical_process
-from airflow.sdk import get_current_context
 
 default_args = {
     "owner": "airflow",
@@ -54,7 +54,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    def fetch_item_list(**kwargs):
+    def fetch_item_list():
         item_list_en = get_graphql(generate_item_graphql("en"))
         item_list_ko = get_graphql(generate_item_graphql("ko"))
         item_list_ja = get_graphql(generate_item_graphql("ja"))

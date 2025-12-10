@@ -3,7 +3,8 @@ import os
 from airflow import DAG
 import pendulum
 import json
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
@@ -42,7 +43,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    def fetch_price_list(**kwargs):
+    def fetch_price_list():
         pvp_list_en = get_graphql(generate_pvp_item_price_graphql("en"))
         pvp_list_ko = get_graphql(generate_pvp_item_price_graphql("ko"))
         pvp_list_ja = get_graphql(generate_pvp_item_price_graphql("ja"))
@@ -74,8 +75,9 @@ with DAG(
             "pve_ja": pve_ja_path,
         }
 
-    def upsert_price(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_price(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_price_list")
 
         with open(item_paths["pvp_en"], "r") as f:
@@ -139,8 +141,9 @@ with DAG(
                     cursor.execute(sql, insert_data)
             conn.commit()
 
-    def upsert_price_history(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_price_history(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_price_list")
 
         with open(item_paths["pvp_en"], "r") as f:
@@ -219,7 +222,7 @@ with DAG(
 
                 conn.commit()  # 한 번에 커밋
 
-    def remove_json_files(**kwargs):
+    def remove_json_files():
         files = [
             pvp_en_path,
             pvp_ko_path,
@@ -247,20 +250,17 @@ with DAG(
         task_id="upsert_price",
         python_callable=upsert_price,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_price_history_task = PythonOperator(
         task_id="upsert_price_history",
         python_callable=upsert_price_history,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
-        provide_context=True,
     )
 
     (

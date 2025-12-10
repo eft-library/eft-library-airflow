@@ -2,7 +2,8 @@ import json
 import os
 import pendulum
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
@@ -28,7 +29,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    def fetch_trader_list(**kwargs):
+    def fetch_trader_list():
         item_list_en = get_graphql(generate_trader_graphql("en"))
         item_list_ko = get_graphql(generate_trader_graphql("ko"))
         item_list_ja = get_graphql(generate_trader_graphql("ja"))
@@ -46,8 +47,9 @@ with DAG(
             "ja": ja_path,
         }
 
-    def upsert_trader(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_trader(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_trader_list")
 
         with open(item_paths["en"], "r") as f:
@@ -80,7 +82,7 @@ with DAG(
                     cursor.execute(sql, v2_trader_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def remove_json_files(**kwargs):
+    def remove_json_files():
         files = [
             en_path,
             ko_path,
@@ -105,13 +107,11 @@ with DAG(
         task_id="upsert_trader",
         python_callable=upsert_trader,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
-        provide_context=True,
     )
 
     fetch_data >> upsert_trader_task >> remove_json_files_task

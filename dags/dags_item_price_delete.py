@@ -20,7 +20,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    def delete_price(postgres_conn_id, **kwargs):
+    def delete_price(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("delete_item_price.sql")
 
@@ -33,7 +33,6 @@ with DAG(
         task_id="delete_price",
         python_callable=delete_price,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     delete_price_task
