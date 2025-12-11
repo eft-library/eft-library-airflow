@@ -21,6 +21,9 @@ def dump_script():
     today = get_today()
 
     return f"""
+        whoami
+        echo $HOME
+        ls -al $HOME
         pg_dump -h 192.168.219.102 -p 13245 -U tkl --inserts \
         --exclude-table-data=public.item_detail_i18n \
         --exclude-table-data=public.item_price_i18n \
