@@ -33,7 +33,7 @@ def dump_script():
         > /opt/airflow/latest_data/{today}_backup.sql 2>&1
 
         exit_code=$?
-        echo "exit_code=$exit_code"
+        echo $exit_code
         exit $exit_code
     """
 
