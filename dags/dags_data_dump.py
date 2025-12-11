@@ -62,6 +62,7 @@ with DAG(
         html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
         files=[compressed_file_path],
         conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
     )
 
     failure_task = EmptyOperator(task_id="failure_task")
