@@ -66,4 +66,4 @@ check "Airflow API Server" \
   "curl -sf http://airflow-airflow-apiserver-1:8080/api/v2/monitor/health"
 
 log "==================== Health Check End ======================"
-echo "" >> "$LOG_FILE"
+echo "" > "$LOG_FILE"
