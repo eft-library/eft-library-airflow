@@ -5,8 +5,8 @@ from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
-from airflow.operators.email import EmailOperator
-from airflow.operators.empty import EmptyOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 from datetime import datetime, timezone
 import time
 import os
