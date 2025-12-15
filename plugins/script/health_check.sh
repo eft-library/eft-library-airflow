@@ -18,7 +18,7 @@ check() {
   local cmd="$2"
 
   if timeout ${TIMEOUT}s bash -c "$cmd" >/dev/null 2>&1; then
-    log "✅ [OK]   ${name}"
+    log "❌ [FAIL]   ${name}"
   else
     log "❌ [FAIL] ${name}"
   fi
