@@ -6,6 +6,9 @@
 LOG_FILE="/opt/airflow/latest_data/health_check.log"
 TIMEOUT=5
 
+# 로그 초기화
+: > "$LOG_FILE"
+
 # =========================
 # 로그 함수
 # =========================
@@ -18,7 +21,7 @@ check() {
   local cmd="$2"
 
   if timeout ${TIMEOUT}s bash -c "$cmd" >/dev/null 2>&1; then
-    log "❌ [FAIL]   ${name}"
+    log "❌ [FAIL] ${name}"
   else
     log "❌ [FAIL] ${name}"
   fi
@@ -66,4 +69,4 @@ check "Airflow API Server" \
   "curl -sf http://airflow-airflow-apiserver-1:8080/api/v2/monitor/health"
 
 log "==================== Health Check End ======================"
-echo "" > "$LOG_FILE"
+echo "" >> "$LOG_FILE"
