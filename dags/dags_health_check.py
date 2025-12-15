@@ -12,7 +12,7 @@ import time
 import os
 import requests
 
-log_path = "/opt/airflow/health_check/logs/health_check.log"
+log_path = "/opt/airflow/latest_data/health_check.log"
 
 default_args = {
     "owner": "airflow",
@@ -33,7 +33,7 @@ with DAG(
     run_health_check = BashOperator(
         task_id="run_health_check",
         bash_command="""
-        bash /opt/airflow/health_check/health_check.sh
+        bash /opt/airflow/plugins/script/health_check.sh
         """,
     )
 
@@ -136,7 +136,7 @@ with DAG(
     send_email = EmailOperator(
         task_id="send_email",
         to=["poeynus@gmail.com"],
-        cc=["moonjipsa@gmail.com", "jjy2mn@gmail.com"],
+        # cc=["moonjipsa@gmail.com", "jjy2mn@gmail.com"],
         subject="🚨 EFT Library 서비스에 문제가 생겼습니다.",
         html_content="{{ task_instance.xcom_pull(task_ids='prepare_email_body', key='email_body') }}",
         conn_id="smtp_gmail",
