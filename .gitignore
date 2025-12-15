@@ -183,7 +183,5 @@ logs/
 webserver_config.py
 airflow-webserver.pid
 
-# health check
-health_check.sh
 
 # End of https://www.toptal.com/developers/gitignore/api/python
