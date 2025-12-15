@@ -150,6 +150,7 @@ with DAG(
         subject="🚨 EFT Library 서비스에 문제가 생겼습니다.",
         html_content="{{ task_instance.xcom_pull(task_ids='prepare_email_body', key='email_body') }}",
         conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
     )
 
     # 5. 성공 시 아무 것도 안 함
