@@ -9,7 +9,7 @@
 
 EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
 
-![architecture](https://github.com/user-attachments/assets/0aad4cb2-2a18-48e1-832c-436507af67fd)
+<img width="1923" height="1366" alt="arc" src="https://github.com/user-attachments/assets/ee949526-d6ce-4f69-bf64-6c350097a593" />
 
 ## 주요 사항
 
