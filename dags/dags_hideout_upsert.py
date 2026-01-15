@@ -3,7 +3,8 @@ import os
 
 from airflow import DAG
 import pendulum
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
@@ -35,12 +36,12 @@ with DAG(
     dag_id="dags_hideout_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="10 0 * * *",
+    schedule="10 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def fetch_hideout_list(**kwargs):
+    def fetch_hideout_list():
         item_list_en = get_graphql(generate_hideout_stations_graphql("en"))
         item_list_ko = get_graphql(generate_hideout_stations_graphql("ko"))
         item_list_ja = get_graphql(generate_hideout_stations_graphql("ja"))
@@ -58,8 +59,9 @@ with DAG(
             "ja": ja_path,
         }
 
-    def upsert_hideout_master(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_master(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -94,8 +96,9 @@ with DAG(
                     )
             conn.commit()
 
-    def upsert_hideout_level(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_level(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -116,8 +119,9 @@ with DAG(
                         cursor.execute(sql, v2_hideout_level_process(level))
             conn.commit()
 
-    def upsert_hideout_item_require(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_item_require(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -167,8 +171,9 @@ with DAG(
 
             conn.commit()
 
-    def upsert_hideout_trader_require(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_trader_require(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -215,8 +220,9 @@ with DAG(
 
             conn.commit()
 
-    def upsert_hideout_station_require(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_station_require(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -263,8 +269,9 @@ with DAG(
 
             conn.commit()
 
-    def upsert_hideout_skill_require(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_skill_require(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -311,8 +318,9 @@ with DAG(
 
             conn.commit()
 
-    def upsert_hideout_bonus(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_bonus(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -359,8 +367,9 @@ with DAG(
 
             conn.commit()
 
-    def upsert_hideout_crafts(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_hideout_crafts(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_hideout_list")
 
         with open(item_paths["en"], "r") as f:
@@ -400,7 +409,7 @@ with DAG(
 
             conn.commit()
 
-    def remove_json_files(**kwargs):
+    def remove_json_files():
         files = [
             en_path,
             ko_path,
@@ -425,62 +434,53 @@ with DAG(
         task_id="upsert_hideout_master",
         python_callable=upsert_hideout_master,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_level_task = PythonOperator(
         task_id="upsert_hideout_level",
         python_callable=upsert_hideout_level,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_item_require_task = PythonOperator(
         task_id="upsert_hideout_item_require",
         python_callable=upsert_hideout_item_require,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_trader_require_task = PythonOperator(
         task_id="upsert_hideout_trader_require",
         python_callable=upsert_hideout_trader_require,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_station_require_task = PythonOperator(
         task_id="upsert_hideout_station_require",
         python_callable=upsert_hideout_station_require,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_skill_require_task = PythonOperator(
         task_id="upsert_hideout_skill_require",
         python_callable=upsert_hideout_skill_require,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_bonus_task = PythonOperator(
         task_id="upsert_hideout_bonus",
         python_callable=upsert_hideout_bonus,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     upsert_hideout_crafts_task = PythonOperator(
         task_id="upsert_hideout_crafts",
         python_callable=upsert_hideout_crafts,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
-        provide_context=True,
     )
 
     (

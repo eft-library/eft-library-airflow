@@ -1,10 +1,13 @@
 import os
+import json
+import pendulum
 
 from airflow import DAG
-import pendulum
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
+
 from custom_module.psql_func import read_sql
 from custom_module.graphql_func import get_graphql
 from custom_module.boss_func import (
@@ -15,7 +18,6 @@ from custom_module.boss_func import (
     make_boss_spawn_dict,
     make_boss_spawn_map,
 )
-import json
 
 default_args = {
     "owner": "airflow",
@@ -35,12 +37,12 @@ with DAG(
     dag_id="dags_boss_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="5 0 * * *",
+    schedule="5 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def fetch_boss_list(**kwargs):
+    def fetch_boss_list():
         item_list_en = get_graphql(generate_boss_graphql("en"))
         item_list_ko = get_graphql(generate_boss_graphql("ko"))
         item_list_ja = get_graphql(generate_boss_graphql("ja"))
@@ -52,14 +54,11 @@ with DAG(
         with open(ja_path, "w") as f:
             json.dump(item_list_ja["data"]["bosses"], f)
 
-        return {
-            "en": en_path,
-            "ko": ko_path,
-            "ja": ja_path,
-        }
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
-    def upsert_boss(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_boss(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_boss_list")
 
         with open(item_paths["en"], "r") as f:
@@ -73,11 +72,7 @@ with DAG(
         item_ko_dict = {item["id"]: item for item in item_ko_list}
         item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = (
-            set(item_en_dict.keys())
-            & set(item_ko_dict.keys())
-            & set(item_ja_dict.keys())
-        )
+        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
 
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_boss.sql")
@@ -85,33 +80,33 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 for item_id in item_ids:
-                    item_en = item_en_dict[item_id]
-                    item_ko = item_ko_dict[item_id]
-                    item_ja = item_ja_dict[item_id]
-
-                    cursor.execute(sql, v2_boss_process(item_en, item_ko, item_ja))
+                    cursor.execute(
+                        sql,
+                        v2_boss_process(
+                            item_en_dict[item_id],
+                            item_ko_dict[item_id],
+                            item_ja_dict[item_id],
+                        ),
+                    )
             conn.commit()
 
-    def fetch_boss_spawn_list(**kwargs):
+    def fetch_boss_spawn_list():
         item_list_en = get_graphql(generate_boss_spawn_graphql("en"))
         item_list_ko = get_graphql(generate_boss_spawn_graphql("ko"))
         item_list_ja = get_graphql(generate_boss_spawn_graphql("ja"))
 
-        with open(en_path, "w") as f:
+        with open(spawn_en_path, "w") as f:
             json.dump(item_list_en["data"]["maps"], f)
-        with open(ko_path, "w") as f:
+        with open(spawn_ko_path, "w") as f:
             json.dump(item_list_ko["data"]["maps"], f)
-        with open(ja_path, "w") as f:
+        with open(spawn_ja_path, "w") as f:
             json.dump(item_list_ja["data"]["maps"], f)
 
-        return {
-            "en": en_path,
-            "ko": ko_path,
-            "ja": ja_path,
-        }
+        return {"en": spawn_en_path, "ko": spawn_ko_path, "ja": spawn_ja_path}
 
-    def upsert_boss_spawn(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_boss_spawn(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_boss_spawn_list")
 
         with open(item_paths["en"], "r") as f:
@@ -125,25 +120,19 @@ with DAG(
         item_ko_dict = {item["id"]: item for item in item_ko_list}
         item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = (
-            set(item_en_dict.keys())
-            & set(item_ko_dict.keys())
-            & set(item_ja_dict.keys())
-        )
+        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
 
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("upsert_boss_spawn.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
-                process_spawn_list = []
-                for item_id in item_ids:
-                    item_en = item_en_dict[item_id]
-                    item_ko = item_ko_dict[item_id]
-                    item_ja = item_ja_dict[item_id]
-                    process_spawn_list.append(
-                        spawn_list_process(item_en, item_ko, item_ja)
-                    )
+
+                process_spawn_list = [
+                    spawn_list_process(item_en_dict[id], item_ko_dict[id], item_ja_dict[id])
+                    for id in item_ids
+                ]
+
                 boss_spawn_dict = make_boss_spawn_dict(process_spawn_list)
 
                 for boss_name, spawn_info in boss_spawn_dict.items():
@@ -155,10 +144,9 @@ with DAG(
                             boss_name,
                         ),
                     )
-
             conn.commit()
 
-    def update_pipe_eye_spawn(postgres_conn_id, **kwargs):
+    def update_pipe_eye_spawn(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("update_pipe_eye_spawn.sql")
 
@@ -167,8 +155,11 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
-    def remove_json_files(**kwargs):
-        files = [en_path, ko_path, ja_path, spawn_en_path, spawn_ja_path, spawn_ko_path]
+    def remove_json_files():
+        files = [
+            en_path, ko_path, ja_path,
+            spawn_en_path, spawn_ko_path, spawn_ja_path,
+        ]
 
         for path in files:
             try:
@@ -181,38 +172,36 @@ with DAG(
                 print(f"Error deleting {path}: {e}")
 
     fetch_data = PythonOperator(
-        task_id="fetch_boss_list", python_callable=fetch_boss_list
+        task_id="fetch_boss_list",
+        python_callable=fetch_boss_list,
     )
 
     upsert_boss_task = PythonOperator(
         task_id="upsert_boss",
         python_callable=upsert_boss,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     fetch_spawn_data = PythonOperator(
-        task_id="fetch_boss_spawn_list", python_callable=fetch_boss_spawn_list
+        task_id="fetch_boss_spawn_list",
+        python_callable=fetch_boss_spawn_list,
     )
 
     upsert_boss_spawn_task = PythonOperator(
         task_id="upsert_boss_spawn",
         python_callable=upsert_boss_spawn,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     update_pipe_eye_spawn_task = PythonOperator(
         task_id="update_pipe_eye_spawn",
         python_callable=update_pipe_eye_spawn,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
-        provide_context=True,
     )
 
     (

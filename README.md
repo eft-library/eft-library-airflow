@@ -9,7 +9,7 @@
 
 EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
 
-![architecture](https://github.com/user-attachments/assets/0aad4cb2-2a18-48e1-832c-436507af67fd)
+<img width="1923" height="1366" alt="last" src="https://github.com/user-attachments/assets/3a17adc2-e80b-4042-93fa-dda30bbaf947" />
 
 ## 주요 사항
 
@@ -22,8 +22,8 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
 
 ## 패키지 정보
 
-- Python 3.9
-- Airflow 2.10.5
+- Python 3.13
+- Airflow 3.1.5
 
 ## 구조
 
@@ -61,12 +61,12 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 **첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump와 System Health Check에서 사용하고 있습니다.
 
 ## 개발 History
-- 🪤 [Airflow 구축하기 (Nas, Ubuntu)](https://github.com/eft-library/eft-library-history/blob/main/airflow/airflow.md)
-- ⚠️ [데이터 불일치](https://github.com/eft-library/eft-library-history/blob/main/airflow/different_data.md)
-- 🌐 [다국어 데이터 매핑 및 처리량 증가 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/i18n_mapping.md)
-- 🔹 [다국어 원천 데이터의 신뢰도 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/untranslated_data.md)
-- 📦 [Data Dump 자동화 설정](https://github.com/eft-library/eft-library-history/blob/main/airflow/data_dump.md)
-- 🐹 [시스템 Health Check 구축](https://github.com/eft-library/eft-library-history/blob/main/airflow/health_check.md)
-- 🧠 [아이템 상세 페이지 성능 튜닝 후기](https://github.com/eft-library/eft-library-history/blob/main/airflow/item_detail.md)
+- [Airflow 구축하기 (Nas, Ubuntu)](https://github.com/eft-library/eft-library-history/blob/main/airflow/airflow.md)
+- [데이터 불일치](https://github.com/eft-library/eft-library-history/blob/main/airflow/different_data.md)
+- [다국어 데이터 매핑 및 처리량 증가 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/i18n_mapping.md)
+- [다국어 원천 데이터의 신뢰도 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/untranslated_data.md)
+- [Data Dump 자동화 설정](https://github.com/eft-library/eft-library-history/blob/main/airflow/data_dump.md)
+- [시스템 Health Check 구축](https://github.com/eft-library/eft-library-history/blob/main/airflow/health_check.md)
+- [아이템 상세 페이지 성능 튜닝 후기](https://github.com/eft-library/eft-library-history/blob/main/airflow/item_detail.md)
 
 

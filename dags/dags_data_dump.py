@@ -1,8 +1,8 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import BranchPythonOperator
-from airflow.operators.email import EmailOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 import datetime
 import pendulum
 from custom_module.data_dump_func import (
@@ -14,12 +14,11 @@ from custom_module.data_dump_func import (
 
 
 def choose_branch(**kwargs):
-    task_instance = kwargs["ti"]
-    bash_return_code = task_instance.xcom_pull(task_ids="data_dump")
-    if bash_return_code == "0":
+    code = kwargs["ti"].xcom_pull(task_ids="data_dump")
+    if code and code.strip() == "0":
         return "compress_backup"
-    else:
-        return "failure_task"
+    return "failure_task"
+
 
 
 today = get_today()
@@ -63,9 +62,10 @@ with DAG(
         html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
         files=[compressed_file_path],
         conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
     )
 
-    failure_task = DummyOperator(task_id="failure_task")
+    failure_task = EmptyOperator(task_id="failure_task")
 
     # DAG 흐름 정의
     data_dump_task >> branch_task

@@ -1,6 +1,6 @@
 from airflow import DAG
 import pendulum
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
@@ -15,12 +15,12 @@ with DAG(
     dag_id="dags_search_update",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="45 0 * * *",
+    schedule="45 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def update_search(postgres_conn_id, **kwargs):
+    def update_search(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("update_search.sql")
 
@@ -33,7 +33,6 @@ with DAG(
         task_id="update_search",
         python_callable=update_search,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     update_search_task

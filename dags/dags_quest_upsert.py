@@ -3,7 +3,8 @@ import os
 
 from airflow import DAG
 import pendulum
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
@@ -24,12 +25,12 @@ with DAG(
     dag_id="dags_quest_upsert",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="35 0 * * *",
+    schedule="35 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def fetch_quest_list(**kwargs):
+    def fetch_quest_list():
         item_list_en = get_graphql(generate_quest_graphql("en"))
         item_list_ko = get_graphql(generate_quest_graphql("ko"))
         item_list_ja = get_graphql(generate_quest_graphql("ja"))
@@ -47,8 +48,9 @@ with DAG(
             "ja": ja_path,
         }
 
-    def upsert_quest(postgres_conn_id, **kwargs):
-        ti = kwargs["ti"]
+    def upsert_quest(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_quest_list")
 
         with open(item_paths["en"], "r") as f:
@@ -81,7 +83,7 @@ with DAG(
                     cursor.execute(sql, v2_quest_process(item_en, item_ko, item_ja))
             conn.commit()
 
-    def update_quest_next(postgres_conn_id, **kwargs):
+    def update_quest_next(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("update_quest_next.sql")
 
@@ -90,7 +92,7 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
-    def insert_roadmap_node(postgres_conn_id, **kwargs):
+    def insert_roadmap_node(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("insert_roadmap_node.sql")
 
@@ -99,7 +101,7 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
-    def remove_json_files(**kwargs):
+    def remove_json_files():
         files = [
             en_path,
             ko_path,
@@ -124,27 +126,23 @@ with DAG(
         task_id="upsert_quest",
         python_callable=upsert_quest,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
-        provide_context=True,
     )
 
     update_quest_next_task = PythonOperator(
         task_id="update_quest_next",
         python_callable=update_quest_next,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     insert_roadmap_node = PythonOperator(
         task_id="insert_roadmap_node",
         python_callable=insert_roadmap_node,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     (

@@ -15,12 +15,12 @@ with DAG(
     dag_id="dags_item_price_delete",
     default_args=default_args,
     start_date=pendulum.datetime(2024, 5, 1, tz="Asia/Seoul"),
-    schedule_interval="20 0 * * *",
+    schedule="20 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
 
-    def delete_price(postgres_conn_id, **kwargs):
+    def delete_price(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("delete_item_price.sql")
 
@@ -33,7 +33,6 @@ with DAG(
         task_id="delete_price",
         python_callable=delete_price,
         op_kwargs={"postgres_conn_id": "tkl_db"},
-        provide_context=True,
     )
 
     delete_price_task
