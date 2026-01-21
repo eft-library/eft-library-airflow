@@ -267,6 +267,12 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
     )
 
+    refresh_item_view_table_task = PythonOperator(
+        task_id="refresh_item_view_table",
+        python_callable=refresh_item_view_table,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+    )
+
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
@@ -276,6 +282,6 @@ with DAG(
         fetch_data
         >> upsert_price_task
         >> upsert_price_history_task
-        >> refresh_item_view_table
+        >> refresh_item_view_table_task
         >> remove_json_files_task
     )
