@@ -39,8 +39,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
   - **trader upsert** : NPC 상인 정보 갱신
   - **search update** : 메인 페이지 검색 기능 데이터 갱신
  
-![airflow_main](https://github.com/user-attachments/assets/523a62e3-45c1-4d9c-9efd-d346b6ef4b39)
-
+<img width="2087" height="1088" alt="스크린샷 2026-01-29 오전 7 36 01" src="https://github.com/user-attachments/assets/2d1d087d-de8d-4a55-9b98-7ce06d4ee866" />
 
 ## 흐름
 
