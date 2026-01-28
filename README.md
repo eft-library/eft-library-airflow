@@ -49,13 +49,11 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
 
 이후 각 태스크에서 해당 파일들을 읽어 들여 언어별 데이터를 하나의 딕셔너리로 통합한 후, 이를 DB에 적재하는 방식으로 동작합니다.
 
-![hiedout](https://github.com/user-attachments/assets/e5337b3e-7cbe-499d-b3b9-a5fc7dac1672)
+<img width="902" height="888" alt="스크린샷 2026-01-29 오전 7 37 01" src="https://github.com/user-attachments/assets/5dbb6317-85c5-426f-8c36-8ff83255abbe" />
 
 DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Task를 동적으로 선택**하는 방식을 사용합니다.
 
-![스크린샷 2025-05-26 오후 1 51 02](https://github.com/user-attachments/assets/ab62b0c6-9980-45b0-a3bc-2a041b0105b7)
-
-
+<img width="1277" height="337" alt="스크린샷 2026-01-29 오전 7 37 21" src="https://github.com/user-attachments/assets/815b1833-981d-4fd8-b829-292a81222f42" />
 
 **첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump와 System Health Check에서 사용하고 있습니다.
 
