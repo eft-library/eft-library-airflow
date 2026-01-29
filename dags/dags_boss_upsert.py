@@ -4,6 +4,7 @@ import pendulum
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 
@@ -41,7 +42,7 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    def fetch_boss_list(ti, **kwargs):
+    def fetch_boss_list():
         item_list_en = get_graphql(generate_boss_graphql("en"))
         item_list_ko = get_graphql(generate_boss_graphql("ko"))
         item_list_ja = get_graphql(generate_boss_graphql("ja"))
@@ -55,7 +56,9 @@ with DAG(
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
-    def upsert_boss(postgres_conn_id, ti, **kwargs):
+    def upsert_boss(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_boss_list")
 
         with open(item_paths["en"], "r") as f:
@@ -87,7 +90,7 @@ with DAG(
                     )
             conn.commit()
 
-    def fetch_boss_spawn_list(ti, **kwargs):
+    def fetch_boss_spawn_list():
         item_list_en = get_graphql(generate_boss_spawn_graphql("en"))
         item_list_ko = get_graphql(generate_boss_spawn_graphql("ko"))
         item_list_ja = get_graphql(generate_boss_spawn_graphql("ja"))
@@ -101,7 +104,9 @@ with DAG(
 
         return {"en": spawn_en_path, "ko": spawn_ko_path, "ja": spawn_ja_path}
 
-    def upsert_boss_spawn(postgres_conn_id, ti, **kwargs):
+    def upsert_boss_spawn(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_boss_spawn_list")
 
         with open(item_paths["en"], "r") as f:
@@ -141,7 +146,7 @@ with DAG(
                     )
             conn.commit()
 
-    def update_pipe_eye_spawn(postgres_conn_id, **kwargs):
+    def update_pipe_eye_spawn(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
         sql = read_sql("update_pipe_eye_spawn.sql")
 
@@ -150,7 +155,7 @@ with DAG(
                 cursor.execute(sql)
             conn.commit()
 
-    def remove_json_files(**kwargs):
+    def remove_json_files():
         files = [
             en_path, ko_path, ja_path,
             spawn_en_path, spawn_ko_path, spawn_ja_path,

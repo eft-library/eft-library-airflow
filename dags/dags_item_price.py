@@ -242,6 +242,15 @@ with DAG(
             except Exception as e:
                 print(f"Error deleting {path}: {e}")
 
+    def refresh_item_view_table(postgres_conn_id):
+        postgres_hook = PostgresHook(postgres_conn_id)
+        sql = read_sql("refresh_item_view_table.sql")
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(sql)
+            conn.commit()
+
     fetch_data = PythonOperator(
         task_id="fetch_price_list", python_callable=fetch_price_list
     )
@@ -258,6 +267,12 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
     )
 
+    refresh_item_view_table_task = PythonOperator(
+        task_id="refresh_item_view_table",
+        python_callable=refresh_item_view_table,
+        op_kwargs={"postgres_conn_id": "tkl_db"},
+    )
+
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
@@ -267,5 +282,6 @@ with DAG(
         fetch_data
         >> upsert_price_task
         >> upsert_price_history_task
+        >> refresh_item_view_table_task
         >> remove_json_files_task
     )

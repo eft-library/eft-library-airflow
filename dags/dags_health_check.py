@@ -1,18 +1,32 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from custom_module.psql_func import read_sql
-from airflow.operators.email import EmailOperator
-from airflow.operators.empty import EmptyOperator
-from airflow.utils.dates import days_ago
-from datetime import datetime
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from datetime import datetime, timezone
 import time
 import os
 import requests
+import re
 
-log_path = "/opt/airflow/health_check/logs/health_check.log"
+LOG_PATTERN = re.compile(
+    r"""
+    \[(?P<ts>[\d\-:\s]+)\]      # timestamp
+    \s+
+    (?:✅|❌)                   # emoji
+    \s+
+    \[(?P<status>OK|FAIL)\]    # status
+    \s+
+    (?P<service>.+)            # service name
+    """,
+    re.VERBOSE,
+)
+
+log_path = "/opt/airflow/latest_data/health_check.log"
 
 default_args = {
     "owner": "airflow",
@@ -24,7 +38,7 @@ with DAG(
     dag_id="dags_health_check",
     default_args=default_args,
     schedule="*/5 * * * *",
-    start_date=days_ago(1),
+    start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     tags=["health", "monitoring"],
 ) as dag:
@@ -33,14 +47,14 @@ with DAG(
     run_health_check = BashOperator(
         task_id="run_health_check",
         bash_command="""
-        bash /opt/airflow/health_check/health_check.sh
+        bash /opt/airflow/plugins/script/health_check.sh
         """,
     )
 
     def measure_response_time(postgres_conn_id, **kwargs):
         services = {
-            "Next.js": "http://eftlibrary.com/health",
-            "FastAPI": "http://back.eftlibrary.com/health",
+            "Next.js": "https://eftlibrary.com/health",
+            "FastAPI": "https://back.eftlibrary.com/health",
         }
 
         postgres_hook = PostgresHook(postgres_conn_id)
@@ -59,6 +73,7 @@ with DAG(
                     cursor.execute(sql, (service_name, elapsed, datetime.now()))
             conn.commit()
 
+
     def save_health_check(postgres_conn_id, **kwargs):
         if not os.path.exists(log_path):
             return
@@ -70,27 +85,22 @@ with DAG(
             with closing(conn.cursor()) as cursor:
                 with open(log_path, "r") as f:
                     for line in f:
-                        if not line.strip():
-                            continue
+                        match = LOG_PATTERN.search(line)
+                        if not match:
+                            continue  # START / END 등은 무시
 
-                        print(line)
-                        try:
-                            parts = line.strip().split("] ")
-                            timestamp_str = parts[0].strip("[")
-                            log_body = parts[1]
-                            service_name, status = log_body.split(": ")
-                            checked_at = datetime.strptime(
-                                timestamp_str, "%Y-%m-%d %H:%M:%S"
-                            )
+                        checked_at = datetime.strptime(
+                            match.group("ts"), "%Y-%m-%d %H:%M:%S"
+                        ).replace(tzinfo=timezone.utc)
 
-                            cursor.execute(
-                                sql, (service_name.strip(), status.strip(), checked_at)
-                            )
-                        except Exception as e:
-                            # 에러 로깅 (옵션)
-                            print(f"Error parsing line: {line} -> {e}")
+                        service_name = match.group("service").strip()
+                        status = match.group("status")
 
-                conn.commit()
+                        cursor.execute(
+                            sql,
+                            (service_name, status, checked_at),
+                        )
+            conn.commit()
 
     # 2. 로그 내용 검사 (FAIL 포함 여부)
     def check_fail_in_log(**kwargs):
@@ -140,6 +150,7 @@ with DAG(
         subject="🚨 EFT Library 서비스에 문제가 생겼습니다.",
         html_content="{{ task_instance.xcom_pull(task_ids='prepare_email_body', key='email_body') }}",
         conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
     )
 
     # 5. 성공 시 아무 것도 안 함

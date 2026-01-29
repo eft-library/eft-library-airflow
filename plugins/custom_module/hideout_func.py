@@ -21,6 +21,10 @@ def generate_hideout_stations_graphql(lang: str) -> str:
         }}
         quantity
         count
+        attributes {{
+          type
+          value
+        }}
       }}
       skillRequirements {{
         id
@@ -142,6 +146,18 @@ def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
     lev_id = item_en.get("id")
     quantity = item_en.get("quantity")
     count = item_en.get("count")
+    attributes = item_en.get("attributes", [])
+    found_in_raid = (
+        next(
+            (
+                attr.get("value")
+                for attr in attributes
+                if attr.get("type") == "foundInRaid"
+            ),
+            "false",
+        )
+        == "true"
+    )
 
     item_info = item_en["item"] or {}
     image = item_info.get("gridImageLink")
@@ -160,6 +176,7 @@ def v2_hideout_item_require_process(level_id, item_en, item_ko, item_ja):
         count,
         image,
         item_id,
+        found_in_raid,
         update_time,
     )
 
