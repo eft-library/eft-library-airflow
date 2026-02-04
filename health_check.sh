@@ -27,14 +27,6 @@ check_postgres() {
     fi
 }
 
-check_clickhouse() {
-    if echo "SELECT 1;" | clickhouse-client --host 192.168.219.102 --port 9232 --user tkl --password TKL0717 > /dev/null 2>&1; then
-        log "ClickHouse: OK"
-    else
-        log "ClickHouse: FAIL"
-    fi
-}
-
 check_kafka_topic() {
     local BROKER="192.168.219.102:9092"
     local TOPIC="web-logs-topic"
@@ -72,7 +64,6 @@ check_http "FastAPI" "http://192.168.219.102:9022/api/news/health"
 check_http "MinIO" "http://192.168.219.102:9000/minio/health/live"
 
 check_postgres
-check_clickhouse
 check_kafka_topic
 check_airflow_health
 check_npm_health
