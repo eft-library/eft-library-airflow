@@ -52,7 +52,7 @@ FROM (
         FROM npc_i18n
         UNION ALL
         SELECT '아이템: ' || (name ->> 'ko'),
-               '/item/' || item_i18n.url_mapping,
+               '/item/info/' || item_i18n.url_mapping,
                item_i18n.url_mapping,
                'ITEM',
                'ko'
