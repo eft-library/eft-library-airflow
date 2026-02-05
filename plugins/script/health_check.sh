@@ -38,9 +38,6 @@ check "FastAPI" \
 check "NextJS" \
   "curl -sf http://192.168.219.102:4002/api/health"
 
-check "ClickHouse" \
-  "curl -sf http://192.168.219.102:8123/ping"
-
 check "MinIO" \
   "curl -sf http://192.168.219.102:9000/minio/health/live"
 
