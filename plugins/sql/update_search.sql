@@ -45,7 +45,7 @@ FROM (
         FROM quest_i18n
         UNION ALL
         SELECT '상인: ' || (name ->> 'ko'),
-               '/quest',
+               '/quest/' || id,
                id,
                'TRADER',
                'ko'
@@ -89,7 +89,7 @@ FROM (
         FROM quest_i18n
         UNION ALL
         SELECT 'Trader: ' || (name ->> 'en'),
-               '/quest',
+               '/quest/' || id,
                id,
                'TRADER',
                'en'
@@ -133,7 +133,7 @@ FROM (
         FROM quest_i18n
         UNION ALL
         SELECT '商人: ' || (name ->> 'ja'),
-               '/quest',
+               '/quest/' || id,
                id,
                'TRADER',
                'ja'
