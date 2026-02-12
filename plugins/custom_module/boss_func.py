@@ -60,21 +60,23 @@ def v2_boss_process(item_en, item_ko, item_ja):
     merged_equipment = []
     merged_health = []
 
-    for eq_en, eq_ko, eq_ja in zip(
-        item_en.get("equipment", []),
-        item_ko.get("equipment", []),
-        item_ja.get("equipment", []),
-    ):
-        merged_eq = copy.deepcopy(eq_en)  # 기본은 영어 구조 복사
-        item = eq_en["item"]
+    # 영어 기준 dict 생성
+    en_dict = {e["item"]["id"]: e for e in item_en.get("equipment", [])}
+    ko_dict = {e["item"]["id"]: e for e in item_ko.get("equipment", [])}
+    ja_dict = {e["item"]["id"]: e for e in item_ja.get("equipment", [])}
 
-        # 다국어 이름 병합
-        item["name_en"] = eq_en["item"].get("name", "")
-        item["name_ko"] = eq_ko["item"].get("name", "")
-        item["name_ja"] = eq_ja["item"].get("name", "")
-        del item["name"]
+    for item_id, eq_en in en_dict.items():
+        eq_ko = ko_dict.get(item_id)
+        eq_ja = ja_dict.get(item_id)
 
-        merged_eq["item"] = item
+        merged_eq = copy.deepcopy(eq_en)
+
+        merged_eq["item"]["name_en"] = eq_en["item"].get("name", "")
+        merged_eq["item"]["name_ko"] = eq_ko["item"].get("name", "") if eq_ko else ""
+        merged_eq["item"]["name_ja"] = eq_ja["item"].get("name", "") if eq_ja else ""
+
+        del merged_eq["item"]["name"]
+
         merged_equipment.append(merged_eq)
 
     for h_en, h_ko, h_ja in zip(
