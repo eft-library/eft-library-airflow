@@ -21,15 +21,41 @@ def dump_script():
     today = get_today()
 
     return f"""
-        pg_dump -h 192.168.219.102 -p 13245 -U tkl --inserts \
-        --exclude-table-data=public.item_detail_i18n \
-        --exclude-table-data=public.item_price_i18n \
-        --exclude-table-data=public.health_check \
-        --exclude-table-data=public.response_time \
-        --exclude-table-data=public.user_footprint \
-        --exclude-table=public.item_i18n \
-        --exclude-table=public.search_i18n \
-        --exclude-table=public.item_price_history_i18n prd \
+        pg_dump -h 192.168.219.102 -p 13245 -U tkl \
+        --inserts \
+        prd \
+        -t public.boss_i18n \
+        -t public.extraction_18n \
+        -t public.transit_i18n \
+        -t public.main_i18n \
+        -t public.menu_group_i18n \
+        -t public.community_comments \
+        -t public.community_posts \
+        -t public.community_posts_reactions \
+        -t public.community_posts_views \
+        -t public.dynamic_info_i18n \
+        -t public.extraction_i18n \
+        -t public.information_i18n \
+        -t public.main_i18n \
+        -t public.map_group_i18n \
+        -t public.menu_group_i18n \
+        -t public.menu_sub_group_i18n \
+        -t public.npc_i18n \
+        -t public.progress_item_i18n \
+        -t public.quest_i18n \
+        -t public.roadmap_node \
+        -t public.roadmap_edge \
+        -t public.sitemap \
+        -t public.story_i18n \
+        -t public.story_roadmap_i18n \
+        -t public.user_follows \
+        -t public.user_hideout \
+        -t public.user_info \
+        -t public.user_progress_item \
+        -t public.user_quest \
+        -t public.user_roadmap \
+        -t public.where_am_i_i18n \
+        -t public.wipe_i18n \
         > /opt/airflow/latest_data/{today}_backup.sql 2>&1
 
         exit_code=$?
