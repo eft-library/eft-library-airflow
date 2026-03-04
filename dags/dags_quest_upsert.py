@@ -10,6 +10,7 @@ from contextlib import closing
 from custom_module.psql_func import read_sql
 from custom_module.graphql_func import get_graphql
 from custom_module.quest_func import generate_quest_graphql, v2_quest_process
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 default_args = {
     "owner": "airflow",
@@ -145,10 +146,17 @@ with DAG(
         op_kwargs={"postgres_conn_id": "tkl_db"},
     )
 
+    trigger_rag_embed = TriggerDagRunOperator(
+        task_id="trigger_rag_quest_embed",
+        trigger_dag_id="dags_rag_quest_embed",
+        wait_for_completion=False,
+    )
+
     (
         fetch_data
         >> upsert_quest_task
         >> update_quest_next_task
         >> insert_roadmap_node
         >> remove_json_files_task
+        >> trigger_rag_embed
     )
