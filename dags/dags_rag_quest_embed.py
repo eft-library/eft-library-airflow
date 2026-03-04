@@ -1,7 +1,7 @@
 from airflow import DAG
 import pendulum
 from airflow.providers.standard.operators.python import PythonOperator
-from custom_module.rag_quest_func import run_quest_rag_embed
+from custom_module.rag.rag_quest_func import run_quest_rag_embed
 
 default_args = {
     "owner": "airflow",
