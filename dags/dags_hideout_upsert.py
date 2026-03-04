@@ -20,6 +20,7 @@ from custom_module.hideout_func import (
     v2_hideout_bonus_process,
     v2_hideout_crafts_process,
 )
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 
 default_args = {
@@ -483,6 +484,12 @@ with DAG(
         python_callable=remove_json_files,
     )
 
+    trigger_rag_embed = TriggerDagRunOperator(
+        task_id="trigger_rag_hideout_embed",
+        trigger_dag_id="dags_rag_hideout_embed",
+        wait_for_completion=False,
+    )
+
     (
         fetch_data
         >> [
@@ -496,4 +503,5 @@ with DAG(
             upsert_hideout_crafts_task,
         ]
         >> remove_json_files_task
+        >> trigger_rag_embed
     )
