@@ -1,5 +1,6 @@
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from contextlib import closing
 import pendulum
 from custom_module.psql_func import read_sql
@@ -32,10 +33,6 @@ def item_detail_upsert():
 
     @task
     def make_ranges(total_count: int) -> list[dict]:
-        """
-        XCom(리스트) → process_batch 에 매핑됨.
-        각 dict가 하나의 Task 인스턴스(Worker Slot)를 생성.
-        """
         return [
             {"start": start, "end": min(start + BATCH_SIZE, total_count)}
             for start in range(0, total_count, BATCH_SIZE)
@@ -50,9 +47,19 @@ def item_detail_upsert():
             cur.execute(sql, (start, end))
             conn.commit()
 
+    # 트리거 task
+    trigger_rag = TriggerDagRunOperator(
+        task_id="trigger_rag_item_embed",
+        trigger_dag_id="dags_rag_item_embed",
+        wait_for_completion=False,
+    )
+
     total = get_total_count(postgres_conn_id="tkl_db")
     ranges = make_ranges(total)
-    process_batch.expand(batch=ranges, postgres_conn_id=["tkl_db"])
+    batches = process_batch.expand(batch=ranges, postgres_conn_id=["tkl_db"])
+
+    # process_batch 전체 완료 후 트리거
+    batches >> trigger_rag
 
 
 dag = item_detail_upsert()
