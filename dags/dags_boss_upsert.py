@@ -7,7 +7,7 @@ from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from custom_module.psql_func import read_sql
 from custom_module.graphql_func import get_graphql
 from custom_module.boss_func import (
@@ -129,7 +129,9 @@ with DAG(
             with closing(conn.cursor()) as cursor:
 
                 process_spawn_list = [
-                    spawn_list_process(item_en_dict[id], item_ko_dict[id], item_ja_dict[id])
+                    spawn_list_process(
+                        item_en_dict[id], item_ko_dict[id], item_ja_dict[id]
+                    )
                     for id in item_ids
                 ]
 
@@ -157,8 +159,12 @@ with DAG(
 
     def remove_json_files():
         files = [
-            en_path, ko_path, ja_path,
-            spawn_en_path, spawn_ko_path, spawn_ja_path,
+            en_path,
+            ko_path,
+            ja_path,
+            spawn_en_path,
+            spawn_ko_path,
+            spawn_ja_path,
         ]
 
         for path in files:
@@ -204,6 +210,12 @@ with DAG(
         python_callable=remove_json_files,
     )
 
+    trigger_rag_embed = TriggerDagRunOperator(
+        task_id="trigger_rag_boss_embed",
+        trigger_dag_id="dags_rag_boss_embed",
+        wait_for_completion=False,  # True면 RAG 끝날때까지 기다림
+    )
+
     (
         fetch_data
         >> upsert_boss_task
@@ -211,4 +223,5 @@ with DAG(
         >> upsert_boss_spawn_task
         >> update_pipe_eye_spawn_task
         >> remove_json_files_task
+        >> trigger_rag_embed
     )
