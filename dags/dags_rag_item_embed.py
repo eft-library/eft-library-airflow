@@ -25,6 +25,6 @@ with DAG(
             "postgres_conn_id": "tkl_db",
             "batch_size": 10,
             "concurrent_limit": 5,
-            "skip_existing": True,
+            "skip_existing": False,
         },
     )
