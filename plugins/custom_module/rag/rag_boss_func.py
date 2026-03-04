@@ -5,7 +5,7 @@ import logging
 from bs4 import BeautifulSoup
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-from airflow.models import Variable
+from airflow.sdk import Variable
 
 OLLAMA_BASE_URL = Variable.get("OLLAMA_BASE_URL")
 EMBED_MODEL = Variable.get("OLLAMA_EMBED_MODEL")
