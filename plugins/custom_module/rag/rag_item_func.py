@@ -724,9 +724,11 @@ async def _run(
                         (target_ids,),
                     )
                     col_names = [desc[0] for desc in cursor.description]
-                    detail_map = {
-                        r["id"]: dict(zip(col_names, r)) for r in cursor.fetchall()
-                    }
+                    rows = cursor.fetchall()
+                    detail_map = {}
+                    for r in rows:
+                        row_dict = dict(zip(col_names, r))
+                        detail_map[row_dict["id"]] = row_dict
 
                     # hideout_crafts 조회
                     cursor.execute(
