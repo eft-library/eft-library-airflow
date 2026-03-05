@@ -372,7 +372,9 @@ async def _process_batch(
                         base_metadata,
                     )
                     if doc["chunk_type"] == "identifier":
-                        upsert_search(cursor, get_lang_value(quest["name"], lang), lang)
+                        lb = LABELS[lang]
+                        name = get_lang_value(quest["name"], lang)
+                        upsert_search(cursor, f"{lb['quest']}: {name}", lang)
                     log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
 
                 except httpx.HTTPError as e:

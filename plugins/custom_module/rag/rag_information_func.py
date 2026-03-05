@@ -300,8 +300,8 @@ async def _process_type(
                         item_id,  # ref_id는 항상 item_id로 통일
                         base_metadata,
                     )
-                    if doc["chunk_type"] == "identifier":
-                        upsert_search(cursor, get_lang_value(info["name"], lang), lang)
+                    # if doc["chunk_type"] == "identifier":
+                    #     upsert_search(cursor, get_lang_value(info["name"], lang), lang)
                     log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
 
                 except httpx.HTTPError as e:
@@ -311,6 +311,7 @@ async def _process_type(
 
 
 # ── rag_search_i18n upsert
+# 얘는 일단 비활성화
 def upsert_search(cursor, value: str, lang: str):
     if not value.strip():
         return

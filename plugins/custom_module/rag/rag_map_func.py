@@ -371,7 +371,9 @@ async def process_map(
                     metadata,
                 )
                 if doc["chunk_type"] == "identifier":
-                    upsert_search(cursor, get_lang_value(map_row["name"], lang), lang)
+                    lb = LANG_LABELS[lang]
+                    name = get_lang_value(map_row["name"], lang)
+                    upsert_search(cursor, f"{lb['map']}: {name}", lang)
                 log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
             except httpx.HTTPError as e:
                 log.error(f"  ✗ 임베딩 실패: {doc['source_id']} [{lang}] - {e}")
