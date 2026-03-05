@@ -1,21 +1,34 @@
+"""
+quest_i18n + npc_i18n 배치 임베딩 - Airflow DAG 태스크용
+- quest.npc_id = npc.id JOIN (order IS NOT NULL인 npc만)
+- objectives, finish_rewards, guide HTML 파싱
+- bge-m3로 임베딩 생성
+- rag_documents 테이블에 upsert
+
+청크 분리:
+  - quest_id       : 퀘스트명 + 상인명 + 목표 (chunk_type: identifier) → 맵/위치 검색용
+  - quest_id_main  : 기본정보 + 목표 + 보상 (chunk_type: content)
+  - quest_id_guide : 가이드 (chunk_type: content)
+"""
+
 import asyncio
 import httpx
 import json
 import logging
 from bs4 import BeautifulSoup
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.sdk import Variable
 
 OLLAMA_BASE_URL = Variable.get("OLLAMA_BASE_URL")
 EMBED_MODEL = Variable.get("OLLAMA_EMBED_MODEL")
-BATCH_SIZE = 10
+BATCH_SIZE = 50
 LANGS = ["ko", "en", "ja"]
 
 log = logging.getLogger(__name__)
 
 
-# 유틸
+# ── 유틸
 def get_lang_value(jsonb_field: dict | str | None, lang: str) -> str:
     if not jsonb_field:
         return ""
@@ -50,12 +63,10 @@ def clean_html(html_text: str) -> str:
 
 
 def yn(value: bool | None, lang: str) -> str:
-    yes = {"ko": "✅", "en": "✅", "ja": "✅"}
-    no = {"ko": "❌", "en": "❌", "ja": "❌"}
-    return yes[lang] if value else no[lang]
+    return "✅" if value else "❌"
 
 
-# 라벨
+# ── 라벨
 LABELS = {
     "ko": {
         "quest": "퀘스트",
@@ -101,8 +112,37 @@ LABELS = {
 NAME_KEY = {"ko": "name_ko", "en": "name_en", "ja": "name_ja"}
 
 
-# content 조합
-def build_content(quest: dict, npc_name: str, lang: str) -> str:
+# ── content 빌더
+def build_identifier_content(quest: dict, npc_name: str, lang: str) -> str:
+    """퀘스트명 + 상인명 + 목표 → 맵/위치 키워드 포함으로 검색 정확도 향상"""
+    lb = LABELS[lang]
+    nk = NAME_KEY[lang]
+
+    quest_name = get_lang_value(quest["name"], lang)
+    objectives = parse_jsonb(quest.get("objectives")) or []
+
+    parts = [
+        f"{lb['quest']}: {quest_name}",
+        f"{lb['trader']}: {npc_name}",
+    ]
+
+    if objectives:
+        lines = []
+        for obj in objectives:
+            desc = obj.get(f"description_{lang}", "")
+            items = obj.get("items") or []
+            line = f"- {desc}"
+            if items:
+                item_names = ", ".join(i.get(nk) or i.get("name_en", "") for i in items)
+                line += f" [{item_names}]"
+            lines.append(line)
+        parts.append(f"\n[{lb['objectives']}]\n" + "\n".join(lines))
+
+    return "\n".join(parts).strip()
+
+
+def build_main_content(quest: dict, npc_name: str, lang: str) -> str:
+    """기본정보 + 목표 + 보상"""
     lb = LABELS[lang]
     nk = NAME_KEY[lang]
 
@@ -115,8 +155,6 @@ def build_content(quest: dict, npc_name: str, lang: str) -> str:
     task_next = parse_jsonb(quest.get("task_next")) or []
     objectives = parse_jsonb(quest.get("objectives")) or []
     rewards_raw = parse_jsonb(quest.get("finish_rewards")) or {}
-    guide_html = get_lang_value(quest.get("guide"), lang)
-    guide = clean_html(guide_html)
 
     parts = [
         f"{lb['quest']}: {quest_name}",
@@ -127,14 +165,13 @@ def build_content(quest: dict, npc_name: str, lang: str) -> str:
     parts.append(f"{lb['kappa']}: {kappa}")
     parts.append(f"{lb['lightkeeper']}: {lightkeeper}")
 
-    # 선행 퀘스트
     if task_reqs:
         lines = [
             f"- {t.get('task', {}).get(nk) or t.get('task', {}).get('name_en', '')}"
             for t in task_reqs
         ]
         parts.append(f"\n[{lb['prev_quest']}]\n" + "\n".join(lines))
-    # 후행 퀘스트
+
     if task_next:
         lines = [
             f"- {t.get('task', {}).get(nk) or t.get('task', {}).get('name_en', '')}"
@@ -142,15 +179,12 @@ def build_content(quest: dict, npc_name: str, lang: str) -> str:
         ]
         parts.append(f"\n[{lb['next_quest']}]\n" + "\n".join(lines))
 
-    # 목표
     if objectives:
         lines = []
         for obj in objectives:
-            desc_key = f"description_{lang}"
-            desc = obj.get(desc_key, "")
+            desc = obj.get(f"description_{lang}", "")
             count = obj.get("count")
             items = obj.get("items") or []
-
             line = f"- {desc}"
             if count and count > 1:
                 line += f" ({count}개)" if lang == "ko" else f" (x{count})"
@@ -160,17 +194,14 @@ def build_content(quest: dict, npc_name: str, lang: str) -> str:
             lines.append(line)
         parts.append(f"\n[{lb['objectives']}]\n" + "\n".join(lines))
 
-    # 보상
     reward_lines = []
-    reward_items = rewards_raw.get("items") or []
-    for r in reward_items:
+    for r in rewards_raw.get("items") or []:
         item = r.get("item") or {}
         item_name = item.get(nk) or item.get("name_en", "")
         quantity = r.get("quantity") or r.get("count", "")
         reward_lines.append(f"- {item_name.strip()} x{quantity}")
 
-    trader_standings = rewards_raw.get("traderStanding") or []
-    for ts in trader_standings:
+    for ts in rewards_raw.get("traderStanding") or []:
         trader = ts.get("trader") or {}
         trader_name = get_lang_value(
             trader.get("name")
@@ -187,17 +218,30 @@ def build_content(quest: dict, npc_name: str, lang: str) -> str:
     if reward_lines:
         parts.append(f"\n[{lb['rewards']}]\n" + "\n".join(reward_lines))
 
-    # 가이드
-    if guide:
-        parts.append(f"\n[{lb['guide']}]\n{guide}")
-
     return "\n".join(parts).strip()
 
 
-# 임베딩 생성
+def build_guide_content(quest: dict, npc_name: str, lang: str) -> str:
+    """가이드"""
+    lb = LABELS[lang]
+
+    quest_name = get_lang_value(quest["name"], lang)
+    guide = clean_html(get_lang_value(quest.get("guide"), lang))
+
+    if not guide:
+        return ""
+
+    return "\n".join(
+        [
+            f"{lb['quest']}: {quest_name}",
+            f"{lb['trader']}: {npc_name}",
+            f"\n[{lb['guide']}]\n{guide}",
+        ]
+    ).strip()
+
+
+# ── 임베딩
 async def get_embedding(client: httpx.AsyncClient, text: str) -> list[float]:
-    OLLAMA_BASE_URL = Variable.get("OLLAMA_BASE_URL")
-    EMBED_MODEL = Variable.get("OLLAMA_EMBED_MODEL")
     response = await client.post(
         f"{OLLAMA_BASE_URL}/api/embed",
         json={"model": EMBED_MODEL, "input": text},
@@ -207,16 +251,34 @@ async def get_embedding(client: httpx.AsyncClient, text: str) -> list[float]:
     return response.json()["embeddings"][0]
 
 
-def upsert_rag_document(cursor, source_id, lang, content, embedding, metadata):
+# ── upsert (psycopg2 cursor 사용)
+def upsert_rag_document(
+    cursor,
+    source_id: str,
+    lang: str,
+    content: str,
+    embedding: list[float],
+    chunk_type: str,
+    ref_type: str,
+    ref_id: str,
+    metadata: dict,
+):
     embedding_str = "[" + ",".join(map(str, embedding)) + "]"
     cursor.execute(
         """
-        INSERT INTO rag_documents (source_table, source_id, lang, content, embedding, metadata)
-        VALUES (%s, %s, %s, %s, %s::vector, %s)
-        ON CONFLICT (source_table, source_id, lang)
+        INSERT INTO rag_documents (
+            source_table, source_id, lang,
+            content, embedding,
+            chunk_type, ref_type, ref_id,
+            metadata
+        )
+        VALUES (%s, %s, %s, %s, %s::vector, %s, %s, %s, %s)
+        ON CONFLICT (source_table, source_id, lang, chunk_type)
         DO UPDATE SET
             content    = EXCLUDED.content,
             embedding  = EXCLUDED.embedding,
+            ref_type   = EXCLUDED.ref_type,
+            ref_id     = EXCLUDED.ref_id,
             metadata   = EXCLUDED.metadata,
             updated_at = NOW()
         """,
@@ -226,62 +288,105 @@ def upsert_rag_document(cursor, source_id, lang, content, embedding, metadata):
             lang,
             content,
             embedding_str,
+            chunk_type,
+            ref_type,
+            ref_id,
             json.dumps(metadata, ensure_ascii=False),
         ),
     )
 
 
-async def _process_batch(cursor, client, rows, npc_map):
+# ── 배치 처리
+async def _process_batch(
+    cursor, client: httpx.AsyncClient, rows: list[dict], npc_map: dict
+):
     for quest in rows:
         quest_id = quest["id"]
         npc_id = quest.get("npc_id") or ""
         npc_names = npc_map.get(npc_id, {"ko": "", "en": "", "ja": ""})
 
-        for lang in LANGS:
-            npc_name = npc_names.get(lang, "")
-            content = build_content(quest, npc_name, lang)
+        base_metadata = {
+            "quest_id": quest_id,
+            "quest_name": {
+                "ko": get_lang_value(quest["name"], "ko"),
+                "en": get_lang_value(quest["name"], "en"),
+                "ja": get_lang_value(quest["name"], "ja"),
+            },
+            "npc_id": npc_id,
+            "npc_name": npc_names,
+            "kappa_required": quest.get("kappa_required") or False,
+            "lightkeeper_required": quest.get("lightkeeper_required") or False,
+            "min_player_level": quest.get("min_player_level"),
+            "url": f"https://eftlibrary.com/quest/detail/{quest.get('url_mapping') or quest_id}",
+        }
 
-            if not content.strip():
-                log.warning(f"빈 content 스킵: {quest_id} [{lang}]")
+        docs = [
+            {
+                "source_id": quest_id,
+                "chunk_type": "identifier",
+                "build_fn": lambda lang, q=quest, n=npc_names: build_identifier_content(
+                    q, n.get(lang, ""), lang
+                ),
+                "skip": False,
+            },
+            {
+                "source_id": f"{quest_id}_main",
+                "chunk_type": "content",
+                "build_fn": lambda lang, q=quest, n=npc_names: build_main_content(
+                    q, n.get(lang, ""), lang
+                ),
+                "skip": False,
+            },
+            {
+                "source_id": f"{quest_id}_guide",
+                "chunk_type": "content",
+                "build_fn": lambda lang, q=quest, n=npc_names: build_guide_content(
+                    q, n.get(lang, ""), lang
+                ),
+                "skip": not quest.get("guide"),
+            },
+        ]
+
+        for doc in docs:
+            if doc["skip"]:
                 continue
 
-            try:
-                embedding = await get_embedding(client, content)
-                metadata = {
-                    "content_type": "joined",
-                    "source_tables": ["quest_i18n", "npc_i18n"],
-                    "quest_id": quest_id,
-                    "quest_name": {
-                        "ko": get_lang_value(quest["name"], "ko"),
-                        "en": get_lang_value(quest["name"], "en"),
-                        "ja": get_lang_value(quest["name"], "ja"),
-                    },
-                    "npc_id": npc_id,
-                    "npc_name": npc_names,
-                    "kappa_required": quest.get("kappa_required") or False,
-                    "lightkeeper_required": quest.get("lightkeeper_required") or False,
-                    "min_player_level": quest.get("min_player_level"),
-                    "url": f"https://eftlibrary.com/quest/detail/{quest.get('url_mapping') or quest_id}",
-                }
-                upsert_rag_document(
-                    cursor, quest_id, lang, content, embedding, metadata
-                )
-                log.info(f"✓ {quest_id} [{lang}]")
+            for lang in LANGS:
+                content = doc["build_fn"](lang)
 
-            except httpx.HTTPError as e:
-                log.error(f"✗ 임베딩 실패: {quest_id} [{lang}] - {e}")
-            except Exception as e:
-                log.error(f"✗ DB 저장 실패: {quest_id} [{lang}] - {e}")
+                if not content.strip():
+                    log.warning(f"  ⚠ 빈 content 스킵: {doc['source_id']} [{lang}]")
+                    continue
+
+                try:
+                    embedding = await get_embedding(client, content)
+                    upsert_rag_document(
+                        cursor,
+                        doc["source_id"],
+                        lang,
+                        content,
+                        embedding,
+                        doc["chunk_type"],
+                        "quest",
+                        quest_id,  # ref_id는 항상 quest_id로 통일
+                        base_metadata,
+                    )
+                    log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
+
+                except httpx.HTTPError as e:
+                    log.error(f"  ✗ 임베딩 실패: {doc['source_id']} [{lang}] - {e}")
+                except Exception as e:
+                    log.error(f"  ✗ DB 저장 실패: {doc['source_id']} [{lang}] - {e}")
 
 
+# ── 메인
 async def _run(postgres_conn_id: str, batch_size: int):
-    log.info("=== quest_i18n 배치 임베딩 시작 ===")
     postgres_hook = PostgresHook(postgres_conn_id)
 
     with closing(postgres_hook.get_conn()) as conn:
         with closing(conn.cursor()) as cursor:
 
-            # npc_map 로드
+            # NPC 맵 로드
             cursor.execute(
                 """
                 SELECT id, name FROM npc_i18n
@@ -306,6 +411,8 @@ async def _run(postgres_conn_id: str, batch_size: int):
             log.info(f"총 {total}개 퀘스트 처리 예정")
 
             offset = 0
+            processed = 0
+
             async with httpx.AsyncClient() as client:
                 while offset < total:
                     cursor.execute(
@@ -321,19 +428,25 @@ async def _run(postgres_conn_id: str, batch_size: int):
                         """,
                         (batch_size, offset),
                     )
-                    col_names = [desc[0] for desc in cursor.description]
-                    rows = [dict(zip(col_names, row)) for row in cursor.fetchall()]
-
+                    rows = cursor.fetchall()
                     if not rows:
                         break
 
-                    log.info(f"배치: {offset + 1} ~ {offset + len(rows)} / {total}")
-                    await _process_batch(cursor, client, rows, npc_map)
+                    col_names = [desc[0] for desc in cursor.description]
+                    rows_dict = [dict(zip(col_names, row)) for row in rows]
+
+                    log.info(
+                        f"배치 처리중: {offset + 1} ~ {offset + len(rows_dict)} / {total}"
+                    )
+                    await _process_batch(cursor, client, rows_dict, npc_map)
+
+                    processed += len(rows_dict)
                     offset += batch_size
 
         conn.commit()
-    log.info("=== 완료 ===")
+    log.info(f"=== 완료: {processed}개 퀘스트 처리 ===")
 
 
-def run_quest_rag_embed(postgres_conn_id: str = "tkl_db", batch_size: int = 10):
+# ── DAG 진입점
+def run_quest_rag_embed(postgres_conn_id: str = "tkl_db", batch_size: int = BATCH_SIZE):
     asyncio.run(_run(postgres_conn_id, batch_size))
