@@ -104,6 +104,7 @@ LANG_LABELS = {
         "health_detail": "부위별 체력",
         "items": "드랍 아이템",
         "guide": "위치 가이드",
+        "order": "순서",
     },
     "en": {
         "boss": "Boss",
@@ -113,6 +114,7 @@ LANG_LABELS = {
         "health_detail": "Health by Body Part",
         "items": "Drop Items",
         "guide": "Location Guide",
+        "order": "Order",
     },
     "ja": {
         "boss": "ボス",
@@ -122,6 +124,7 @@ LANG_LABELS = {
         "health_detail": "部位別体力",
         "items": "ドロップアイテム",
         "guide": "場所ガイド",
+        "order": "順序",
     },
 }
 
@@ -145,11 +148,14 @@ def build_main_content(row: dict, lang: str) -> str:
     name = get_lang_value(row["name"], lang)
     faction = row.get("faction") or ""
     health_total = row.get("health_total") or ""
+    order = row.get("order") or ""
 
     health_detail = parse_jsonb(row.get("health_detail")) or []
     spawn_chance = parse_jsonb(row.get("spawn_chance")) or []
 
     parts = [f"{label['boss']}: {name}"]
+    if order:
+        parts.append(f"{label['order']}: {order}")
     if faction:
         parts.append(f"{label['faction']}: {faction}")
     if health_total:
@@ -272,6 +278,21 @@ def upsert_rag_document(
     )
 
 
+# ── rag_search_i18n upsert
+def upsert_search(cursor, value: str, lang: str):
+    if not value.strip():
+        return
+    cursor.execute(
+        """
+        INSERT INTO rag_search_i18n (value, lang)
+        VALUES (%s, %s)
+        ON CONFLICT (value, lang) DO UPDATE SET
+            update_time = NOW()
+        """,
+        (value.strip(), lang),
+    )
+
+
 # ── 배치 처리
 async def _process_batch(cursor, client: httpx.AsyncClient, rows: list[dict]):
     for row in rows:
@@ -345,6 +366,8 @@ async def _process_batch(cursor, client: httpx.AsyncClient, rows: list[dict]):
                         boss_id,  # ref_id는 항상 boss_id로 통일
                         base_metadata,
                     )
+                    if doc["chunk_type"] == "identifier":
+                        upsert_search(cursor, get_lang_value(row["name"], lang), lang)
                     log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
 
                 except httpx.HTTPError as e:

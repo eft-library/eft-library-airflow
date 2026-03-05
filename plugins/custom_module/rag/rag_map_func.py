@@ -370,11 +370,28 @@ async def process_map(
                     doc["ref_id"],
                     metadata,
                 )
+                if doc["chunk_type"] == "identifier":
+                    upsert_search(cursor, get_lang_value(map_row["name"], lang), lang)
                 log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
             except httpx.HTTPError as e:
                 log.error(f"  ✗ 임베딩 실패: {doc['source_id']} [{lang}] - {e}")
             except Exception as e:
                 log.error(f"  ✗ DB 저장 실패: {doc['source_id']} [{lang}] - {e}")
+
+
+# ── rag_search_i18n upsert
+def upsert_search(cursor, value: str, lang: str):
+    if not value.strip():
+        return
+    cursor.execute(
+        """
+        INSERT INTO rag_search_i18n (value, lang)
+        VALUES (%s, %s)
+        ON CONFLICT (value, lang) DO UPDATE SET
+            update_time = NOW()
+        """,
+        (value.strip(), lang),
+    )
 
 
 # ── 메인
