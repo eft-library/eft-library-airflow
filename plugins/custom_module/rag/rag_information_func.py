@@ -97,9 +97,24 @@ def extract_ids_by_type(json_value: dict) -> dict[str, set[str]]:
 
 # ── 라벨
 LANG_LABELS = {
-    "ko": {"event": "이벤트", "patch": "패치 노트", "updated": "업데이트", "content": "내용"},
-    "en": {"event": "Event", "patch": "Patch Note", "updated": "Updated", "content": "Content"},
-    "ja": {"event": "イベント", "patch": "パッチノート", "updated": "更新", "content": "内容"},
+    "ko": {
+        "event": "이벤트",
+        "patch": "패치 노트",
+        "updated": "업데이트",
+        "content": "내용",
+    },
+    "en": {
+        "event": "Event",
+        "patch": "Patch Note",
+        "updated": "Updated",
+        "content": "Content",
+    },
+    "ja": {
+        "event": "イベント",
+        "patch": "パッチノート",
+        "updated": "更新",
+        "content": "内容",
+    },
 }
 
 SEARCH_KEYWORDS = {
@@ -247,7 +262,9 @@ async def _process_type(
             {
                 "source_id": item_id,
                 "chunk_type": "identifier",
-                "build_fn": lambda lang, r=info, t=type_key: build_identifier_content(r, t, lang),
+                "build_fn": lambda lang, r=info, t=type_key: build_identifier_content(
+                    r, t, lang
+                ),
                 "skip": False,
             },
             {
@@ -280,7 +297,7 @@ async def _process_type(
                         embedding,
                         doc["chunk_type"],
                         type_key,  # ref_type ("event" or "patch")
-                        item_id,   # ref_id는 항상 item_id로 통일
+                        item_id,  # ref_id는 항상 item_id로 통일
                         base_metadata,
                     )
                     log.info(f"  ✓ {doc['source_id']} [{lang}] 완료")
@@ -321,5 +338,5 @@ async def _run(postgres_conn_id: str):
 
 
 # ── DAG 진입점
-def run_dynamic_info_rag_embed(postgres_conn_id: str = "tkl_db"):
+def run_information_rag_embed(postgres_conn_id: str = "tkl_db"):
     asyncio.run(_run(postgres_conn_id))

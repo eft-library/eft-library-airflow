@@ -104,7 +104,6 @@ LANG_LABELS = {
         "health_detail": "부위별 체력",
         "items": "드랍 아이템",
         "guide": "위치 가이드",
-        "order": "순서",
     },
     "en": {
         "boss": "Boss",
@@ -114,7 +113,6 @@ LANG_LABELS = {
         "health_detail": "Health by Body Part",
         "items": "Drop Items",
         "guide": "Location Guide",
-        "order": "Order",
     },
     "ja": {
         "boss": "ボス",
@@ -124,7 +122,6 @@ LANG_LABELS = {
         "health_detail": "部位別体力",
         "items": "ドロップアイテム",
         "guide": "場所ガイド",
-        "order": "順序",
     },
 }
 
@@ -148,14 +145,11 @@ def build_main_content(row: dict, lang: str) -> str:
     name = get_lang_value(row["name"], lang)
     faction = row.get("faction") or ""
     health_total = row.get("health_total") or ""
-    order = row.get("order") or ""
 
     health_detail = parse_jsonb(row.get("health_detail")) or []
     spawn_chance = parse_jsonb(row.get("spawn_chance")) or []
 
     parts = [f"{label['boss']}: {name}"]
-    if order:
-        parts.append(f"{label['order']}: {order}")
     if faction:
         parts.append(f"{label['faction']}: {faction}")
     if health_total:
