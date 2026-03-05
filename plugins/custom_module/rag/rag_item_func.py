@@ -67,9 +67,9 @@ def fmt(value, suffix="") -> str:
 # ── 카테고리별 info 파서
 def parse_ammo(info: dict, lang: str) -> str:
     label = {
-        "ko": "데미지: {damage} | 관통력: {pen} | 장갑 데미지: {ad}%\n반동 보정: {rec} | 명중률 보정: {acc}",
-        "en": "Damage: {damage} | Penetration: {pen} | Armor Damage: {ad}%\nRecoil: {rec} | Accuracy: {acc}",
-        "ja": "ダメージ: {damage} | 貫通力: {pen} | アーマーダメージ: {ad}%\n反動補正: {rec} | 命中補正: {acc}",
+        "ko": "데미지: {damage}\n관통력: {pen}\n장갑 데미지: {ad}%\n반동 보정: {rec}\n명중률 보정: {acc}",
+        "en": "Damage: {damage}\nPenetration: {pen}\nArmor Damage: {ad}%\nRecoil: {rec}\nAccuracy: {acc}",
+        "ja": "ダメージ: {damage}\n貫通力: {pen}\nアーマーダメージ: {ad}%\n反動補正: {rec}\n命中補正: {acc}",
     }[lang]
     return label.format(
         damage=fmt(info.get("damage")),
@@ -85,9 +85,9 @@ def parse_armor(info: dict, lang: str) -> str:
     zones = (info.get("zones") or {}).get(zones_key, [])
     zone_str = ", ".join(zones) if zones else ""
     return {
-        "ko": f"방어 등급: {fmt(info.get('class_value'))} | 내구도: {fmt(info.get('durability'))} | 무게: {fmt(info.get('weight'))}kg\n재질: {fmt((info.get('material') or {}).get('name'))}\n방어 부위: {zone_str}",
-        "en": f"Class: {fmt(info.get('class_value'))} | Durability: {fmt(info.get('durability'))} | Weight: {fmt(info.get('weight'))}kg\nMaterial: {fmt((info.get('material') or {}).get('name'))}\nZones: {zone_str}",
-        "ja": f"防護クラス: {fmt(info.get('class_value'))} | 耐久度: {fmt(info.get('durability'))} | 重量: {fmt(info.get('weight'))}kg\n素材: {fmt((info.get('material') or {}).get('name'))}\n防護部位: {zone_str}",
+        "ko": f"방어 등급: {fmt(info.get('class_value'))}\n내구도: {fmt(info.get('durability'))}\n무게: {fmt(info.get('weight'))}kg\n재질: {fmt((info.get('material') or {}).get('name'))}\n방어 부위: {zone_str}",
+        "en": f"Class: {fmt(info.get('class_value'))}\nDurability: {fmt(info.get('durability'))}\nWeight: {fmt(info.get('weight'))}kg\nMaterial: {fmt((info.get('material') or {}).get('name'))}\nZones: {zone_str}",
+        "ja": f"防護クラス: {fmt(info.get('class_value'))}\n耐久度: {fmt(info.get('durability'))}\n重量: {fmt(info.get('weight'))}kg\n素材: {fmt((info.get('material') or {}).get('name'))}\n防護部位: {zone_str}",
     }[lang]
 
 
@@ -100,9 +100,9 @@ def parse_gun(info: dict, lang: str) -> str:
     if len(allowed) > 5:
         ammo_str += f" 외 {len(allowed)-5}종"
     return {
-        "ko": f"종류: {fmt(info.get('gun_category'))} | 구경: {fmt(info.get('caliber'))} | 무게: {fmt(info.get('weight'))}kg\n발사 속도: {fmt(info.get('fire_rate'))}rpm | 발사 모드: {modes_str}\n기본 탄약: {fmt(info.get('default_ammo'))}\n사용 가능 탄약: {ammo_str}",
-        "en": f"Type: {fmt(info.get('gun_category'))} | Caliber: {fmt(info.get('caliber'))} | Weight: {fmt(info.get('weight'))}kg\nFire Rate: {fmt(info.get('fire_rate'))}rpm | Modes: {modes_str}\nDefault Ammo: {fmt(info.get('default_ammo'))}\nAllowed Ammo: {ammo_str}",
-        "ja": f"種類: {fmt(info.get('gun_category'))} | 口径: {fmt(info.get('caliber'))} | 重量: {fmt(info.get('weight'))}kg\n発射速度: {fmt(info.get('fire_rate'))}rpm | 発射モード: {modes_str}\nデフォルト弾薬: {fmt(info.get('default_ammo'))}\n使用可能弾薬: {ammo_str}",
+        "ko": f"종류: {fmt(info.get('gun_category'))}\n구경: {fmt(info.get('caliber'))}\n무게: {fmt(info.get('weight'))}kg\n발사 속도: {fmt(info.get('fire_rate'))}rpm\n발사 모드: {modes_str}\n기본 탄약: {fmt(info.get('default_ammo'))}\n사용 가능 탄약: {ammo_str}",
+        "en": f"Type: {fmt(info.get('gun_category'))}\nCaliber: {fmt(info.get('caliber'))}\nWeight: {fmt(info.get('weight'))}kg\nFire Rate: {fmt(info.get('fire_rate'))}rpm\nModes: {modes_str}\nDefault Ammo: {fmt(info.get('default_ammo'))}\nAllowed Ammo: {ammo_str}",
+        "ja": f"種類: {fmt(info.get('gun_category'))}\n口径: {fmt(info.get('caliber'))}\n重量: {fmt(info.get('weight'))}kg\n発射速度: {fmt(info.get('fire_rate'))}rpm\n発射モード: {modes_str}\nデフォルト弾薬: {fmt(info.get('default_ammo'))}\n使用可能弾薬: {ammo_str}",
     }[lang]
 
 
@@ -121,9 +121,9 @@ def parse_medical(info: dict, lang: str) -> str:
         f"{m.get(skill_key, m.get('type', ''))} ({m.get('duration')}초)" for m in malus
     )
     return {
-        "ko": f"종류: {fmt(info.get('medical_category'))} | 무게: {fmt(info.get('weight'))}kg | 사용 횟수: {fmt(info.get('uses'))}\n치료 효과: {cures_str}\n버프: {buff_str}\n디버프: {malus_str}",
-        "en": f"Type: {fmt(info.get('medical_category'))} | Weight: {fmt(info.get('weight'))}kg | Uses: {fmt(info.get('uses'))}\nCures: {cures_str}\nBuff: {buff_str}\nDebuff: {malus_str}",
-        "ja": f"種類: {fmt(info.get('medical_category'))} | 重量: {fmt(info.get('weight'))}kg | 使用回数: {fmt(info.get('uses'))}\n治療効果: {cures_str}\nバフ: {buff_str}\nデバフ: {malus_str}",
+        "ko": f"종류: {fmt(info.get('medical_category'))}\n무게: {fmt(info.get('weight'))}kg\n사용 횟수: {fmt(info.get('uses'))}\n치료 효과: {cures_str}\n버프: {buff_str}\n디버프: {malus_str}",
+        "en": f"Type: {fmt(info.get('medical_category'))}\nWeight: {fmt(info.get('weight'))}kg\nUses: {fmt(info.get('uses'))}\nCures: {cures_str}\nBuff: {buff_str}\nDebuff: {malus_str}",
+        "ja": f"種類: {fmt(info.get('medical_category'))}\n重量: {fmt(info.get('weight'))}kg\n使用回数: {fmt(info.get('uses'))}\n治療効果: {cures_str}\nバフ: {buff_str}\nデバフ: {malus_str}",
     }[lang]
 
 
@@ -131,17 +131,17 @@ def parse_key(info: dict, lang: str) -> str:
     use_map = (info.get("use_map") or {}).get(lang, []) or []
     map_str = ", ".join(use_map) if use_map else ""
     return {
-        "ko": f"사용 횟수: {fmt(info.get('uses'))} | 무게: {fmt(info.get('weight'))}kg\n사용 지도: {map_str}",
-        "en": f"Uses: {fmt(info.get('uses'))} | Weight: {fmt(info.get('weight'))}kg\nUsable Map: {map_str}",
-        "ja": f"使用回数: {fmt(info.get('uses'))} | 重量: {fmt(info.get('weight'))}kg\n使用マップ: {map_str}",
+        "ko": f"사용 횟수: {fmt(info.get('uses'))}\n무게: {fmt(info.get('weight'))}kg\n사용 지도: {map_str}",
+        "en": f"Uses: {fmt(info.get('uses'))}\nWeight: {fmt(info.get('weight'))}kg\nUsable Map: {map_str}",
+        "ja": f"使用回数: {fmt(info.get('uses'))}\n重量: {fmt(info.get('weight'))}kg\n使用マップ: {map_str}",
     }[lang]
 
 
 def parse_backpack(info: dict, lang: str) -> str:
     return {
-        "ko": f"용량: {fmt(info.get('capacity'))}칸 | 무게: {fmt(info.get('weight'))}kg\n이동 패널티: {fmt(info.get('speed_penalty'))} | 인체공학 패널티: {fmt(info.get('ergo_penalty'))}",
-        "en": f"Capacity: {fmt(info.get('capacity'))} | Weight: {fmt(info.get('weight'))}kg\nSpeed Penalty: {fmt(info.get('speed_penalty'))} | Ergo Penalty: {fmt(info.get('ergo_penalty'))}",
-        "ja": f"容量: {fmt(info.get('capacity'))} | 重量: {fmt(info.get('weight'))}kg\n移動ペナルティ: {fmt(info.get('speed_penalty'))} | エルゴペナルティ: {fmt(info.get('ergo_penalty'))}",
+        "ko": f"용량: {fmt(info.get('capacity'))}칸\n무게: {fmt(info.get('weight'))}kg\n이동 패널티: {fmt(info.get('speed_penalty'))}\n인체공학 패널티: {fmt(info.get('ergo_penalty'))}",
+        "en": f"Capacity: {fmt(info.get('capacity'))}\nWeight: {fmt(info.get('weight'))}kg\nSpeed Penalty: {fmt(info.get('speed_penalty'))}\nErgo Penalty: {fmt(info.get('ergo_penalty'))}",
+        "ja": f"容量: {fmt(info.get('capacity'))}\n重量: {fmt(info.get('weight'))}kg\n移動ペナルティ: {fmt(info.get('speed_penalty'))}\nエルゴペナルティ: {fmt(info.get('ergo_penalty'))}",
     }[lang]
 
 
@@ -150,9 +150,9 @@ def parse_rig(info: dict, lang: str) -> str:
     zones = (info.get("zones") or {}).get(zones_key, [])
     zone_str = ", ".join(zones) if zones else ""
     return {
-        "ko": f"용량: {fmt(info.get('capacity'))}칸 | 방어 등급: {fmt(info.get('class_value'))} | 내구도: {fmt(info.get('durability'))}\n무게: {fmt(info.get('weight'))}kg | 방어 부위: {zone_str}",
-        "en": f"Capacity: {fmt(info.get('capacity'))} | Class: {fmt(info.get('class_value'))} | Durability: {fmt(info.get('durability'))}\nWeight: {fmt(info.get('weight'))}kg | Zones: {zone_str}",
-        "ja": f"容量: {fmt(info.get('capacity'))} | 防護クラス: {fmt(info.get('class_value'))} | 耐久度: {fmt(info.get('durability'))}\n重量: {fmt(info.get('weight'))}kg | 防護部位: {zone_str}",
+        "ko": f"용량: {fmt(info.get('capacity'))}칸\n방어 등급: {fmt(info.get('class_value'))}\n내구도: {fmt(info.get('durability'))}\n무게: {fmt(info.get('weight'))}kg\n방어 부위: {zone_str}",
+        "en": f"Capacity: {fmt(info.get('capacity'))}\nClass: {fmt(info.get('class_value'))}\nDurability: {fmt(info.get('durability'))}\nWeight: {fmt(info.get('weight'))}kg\nZones: {zone_str}",
+        "ja": f"容量: {fmt(info.get('capacity'))}\n防護クラス: {fmt(info.get('class_value'))}\n耐久度: {fmt(info.get('durability'))}\n重量: {fmt(info.get('weight'))}kg\n防護部位: {zone_str}",
     }[lang]
 
 
@@ -162,9 +162,9 @@ def parse_headwear(info: dict, lang: str) -> str:
     ricochet_key = f"ricochet_chance_{lang}"
     ricochet = (info.get("ricochet_chance") or {}).get(ricochet_key, "")
     return {
-        "ko": f"방어 등급: {fmt(info.get('class_value'))} | 내구도: {fmt(info.get('durability'))} | 무게: {fmt(info.get('weight'))}kg\n재질: {fmt((info.get('material') or {}).get('name'))} | 도탄 확률: {ricochet}\n방어 부위: {', '.join(zones)}",
-        "en": f"Class: {fmt(info.get('class_value'))} | Durability: {fmt(info.get('durability'))} | Weight: {fmt(info.get('weight'))}kg\nMaterial: {fmt((info.get('material') or {}).get('name'))} | Ricochet: {ricochet}\nZones: {', '.join(zones)}",
-        "ja": f"防護クラス: {fmt(info.get('class_value'))} | 耐久度: {fmt(info.get('durability'))} | 重量: {fmt(info.get('weight'))}kg\n素材: {fmt((info.get('material') or {}).get('name'))} | 跳弾確率: {ricochet}\n防護部位: {', '.join(zones)}",
+        "ko": f"방어 등급: {fmt(info.get('class_value'))}\n내구도: {fmt(info.get('durability'))}\n무게: {fmt(info.get('weight'))}kg\n재질: {fmt((info.get('material') or {}).get('name'))}\n도탄 확률: {ricochet}\n방어 부위: {', '.join(zones)}",
+        "en": f"Class: {fmt(info.get('class_value'))}\nDurability: {fmt(info.get('durability'))}\nWeight: {fmt(info.get('weight'))}kg\nMaterial: {fmt((info.get('material') or {}).get('name'))}\nRicochet: {ricochet}\nZones: {', '.join(zones)}",
+        "ja": f"防護クラス: {fmt(info.get('class_value'))}\n耐久度: {fmt(info.get('durability'))}\n重量: {fmt(info.get('weight'))}kg\n素材: {fmt((info.get('material') or {}).get('name'))}\n跳弾確率: {ricochet}\n防護部位: {', '.join(zones)}",
     }[lang]
 
 
@@ -174,57 +174,57 @@ def parse_facecover(info: dict, lang: str) -> str:
     ricochet_key = f"ricochet_chance_{lang}"
     ricochet = (info.get("ricochet_chance") or {}).get(ricochet_key, "")
     return {
-        "ko": f"방어 등급: {fmt(info.get('class_value'))} | 내구도: {fmt(info.get('durability'))} | 무게: {fmt(info.get('weight'))}kg\n도탄 확률: {ricochet} | 방어 부위: {', '.join(zones)}",
-        "en": f"Class: {fmt(info.get('class_value'))} | Durability: {fmt(info.get('durability'))} | Weight: {fmt(info.get('weight'))}kg\nRicochet: {ricochet} | Zones: {', '.join(zones)}",
-        "ja": f"防護クラス: {fmt(info.get('class_value'))} | 耐久度: {fmt(info.get('durability'))} | 重量: {fmt(info.get('weight'))}kg\n跳弾確率: {ricochet} | 防護部位: {', '.join(zones)}",
+        "ko": f"방어 등급: {fmt(info.get('class_value'))}\n내구도: {fmt(info.get('durability'))}\n무게: {fmt(info.get('weight'))}kg\n도탄 확률: {ricochet}\n방어 부위: {', '.join(zones)}",
+        "en": f"Class: {fmt(info.get('class_value'))}\nDurability: {fmt(info.get('durability'))}\nWeight: {fmt(info.get('weight'))}kg\nRicochet: {ricochet}\nZones: {', '.join(zones)}",
+        "ja": f"防護クラス: {fmt(info.get('class_value'))}\n耐久度: {fmt(info.get('durability'))}\n重量: {fmt(info.get('weight'))}kg\n跳弾確率: {ricochet}\n防護部位: {', '.join(zones)}",
     }[lang]
 
 
 def parse_throwable(info: dict, lang: str) -> str:
     return {
-        "ko": f"무게: {fmt(info.get('weight'))}kg | 퓨즈: {fmt(info.get('fuse'))}초\n파편: {fmt(info.get('fragments'))}개 | 폭발 범위: {fmt(info.get('min_explosion_distance'))}~{fmt(info.get('max_explosion_distance'))}m",
-        "en": f"Weight: {fmt(info.get('weight'))}kg | Fuse: {fmt(info.get('fuse'))}s\nFragments: {fmt(info.get('fragments'))} | Blast Radius: {fmt(info.get('min_explosion_distance'))}~{fmt(info.get('max_explosion_distance'))}m",
-        "ja": f"重量: {fmt(info.get('weight'))}kg | 信管: {fmt(info.get('fuse'))}秒\n破片: {fmt(info.get('fragments'))}個 | 爆発範囲: {fmt(info.get('min_explosion_distance'))}~{fmt(info.get('max_explosion_distance'))}m",
+        "ko": f"무게: {fmt(info.get('weight'))}kg\n퓨즈: {fmt(info.get('fuse'))}초\n파편: {fmt(info.get('fragments'))}개\n폭발 범위: {fmt(info.get('min_explosion_distance'))}~{fmt(info.get('max_explosion_distance'))}m",
+        "en": f"Weight: {fmt(info.get('weight'))}kg\nFuse: {fmt(info.get('fuse'))}s\nFragments: {fmt(info.get('fragments'))}\nBlast Radius: {fmt(info.get('min_explosion_distance'))}~{fmt(info.get('max_explosion_distance'))}m",
+        "ja": f"重量: {fmt(info.get('weight'))}kg\n信管: {fmt(info.get('fuse'))}秒\n破片: {fmt(info.get('fragments'))}個\n爆発範囲: {fmt(info.get('min_explosion_distance'))}~{fmt(info.get('max_explosion_distance'))}m",
     }[lang]
 
 
 def parse_provisions(info: dict, lang: str) -> str:
     return {
-        "ko": f"무게: {fmt(info.get('weight'))}kg | 에너지: {fmt(info.get('energy'))} | 수분: {fmt(info.get('hydration'))}",
-        "en": f"Weight: {fmt(info.get('weight'))}kg | Energy: {fmt(info.get('energy'))} | Hydration: {fmt(info.get('hydration'))}",
-        "ja": f"重量: {fmt(info.get('weight'))}kg | エネルギー: {fmt(info.get('energy'))} | 水分: {fmt(info.get('hydration'))}",
+        "ko": f"무게: {fmt(info.get('weight'))}kg\n에너지: {fmt(info.get('energy'))}\n수분: {fmt(info.get('hydration'))}",
+        "en": f"Weight: {fmt(info.get('weight'))}kg\nEnergy: {fmt(info.get('energy'))}\nHydration: {fmt(info.get('hydration'))}",
+        "ja": f"重量: {fmt(info.get('weight'))}kg\nエネルギー: {fmt(info.get('energy'))}\n水分: {fmt(info.get('hydration'))}",
     }[lang]
 
 
 def parse_loot(info: dict, lang: str) -> str:
     return {
-        "ko": f"무게: {fmt(info.get('weight'))}kg | 카테고리: {fmt(info.get('loot_category'))}",
-        "en": f"Weight: {fmt(info.get('weight'))}kg | Category: {fmt(info.get('loot_category'))}",
-        "ja": f"重量: {fmt(info.get('weight'))}kg | カテゴリ: {fmt(info.get('loot_category'))}",
+        "ko": f"무게: {fmt(info.get('weight'))}kg\n카테고리: {fmt(info.get('loot_category'))}",
+        "en": f"Weight: {fmt(info.get('weight'))}kg\nCategory: {fmt(info.get('loot_category'))}",
+        "ja": f"重量: {fmt(info.get('weight'))}kg\nカテゴリ: {fmt(info.get('loot_category'))}",
     }[lang]
 
 
 def parse_knife(info: dict, lang: str) -> str:
     return {
-        "ko": f"무게: {fmt(info.get('weight'))}kg | 찌르기 데미지: {fmt(info.get('stab_damage'))} | 베기 데미지: {fmt(info.get('slash_damage'))}\n범위: {fmt(info.get('hit_radius'))}m",
-        "en": f"Weight: {fmt(info.get('weight'))}kg | Stab: {fmt(info.get('stab_damage'))} | Slash: {fmt(info.get('slash_damage'))}\nRange: {fmt(info.get('hit_radius'))}m",
-        "ja": f"重量: {fmt(info.get('weight'))}kg | 刺突ダメージ: {fmt(info.get('stab_damage'))} | 斬撃ダメージ: {fmt(info.get('slash_damage'))}\n射程: {fmt(info.get('hit_radius'))}m",
+        "ko": f"무게: {fmt(info.get('weight'))}kg\n찌르기 데미지: {fmt(info.get('stab_damage'))}\n베기 데미지: {fmt(info.get('slash_damage'))}\n범위: {fmt(info.get('hit_radius'))}m",
+        "en": f"Weight: {fmt(info.get('weight'))}kg\nStab: {fmt(info.get('stab_damage'))}\nSlash: {fmt(info.get('slash_damage'))}\nRange: {fmt(info.get('hit_radius'))}m",
+        "ja": f"重量: {fmt(info.get('weight'))}kg\n刺突ダメージ: {fmt(info.get('stab_damage'))}\n斬撃ダメージ: {fmt(info.get('slash_damage'))}\n射程: {fmt(info.get('hit_radius'))}m",
     }[lang]
 
 
 def parse_headset(info: dict, lang: str) -> str:
     return {
-        "ko": f"무게: {fmt(info.get('weight'))}kg | 거리 보정: {fmt(info.get('distance_modifier'))}",
-        "en": f"Weight: {fmt(info.get('weight'))}kg | Distance Modifier: {fmt(info.get('distance_modifier'))}",
-        "ja": f"重量: {fmt(info.get('weight'))}kg | 距離補正: {fmt(info.get('distance_modifier'))}",
+        "ko": f"무게: {fmt(info.get('weight'))}kg\n거리 보정: {fmt(info.get('distance_modifier'))}",
+        "en": f"Weight: {fmt(info.get('weight'))}kg\nDistance Modifier: {fmt(info.get('distance_modifier'))}",
+        "ja": f"重量: {fmt(info.get('weight'))}kg\n距離補正: {fmt(info.get('distance_modifier'))}",
     }[lang]
 
 
 def parse_container(info: dict, lang: str) -> str:
     return {
-        "ko": f"무게: {fmt(info.get('weight'))}kg | 용량: {fmt(info.get('capacity'))}칸 | 크기: {fmt(info.get('width'))}x{fmt(info.get('height'))}",
-        "en": f"Weight: {fmt(info.get('weight'))}kg | Capacity: {fmt(info.get('capacity'))} | Size: {fmt(info.get('width'))}x{fmt(info.get('height'))}",
-        "ja": f"重量: {fmt(info.get('weight'))}kg | 容量: {fmt(info.get('capacity'))} | サイズ: {fmt(info.get('width'))}x{fmt(info.get('height'))}",
+        "ko": f"무게: {fmt(info.get('weight'))}kg\n용량: {fmt(info.get('capacity'))}칸\n크기: {fmt(info.get('width'))}x{fmt(info.get('height'))}",
+        "en": f"Weight: {fmt(info.get('weight'))}kg\nCapacity: {fmt(info.get('capacity'))}\nSize: {fmt(info.get('width'))}x{fmt(info.get('height'))}",
+        "ja": f"重量: {fmt(info.get('weight'))}kg\n容量: {fmt(info.get('capacity'))}\nサイズ: {fmt(info.get('width'))}x{fmt(info.get('height'))}",
     }[lang]
 
 
@@ -238,9 +238,9 @@ def parse_armband(info: dict, lang: str) -> str:
 
 def parse_glasses(info: dict, lang: str) -> str:
     return {
-        "ko": f"방어 등급: {fmt(info.get('class_value'))} | 내구도: {fmt(info.get('durability'))} | 무게: {fmt(info.get('weight'))}kg\n실명 방어: {fmt(info.get('blindness_protection'))}",
-        "en": f"Class: {fmt(info.get('class_value'))} | Durability: {fmt(info.get('durability'))} | Weight: {fmt(info.get('weight'))}kg\nBlindness Protection: {fmt(info.get('blindness_protection'))}",
-        "ja": f"防護クラス: {fmt(info.get('class_value'))} | 耐久度: {fmt(info.get('durability'))} | 重量: {fmt(info.get('weight'))}kg\n盲目防御: {fmt(info.get('blindness_protection'))}",
+        "ko": f"방어 등급: {fmt(info.get('class_value'))}\n내구도: {fmt(info.get('durability'))}\n무게: {fmt(info.get('weight'))}kg\n실명 방어: {fmt(info.get('blindness_protection'))}",
+        "en": f"Class: {fmt(info.get('class_value'))}\nDurability: {fmt(info.get('durability'))}\nWeight: {fmt(info.get('weight'))}kg\nBlindness Protection: {fmt(info.get('blindness_protection'))}",
+        "ja": f"防護クラス: {fmt(info.get('class_value'))}\n耐久度: {fmt(info.get('durability'))}\n重量: {fmt(info.get('weight'))}kg\n盲目防御: {fmt(info.get('blindness_protection'))}",
     }[lang]
 
 
