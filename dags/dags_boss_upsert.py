@@ -210,9 +210,15 @@ with DAG(
         python_callable=remove_json_files,
     )
 
-    trigger_rag_embed = TriggerDagRunOperator(
+    trigger_rag_boss_embed = TriggerDagRunOperator(
         task_id="trigger_rag_boss_embed",
         trigger_dag_id="dags_rag_boss_embed",
+        wait_for_completion=False,  # True면 RAG 끝날때까지 기다림
+    )
+
+    trigger_rag_map_embed = TriggerDagRunOperator(
+        task_id="trigger_rag_map_embed",
+        trigger_dag_id="dags_rag_map_embed",
         wait_for_completion=False,  # True면 RAG 끝날때까지 기다림
     )
 
@@ -223,5 +229,6 @@ with DAG(
         >> upsert_boss_spawn_task
         >> update_pipe_eye_spawn_task
         >> remove_json_files_task
-        >> trigger_rag_embed
+        >> trigger_rag_boss_embed
+        >> trigger_rag_map_embed
     )
