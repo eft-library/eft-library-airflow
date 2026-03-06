@@ -120,11 +120,18 @@ def build_identifier_content(quest: dict, npc_name: str, lang: str) -> str:
 
     quest_name = get_lang_value(quest["name"], lang)
     objectives = parse_jsonb(quest.get("objectives")) or []
+    min_level = quest.get("min_player_level") or ""
+    kappa = yn(quest.get("kappa_required"), lang)
+    lightkeeper = yn(quest.get("lightkeeper_required"), lang)
 
     parts = [
         f"{lb['quest']}: {quest_name}",
         f"{lb['trader']}: {npc_name}",
     ]
+    if min_level:
+        parts.append(f"{lb['min_level']}: {min_level}")
+    parts.append(f"{lb['kappa']}: {kappa}")
+    parts.append(f"{lb['lightkeeper']}: {lightkeeper}")
 
     if objectives:
         lines = []
@@ -147,10 +154,6 @@ def build_main_content(quest: dict, npc_name: str, lang: str) -> str:
     nk = NAME_KEY[lang]
 
     quest_name = get_lang_value(quest["name"], lang)
-    min_level = quest.get("min_player_level") or ""
-    kappa = yn(quest.get("kappa_required"), lang)
-    lightkeeper = yn(quest.get("lightkeeper_required"), lang)
-
     task_reqs = parse_jsonb(quest.get("task_requirements")) or []
     task_next = parse_jsonb(quest.get("task_next")) or []
     objectives = parse_jsonb(quest.get("objectives")) or []
@@ -160,10 +163,6 @@ def build_main_content(quest: dict, npc_name: str, lang: str) -> str:
         f"{lb['quest']}: {quest_name}",
         f"{lb['trader']}: {npc_name}",
     ]
-    if min_level:
-        parts.append(f"{lb['min_level']}: {min_level}")
-    parts.append(f"{lb['kappa']}: {kappa}")
-    parts.append(f"{lb['lightkeeper']}: {lightkeeper}")
 
     if task_reqs:
         lines = [
