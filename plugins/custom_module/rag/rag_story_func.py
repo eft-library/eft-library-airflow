@@ -97,8 +97,10 @@ LABELS = {
 # ── content 빌더
 def build_main_content(row: dict, lang: str) -> str:
     lb = LABELS[lang]
-    name = get_lang_value(row["name"], lang)
-    return f"{lb['story']}: {name}"
+    name_ko = get_lang_value(row["name"], "ko")
+    name_en = get_lang_value(row["name"], "en")
+    name_ja = get_lang_value(row["name"], "ja")
+    return f"{lb['story']}: {name_ko} | {name_en} | {name_ja}"
 
 
 def build_objectives_content(row: dict, lang: str) -> str:

@@ -137,8 +137,20 @@ ITEM_NAME_KEY = {"ko": "name_ko", "en": "name_en", "ja": "name_ja"}
 def build_identifier_content(row: dict, lang: str) -> str:
     """이름만 → RDB 조회용 (chunk_type: identifier)"""
     label = LANG_LABELS[lang]
-    name = get_lang_value(row["name"], lang)
-    return f"{label['boss']}: {name}"
+
+    name_ko = get_lang_value(row["name"], "ko")
+    name_en = get_lang_value(row["name"], "en")
+    name_ja = get_lang_value(row["name"], "ja")
+
+    # 스폰 맵 (메타데이터에 있는 spawn_map 활용)
+    spawn_map = list(row.get("spawn_map") or [])
+    spawn_str = ", ".join(spawn_map) if spawn_map else ""
+
+    content = f"{label['boss']}: {name_ko} | {name_en} | {name_ja}"
+    if spawn_str:
+        content += f"\n{label['spawn']}: {spawn_str}"
+
+    return content
 
 
 def build_main_content(row: dict, lang: str) -> str:

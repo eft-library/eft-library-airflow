@@ -144,14 +144,10 @@ LANG_LABELS = {
 # ── content 빌더
 def build_identifier_content(map_row: dict, lang: str) -> str:
     label = LANG_LABELS[lang]
-    map_name = get_lang_value(map_row["name"], lang)
+    map_name_ko = get_lang_value(map_row["name"], "ko")
     map_name_en = get_lang_value(map_row["name"], "en")
-    keywords = {
-        "ko": f"{map_name} 맵 지도 정보 {map_name_en}",
-        "en": f"{map_name} map info {map_name_en}",
-        "ja": f"{map_name} マップ 情報 {map_name_en}",
-    }
-    return f"{keywords[lang]}\n{label['map']}: {map_name}"
+    map_name_ja = get_lang_value(map_row["name"], "ja")
+    return f"{label['map']}: {map_name_ko} | {map_name_en} | {map_name_ja}"
 
 
 def build_map_content(map_row: dict, sub_areas: list, bosses: list, lang: str) -> str:
@@ -485,7 +481,13 @@ async def _run(postgres_conn_id: str):
                         f"처리중: {map_id} | 구역 {len(sub_areas)}개 | 탈출구 {len(extractions)}개 | 트랜짓 {len(transits)}개 | 보스 {len(bosses)}개"
                     )
                     await process_map(
-                        cursor, client, map_row, sub_areas, extractions, transits, bosses
+                        cursor,
+                        client,
+                        map_row,
+                        sub_areas,
+                        extractions,
+                        transits,
+                        bosses,
                     )
 
         conn.commit()

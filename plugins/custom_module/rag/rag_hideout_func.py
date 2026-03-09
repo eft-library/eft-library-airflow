@@ -128,8 +128,10 @@ LABELS = {
 # ── content 빌더
 def build_identifier_content(master_name: dict, level_num: int, lang: str) -> str:
     lb = LABELS[lang]
-    hideout_name = get_lang_value(master_name, lang)
-    return f"{lb['hideout']}: {hideout_name}\n{lb['level']}: {level_num}"
+    hideout_name_ko = get_lang_value(master_name, "ko")
+    hideout_name_en = get_lang_value(master_name, "en")
+    hideout_name_ja = get_lang_value(master_name, "ja")
+    return f"{lb['hideout']}: {hideout_name_ko} | {hideout_name_en} | {hideout_name_ja}\n{lb['level']}: {level_num}"
 
 
 def build_main_content(

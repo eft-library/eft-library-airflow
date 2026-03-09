@@ -358,9 +358,11 @@ def format_duration(seconds: int, lang: str) -> str:
 
 # ── content 빌더
 def build_identifier_content(item_row: dict, lang: str) -> str:
-    name = get_lang_value(item_row["name"], lang)
+    name_ko = get_lang_value(item_row["name"], "ko")
+    name_en = get_lang_value(item_row["name"], "en")
+    name_ja = get_lang_value(item_row["name"], "ja")
     category = item_row.get("category") or ""
-    return f"{ITEM_LABEL[lang]}: {name}\n{CATEGORY_LABEL[lang]}: {category}"
+    return f"{ITEM_LABEL[lang]}: {name_ko} | {name_en} | {name_ja}\n{CATEGORY_LABEL[lang]}: {category}"
 
 
 def build_spec_content(item_row: dict, lang: str) -> str:
