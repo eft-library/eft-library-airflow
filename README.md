@@ -1,15 +1,15 @@
-- [EFT Library의 Airflow 운영 방식](#eft-library의-airflow-운영-방식)
+- [타르코프 도서관의 운영 방식](#타르코프-도서관의-운영-방식)
   * [주요 사항](#주요-사항)
   * [패키지 정보](#패키지-정보)
   * [구조](#구조)
   * [흐름](#흐름)
   * [개발 History](#개발-History)
 
-# EFT Library의 Airflow 운영 방식
+# 타르코프 도서관의 운영 방식
 
-EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
+타르코프 도서관은 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
 
-<img width="1923" height="1366" alt="last" src="https://github.com/user-attachments/assets/3a17adc2-e80b-4042-93fa-dda30bbaf947" />
+<img width="1314" height="1275" alt="arch_v4" src="https://github.com/user-attachments/assets/0392b55e-14b0-45d8-9aa6-4b83a9cd640f" />
 
 ## 주요 사항
 
@@ -18,6 +18,7 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
 - 수작업을 최소화하기 위해, Tarkov Dev에서 데이터를 가져온 후 **필요한 부분만 수정**하는 방식을 채택했습니다.
 - 데이터는 모두 영어이므로, **한글이나 일본어가 없는 경우 코드 내에서 변환**합니다. 예: 회복 아이템의 버프 및 디버프 정의
 - DB 데이터 덤프는 매일 00:20에 실행되며, 아이템 시세와 같은 데이터가 많은 테이블은 제외 후 진행합니다.
+- LLM에 사용할 Rag에 적재하는 Vector Data는 기존의 모든 Task가 끝난 후 실행 됩니다.
 
 
 ## 패키지 정보
@@ -38,8 +39,10 @@ EFT Library는 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하
   - **quest upsert** : 퀘스트 갱신
   - **trader upsert** : NPC 상인 정보 갱신
   - **search update** : 메인 페이지 검색 기능 데이터 갱신
- 
-<img width="2087" height="1088" alt="스크린샷 2026-01-29 오전 7 36 01" src="https://github.com/user-attachments/assets/2d1d087d-de8d-4a55-9b98-7ce06d4ee866" />
+  - **health check** : 서비스 Health Check
+  - **issue posts update** : 커뮤니티 인기글 데이터 갱신
+  - **rag data update** : LLM에 사용할 Vector 데이터 갱신
+  - **rag search update** : RAG 데이터 기준, 채팅창 자동완성 데이터 갱신
 
 ## 흐름
 
@@ -58,12 +61,9 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 **첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump와 System Health Check에서 사용하고 있습니다.
 
 ## 개발 History
-- [Airflow 구축하기 (Nas, Ubuntu)](https://github.com/eft-library/eft-library-history/blob/main/airflow/airflow.md)
-- [데이터 불일치](https://github.com/eft-library/eft-library-history/blob/main/airflow/different_data.md)
-- [다국어 데이터 매핑 및 처리량 증가 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/i18n_mapping.md)
-- [다국어 원천 데이터의 신뢰도 문제](https://github.com/eft-library/eft-library-history/blob/main/airflow/untranslated_data.md)
-- [Data Dump 자동화 설정](https://github.com/eft-library/eft-library-history/blob/main/airflow/data_dump.md)
-- [시스템 Health Check 구축](https://github.com/eft-library/eft-library-history/blob/main/airflow/health_check.md)
-- [아이템 상세 페이지 성능 튜닝 후기](https://github.com/eft-library/eft-library-history/blob/main/airflow/item_detail.md)
+
+여기에서 확인해 주세요!
+
+[velog 바로가기](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)
 
 
