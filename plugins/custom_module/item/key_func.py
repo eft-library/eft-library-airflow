@@ -19,17 +19,23 @@ def v2_key_process(item_en, item_ko, item_ja, en_key_map, ko_key_map, ja_key_map
     properties = item_en.get("properties") or {}
     uses = properties.get("uses")
 
-    info = json.dumps(
-        {
-            "use_map": {
-                "en": en_key_map.get(item_id),
-                "ko": ko_key_map.get(item_id),
-                "ja": ja_key_map.get(item_id),
-            },
-            "weight": weight,
-            "uses": uses,
-        }
-    )
+    use_map = {
+        "en": en_key_map.get(item_id),
+        "ko": ko_key_map.get(item_id),
+        "ja": ja_key_map.get(item_id),
+    }
+    # None 제거
+    use_map = {k: v for k, v in use_map.items() if v is not None}
+    base_data = {
+        "weight": weight,
+        "uses": uses,
+    }
+
+    # 값이 있을 때만 추가
+    if use_map:
+        base_data["use_map"] = use_map
+
+    info = json.dumps(base_data)
     image = item_en.get("gridImageLink")
     image_width = item_en.get("width")
     image_height = item_en.get("height")
