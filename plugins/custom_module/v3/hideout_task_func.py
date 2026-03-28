@@ -154,3 +154,39 @@ def v3_hideout_skill_require_process(item_en, item_ko, item_ja):
             )
 
     return rows
+
+
+def v3_hideout_trader_require_process(item_en):
+    rows = []
+
+    levels_en = item_en.get("levels", [])
+
+    for level_en in levels_en:
+        level_id = level_en.get("id")
+        trader_list = level_en.get("traderRequirements", [])
+
+        for trader in trader_list:
+            id = trader["id"]
+            trader_id = trader["trader"].get("id")
+            trader_level = trader["level"]
+
+            rows.append((id, level_id, trader_id, trader_level))
+    return rows
+
+
+def v3_hideout_station_require_process(item_en):
+    rows = []
+
+    levels_en = item_en.get("levels", [])
+
+    for level_en in levels_en:
+        level_id = level_en.get("id")
+        station_list = level_en.get("stationLevelRequirements", [])
+
+        for station in station_list:
+            id = station["id"]
+            station_level = station["level"]
+            require_master_id = station["station"].get("id")
+
+            rows.append((id, level_id, require_master_id, station_level))
+    return rows

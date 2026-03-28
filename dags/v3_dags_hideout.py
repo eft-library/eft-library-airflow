@@ -15,6 +15,8 @@ from custom_module.v3.hideout_task_func import (
     v3_hideout_master_process,
     v3_hideout_level_process,
     v3_hideout_skill_require_process,
+    v3_hideout_trader_require_process,
+    v3_hideout_station_require_process,
 )
 
 default_args = {
@@ -71,6 +73,8 @@ with DAG(
         master_rows = []
         level_rows = []
         skill_require_rows = []
+        trader_require_rows = []
+        station_require_rows = []
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
@@ -86,6 +90,8 @@ with DAG(
                     item_ja,
                 )
             )
+            trader_require_rows.extend(v3_hideout_trader_require_process(item_en))
+            station_require_rows.append(v3_hideout_station_require_process(item_en))
 
         if not master_rows:
             return
@@ -129,6 +135,26 @@ with DAG(
                 name_ja = EXCLUDED.name_ja
         """
 
+        trader_require_sql = """
+            insert into hideout_trader_require (id, hideout_level_id, trader_id, trader_level)
+            values %s
+            ON CONFLICT (id) DO UPDATE
+            SET
+                hideout_level_id = EXCLUDED.hideout_level_id,
+                trader_id = EXCLUDED.trader_id,
+                trader_level = EXCLUDED.trader_level
+        """
+
+        station_require_sql = """
+            insert into hideout_station_require (id, hideout_level_id, require_master_id, station_level)
+            values %s
+            ON CONFLICT (id) DO UPDATE
+            SET
+                hideout_level_id = EXCLUDED.hideout_level_id,
+                require_master_id = EXCLUDED.require_master_id,
+                station_level = EXCLUDED.station_level
+        """
+
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -153,6 +179,22 @@ with DAG(
                         cursor,
                         skill_require_sql,
                         skill_require_rows,
+                        page_size=500,
+                    )
+
+                if trader_require_rows:
+                    execute_values(
+                        cursor,
+                        trader_require_sql,
+                        trader_require_rows,
+                        page_size=500,
+                    )
+
+                if station_require_rows:
+                    execute_values(
+                        cursor,
+                        station_require_sql,
+                        station_require_rows,
                         page_size=500,
                     )
             conn.commit()
