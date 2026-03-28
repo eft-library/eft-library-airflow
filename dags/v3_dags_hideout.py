@@ -91,7 +91,7 @@ with DAG(
                 )
             )
             trader_require_rows.extend(v3_hideout_trader_require_process(item_en))
-            station_require_rows.append(v3_hideout_station_require_process(item_en))
+            station_require_rows.extend(v3_hideout_station_require_process(item_en))
 
         if not master_rows:
             return
