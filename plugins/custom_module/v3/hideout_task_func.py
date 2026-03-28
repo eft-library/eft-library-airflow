@@ -168,7 +168,7 @@ def v3_hideout_trader_require_process(item_en):
         for trader in trader_list:
             id = trader["id"]
             trader_id = trader["trader"].get("id")
-            trader_level = trader["level"]
+            trader_level = trader["value"]
 
             rows.append((id, level_id, trader_id, trader_level))
     return rows
