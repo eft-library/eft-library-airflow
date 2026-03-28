@@ -14,6 +14,7 @@ from custom_module.v3.hideout_task_func import (
     generate_hideout_graphql,
     v3_hideout_master_process,
     v3_hideout_level_process,
+    v3_hideout_skill_require_process,
 )
 
 default_args = {
@@ -27,7 +28,7 @@ ko_path = "/opt/airflow/tmp/v3_hideout_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_hideout_ja_list.json"
 
 with DAG(
-    dag_id="v3_hideout_boss",
+    dag_id="v3_dags_hideout",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
     schedule="10 0 * * *",
@@ -69,6 +70,7 @@ with DAG(
 
         master_rows = []
         level_rows = []
+        skill_require_rows = []
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
@@ -77,6 +79,13 @@ with DAG(
 
             master_rows.append(v3_hideout_master_process(item_en, item_ko, item_ja))
             level_rows.append(v3_hideout_level_process(item_en))
+            skill_require_rows.extend(
+                v3_hideout_skill_require_process(
+                    item_en,
+                    item_ko,
+                    item_ja,
+                )
+            )
 
         if not master_rows:
             return
@@ -101,6 +110,25 @@ with DAG(
                 construction_time = EXCLUDED.construction_time
         """
 
+        skill_require_sql = """
+            insert into hideout_skill_require (
+                id,
+                hideout_level_id,
+                require_level,
+                name_en,
+                name_ko,
+                name_ja
+            )
+            values %s
+            ON CONFLICT (id) DO UPDATE
+            SET
+                hideout_level_id = EXCLUDED.hideout_level_id,
+                require_level = EXCLUDED.require_level,
+                name_en = EXCLUDED.name_en,
+                name_ko = EXCLUDED.name_ko,
+                name_ja = EXCLUDED.name_ja
+        """
+
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -119,6 +147,14 @@ with DAG(
                         level_rows,
                         page_size=500,
                     )
+
+                if skill_require_rows:
+                    execute_values(
+                        cursor,
+                        skill_require_sql,
+                        skill_require_rows,
+                        page_size=500,
+                    )
             conn.commit()
 
     def remove_json_files():
@@ -133,3 +169,21 @@ with DAG(
                     print(f"File not found: {path}")
             except Exception as e:
                 print(f"Error deleting {path}: {e}")
+
+    fetch_hideout = PythonOperator(
+        task_id="fetch_hideout",
+        python_callable=fetch_hideout,
+    )
+
+    upsert_hideout_task = PythonOperator(
+        task_id="upsert_hideout",
+        python_callable=upsert_hideout,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
+    remove_json_files_task = PythonOperator(
+        task_id="remove_json_files",
+        python_callable=remove_json_files,
+    )
+
+    fetch_hideout >> upsert_hideout_task >> remove_json_files_task
