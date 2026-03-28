@@ -78,7 +78,7 @@ with DAG(
             item_ja = item_ja_dict[item_id]
 
             master_rows.append(v3_hideout_master_process(item_en, item_ko, item_ja))
-            level_rows.append(v3_hideout_level_process(item_en))
+            level_rows.extend(v3_hideout_level_process(item_en))
             skill_require_rows.extend(
                 v3_hideout_skill_require_process(
                     item_en,
