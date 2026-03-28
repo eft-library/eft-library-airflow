@@ -220,54 +220,56 @@ def v3_hideout_craft_process(station_en):
     craft_rows = []
     require_rows = []
 
+    crafts = station_en.get("crafts", [])
     levels = station_en.get("levels", [])
 
-    for level in levels:
-        hideout_level_id = level.get("id")
-        crafts = level.get("crafts", [])
+    level_id_map = {
+        level.get("level"): level.get("id")
+        for level in levels
+        if level.get("level") is not None and level.get("id")
+    }
 
-        for craft in crafts:
-            craft_id = craft.get("id")
-            if not craft_id:
+    for craft in crafts:
+        craft_id = craft.get("id")
+        if not craft_id:
+            continue
+
+        craft_level = craft.get("level")
+        hideout_level_id = level_id_map.get(craft_level)
+        if not hideout_level_id:
+            continue
+
+        duration = craft.get("duration", 0)
+
+        reward_item = craft.get("rewardItems", [{}])[0]
+        reward_item_id = reward_item.get("item", {}).get("id")
+        reward_quantity = reward_item.get("quantity", 0)
+
+        craft_rows.append(
+            (
+                craft_id,
+                hideout_level_id,
+                reward_item_id,
+                duration,
+                reward_quantity,
+            )
+        )
+
+        for idx, req in enumerate(craft.get("requiredItems", [])):
+            item_id = req.get("item", {}).get("id")
+            quantity = req.get("quantity", 0)
+
+            if not item_id:
                 continue
 
-            duration = craft.get("duration", 0)
-
-            reward_items = craft.get("rewardItems", [])
-            reward_item = reward_items[0] if reward_items else {}
-
-            reward_item_id = reward_item.get("item", {}).get("id")
-            reward_quantity = reward_item.get("quantity", 0)
-
-            craft_rows.append(
+            require_rows.append(
                 (
+                    f"{craft_id}-{idx}",
                     craft_id,
-                    hideout_level_id,
-                    reward_item_id,
-                    duration,
-                    reward_quantity,
+                    item_id,
+                    quantity,
                 )
             )
-
-            required_items = craft.get("requiredItems", [])
-
-            for idx, req in enumerate(required_items):
-                item_id = req.get("item", {}).get("id")
-                quantity = req.get("quantity", 0)
-
-                if not item_id:
-                    continue
-
-                require_id = f"{craft_id}-{idx}"
-
-                require_rows.append(
-                    (
-                        require_id,
-                        craft_id,
-                        item_id,
-                        quantity,
-                    )
-                )
 
     return craft_rows, require_rows
 
