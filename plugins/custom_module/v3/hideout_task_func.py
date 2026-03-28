@@ -4,7 +4,6 @@ def generate_hideout_graphql(lang: str) -> str:
   hideoutStations(lang: {lang}) {{
     id
     name
-    level
     levels {{
       id
       itemRequirements {{
@@ -41,6 +40,7 @@ def generate_hideout_graphql(lang: str) -> str:
           id
         }}
       }}
+      level
       bonuses {{
         type
         name
