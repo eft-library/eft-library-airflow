@@ -88,13 +88,12 @@ def v3_hideout_level_process(item_en):
     rows = []
 
     master_id = item_en.get("id")
-
     levels_en = item_en.get("levels", [])
 
     for level_en in levels_en:
         level_id = level_en.get("id")
-        level = item_en.get("level")
-        construction_time = item_en.get("constructionTime")
+        level = level_en.get("level")
+        construction_time = level_en.get("constructionTime")
 
         rows.append((level_id, master_id, level, construction_time))
 
