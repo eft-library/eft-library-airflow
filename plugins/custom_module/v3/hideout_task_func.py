@@ -85,11 +85,20 @@ def v3_hideout_master_process(item_en, item_ko, item_ja):
 
 
 def v3_hideout_level_process(item_en):
-    item_id = item_en.get("id")
-    level = item_en.get("level")
-    construction_time = item_en.get("constructionTime")
+    rows = []
 
-    return (item_id, level, construction_time)
+    master_id = item_en.get("id")
+
+    levels_en = item_en.get("levels", [])
+
+    for level_en in levels_en:
+        level_id = level_en.get("id")
+        level = item_en.get("level")
+        construction_time = item_en.get("constructionTime")
+
+        rows.append((level_id, master_id, level, construction_time))
+
+    return rows
 
 
 def v3_hideout_skill_require_process(item_en, item_ko, item_ja):

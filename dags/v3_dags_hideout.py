@@ -40,7 +40,7 @@ with DAG(
         item_list_en = get_graphql(generate_hideout_graphql("en"))
         item_list_ko = get_graphql(generate_hideout_graphql("ko"))
         item_list_ja = get_graphql(generate_hideout_graphql("ja"))
-        print(item_list_en)
+
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["hideoutStations"], f)
         with open(ko_path, "w") as f:
@@ -101,11 +101,11 @@ with DAG(
         """
 
         level_sql = """
-            insert into hideout_levels (id, hideout_id, hideout_level, construction_time)
+            insert into hideout_levels (id, master_id, hideout_level, construction_time)
             VALUES %s
             ON CONFLICT (id) DO UPDATE
             SET
-                hideout_id = EXCLUDED.hideout_id,
+                master_id = EXCLUDED.master_id,
                 hideout_level = EXCLUDED.hideout_level,
                 construction_time = EXCLUDED.construction_time
         """
