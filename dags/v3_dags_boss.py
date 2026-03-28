@@ -12,8 +12,10 @@ from psycopg2.extras import execute_values
 from custom_module.graphql_func import get_graphql
 from custom_module.v3.boss_task_func import (
     generate_boss_graphql,
+    generate_boss_spawn_graphql,
     v3_boss_process,
     v3_boss_item_process,
+    v3_boss_spawn_process,
 )
 
 default_args = {
@@ -25,6 +27,7 @@ default_args = {
 en_path = "/opt/airflow/tmp/v3_boss_en_list.json"
 ko_path = "/opt/airflow/tmp/v3_boss_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_boss_ja_list.json"
+spawn_path = "/opt/airflow/tmp/v3_boss_spawn_list.json"
 
 with DAG(
     dag_id="v3_dags_boss",
@@ -48,6 +51,14 @@ with DAG(
             json.dump(item_list_ja["data"]["bosses"], f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
+
+    def fetch_spawn():
+        spawn_data = get_graphql(generate_boss_spawn_graphql())
+
+        with open(spawn_path, "w") as f:
+            json.dump(spawn_data["data"]["maps"], f)
+
+        return {"spawn": spawn_path}
 
     def upsert_boss(postgres_conn_id):
         context = get_current_context()
@@ -134,12 +145,57 @@ with DAG(
 
             conn.commit()
 
-    def remove_json_files():
-        files = [
-            en_path,
-            ko_path,
-            ja_path,
+    def upsert_boss_spawn(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_spawn")
+
+        with open(item_paths["spawn"], "r") as f:
+            map_list = json.load(f)
+
+        boss_spawn_rows = []
+
+        for map_item in map_list:
+            boss_spawn_rows.extend(v3_boss_spawn_process(map_item))
+
+        if not boss_spawn_rows:
+            return
+
+        # 전체 한 번 더 dedupe
+        dedup_map = {}
+        for boss_id, map_id, spawn_chance in boss_spawn_rows:
+            key = (boss_id, map_id)
+            if key not in dedup_map:
+                dedup_map[key] = spawn_chance
+            else:
+                dedup_map[key] = max(dedup_map[key], spawn_chance)
+
+        boss_spawn_rows = [
+            (boss_id, map_id, spawn_chance)
+            for (boss_id, map_id), spawn_chance in dedup_map.items()
         ]
+
+        sql = """
+            insert into boss_spawn (boss_id, map_id, spawn_chance)
+            values %s
+            ON CONFLICT (boss_id, map_id) DO UPDATE
+            SET spawn_chance = EXCLUDED.spawn_chance
+        """
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                execute_values(
+                    cursor,
+                    sql,
+                    boss_spawn_rows,
+                    page_size=500,
+                )
+            conn.commit()
+
+    def remove_json_files():
+        files = [en_path, ko_path, ja_path, spawn_path]
 
         for path in files:
             try:
@@ -162,9 +218,26 @@ with DAG(
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
+    fetch_spawn_task = PythonOperator(
+        task_id="fetch_spawn",
+        python_callable=fetch_spawn,
+    )
+
+    upsert_boss_spawn_task = PythonOperator(
+        task_id="upsert_boss_spawn",
+        python_callable=upsert_boss_spawn,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
     )
 
-    fetch_data_task >> upsert_boss_task >> remove_json_files_task
+    (
+        fetch_data_task
+        >> upsert_boss_task
+        >> fetch_spawn_task
+        >> upsert_boss_spawn_task
+        >> remove_json_files_task
+    )

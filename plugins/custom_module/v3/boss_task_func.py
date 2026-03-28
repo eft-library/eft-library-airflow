@@ -21,6 +21,22 @@ def generate_boss_graphql(lang: str) -> str:
 """
 
 
+def generate_boss_spawn_graphql() -> str:
+    return f"""
+{{
+  maps {{
+    id
+    bosses {{
+      spawnChance
+      boss {{
+        id
+      }}
+    }}
+  }}
+}}
+"""
+
+
 def v3_boss_process(item_en, item_ko, item_ja):
     boss_id = item_en.get("id")
     name_en = item_en.get("name")
@@ -91,4 +107,34 @@ def v3_boss_item_process(item_en):
     return [
         (boss_id, item_id, quantity)
         for (boss_id, item_id), quantity in dedup_map.items()
+    ]
+
+
+def v3_boss_spawn_process(map_item):
+    map_id = map_item.get("id")
+    boss_list = map_item.get("bosses", [])
+
+    dedup_map = {}
+
+    for boss_info in boss_list:
+        boss = boss_info.get("boss")
+        if not boss:
+            continue
+
+        boss_id = boss.get("id")
+        if not boss_id or not map_id:
+            continue
+
+        spawn_chance = boss_info.get("spawnChance", 0)
+
+        key = (boss_id, map_id)
+
+        if key not in dedup_map:
+            dedup_map[key] = spawn_chance
+        else:
+            dedup_map[key] = max(dedup_map[key], spawn_chance)
+
+    return [
+        (boss_id, map_id, spawn_chance)
+        for (boss_id, map_id), spawn_chance in dedup_map.items()
     ]
