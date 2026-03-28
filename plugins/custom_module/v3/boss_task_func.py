@@ -61,3 +61,23 @@ def v3_boss_process(item_en, item_ko, item_ja):
         left_leg_hp,
         right_leg_hp,
     )
+
+
+def v3_boss_item_process(item_en):
+    boss_id = item_en.get("id")
+    equipment_list = item_en.get("equipment", [])
+
+    rows = []
+
+    for eq in equipment_list:
+        item = eq.get("item")
+        if not item:
+            continue
+
+        item_id = item.get("id")
+        quantity = eq.get("quantity", 1)
+
+        if item_id:
+            rows.append((boss_id, item_id, quantity))
+
+    return rows

@@ -9,7 +9,11 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 
 from custom_module.graphql_func import get_graphql
-from custom_module.v3.boss_task_func import generate_boss_graphql, v3_boss_process
+from custom_module.v3.boss_task_func import (
+    generate_boss_graphql,
+    v3_boss_process,
+    v3_boss_item_process,
+)
 
 default_args = {
     "owner": "airflow",
@@ -60,24 +64,29 @@ with DAG(
         item_ko_dict = {item["id"]: item for item in item_ko_list}
         item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
+        item_ids = sorted(set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict))
 
-        rows = [
-            v3_boss_process(
-                item_en_dict[item_id],
-                item_ko_dict[item_id],
-                item_ja_dict[item_id],
-            )
-            for item_id in item_ids
-        ]
+        boss_rows = []
+        boss_item_rows = []
 
-        if not rows:
+        for item_id in item_ids:
+            item_en = item_en_dict[item_id]
+            item_ko = item_ko_dict[item_id]
+            item_ja = item_ja_dict[item_id]
+
+            boss_rows.append(v3_boss_process(item_en, item_ko, item_ja))
+
+            boss_item_rows.extend(v3_boss_item_process(item_en))
+
+        if not boss_rows:
             return
 
-        sql = """
-            insert into bosses (id, name_en, name_ko, name_ja, image, normalized_name,
-                        health_total, head_hp, thorax_hp, stomach_hp, left_arm_hp, right_arm_hp, left_leg_hp,
-                        right_leg_hp)
+        boss_sql = """
+            insert into bosses (
+                id, name_en, name_ko, name_ja, image, normalized_name,
+                health_total, head_hp, thorax_hp, stomach_hp,
+                left_arm_hp, right_arm_hp, left_leg_hp, right_leg_hp
+            )
             values %s
             ON CONFLICT (id) DO UPDATE
             SET
@@ -96,16 +105,32 @@ with DAG(
                 right_leg_hp = EXCLUDED.right_leg_hp
         """
 
+        boss_item_sql = """
+            insert into boss_item (boss_id, item_id, quantity)
+            values %s
+            ON CONFLICT (boss_id, item_id) DO UPDATE
+            SET quantity = EXCLUDED.quantity
+        """
+
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 execute_values(
                     cursor,
-                    sql,
-                    rows,
+                    boss_sql,
+                    boss_rows,
                     page_size=500,
                 )
+
+                if boss_item_rows:
+                    execute_values(
+                        cursor,
+                        boss_item_sql,
+                        boss_item_rows,
+                        page_size=500,
+                    )
+
             conn.commit()
 
     fetch_data_task = PythonOperator(
