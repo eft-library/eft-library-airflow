@@ -17,9 +17,9 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/map_en_list.json"
-ko_path = "/opt/airflow/tmp/map_ko_list.json"
-ja_path = "/opt/airflow/tmp/map_ja_list.json"
+en_path = "/opt/airflow/tmp/v3_map_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_map_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_map_ja_list.json"
 
 with DAG(
     dag_id="v3_dags_map",
@@ -103,7 +103,7 @@ with DAG(
                 )
             conn.commit()
 
-    fetch_data = PythonOperator(
+    fetch_data_task = PythonOperator(
         task_id="fetch_map",
         python_callable=fetch_map,
     )
@@ -114,4 +114,4 @@ with DAG(
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
-    fetch_data >> upsert_map_task
+    fetch_data_task >> upsert_map_task
