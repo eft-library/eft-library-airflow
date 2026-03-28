@@ -67,17 +67,28 @@ def v3_boss_item_process(item_en):
     boss_id = item_en.get("id")
     equipment_list = item_en.get("equipment", [])
 
-    rows = []
+    dedup_map = {}
 
+    # 중복으로 와서 dedupe 추가 - 짜증 ㅜㅜ
     for eq in equipment_list:
         item = eq.get("item")
         if not item:
             continue
 
         item_id = item.get("id")
-        quantity = eq.get("quantity", 1)
+        if not item_id:
+            continue
 
-        if item_id:
-            rows.append((boss_id, item_id, quantity))
+        quantity = eq.get("quantity", eq.get("count", 1)) or 1
 
-    return rows
+        key = (boss_id, item_id)
+
+        if key not in dedup_map:
+            dedup_map[key] = quantity
+        else:
+            dedup_map[key] = max(dedup_map[key], quantity)
+
+    return [
+        (boss_id, item_id, quantity)
+        for (boss_id, item_id), quantity in dedup_map.items()
+    ]
