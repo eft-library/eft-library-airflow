@@ -1,5 +1,6 @@
 import json
 import pendulum
+import os
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
@@ -103,6 +104,23 @@ with DAG(
                 )
             conn.commit()
 
+    def remove_json_files():
+        files = [
+            en_path,
+            ko_path,
+            ja_path,
+        ]
+
+        for path in files:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"Deleted: {path}")
+                else:
+                    print(f"File not found: {path}")
+            except Exception as e:
+                print(f"Error deleting {path}: {e}")
+
     fetch_data_task = PythonOperator(
         task_id="fetch_map",
         python_callable=fetch_map,
@@ -114,4 +132,9 @@ with DAG(
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
-    fetch_data_task >> upsert_map_task
+    remove_json_files_task = PythonOperator(
+        task_id="remove_json_files",
+        python_callable=remove_json_files,
+    )
+
+    fetch_data_task >> upsert_map_task >> remove_json_files_task
