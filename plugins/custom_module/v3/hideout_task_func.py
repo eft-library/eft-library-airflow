@@ -190,3 +190,139 @@ def v3_hideout_station_require_process(item_en):
 
             rows.append((id, level_id, require_master_id, station_level))
     return rows
+
+
+def v3_hideout_item_require_process(item_en):
+    rows = []
+
+    levels_en = item_en.get("levels", [])
+
+    for level_en in levels_en:
+        level_id = level_en.get("id")
+        item_list = level_en.get("itemRequirements", [])
+
+        for item_en in item_list:
+            id = item_en.get("id")
+            quantity = item_en.get("quantity")
+            attributes = item_en.get("attributes", [])
+            first_attr = attributes[0] if attributes else {}
+
+            in_raid = str(first_attr.get("value", "false")).lower() == "true"
+
+            item_id = item_en.get("item", {}).get("id")
+
+            rows.append((id, level_id, item_id, quantity, in_raid))
+
+    return rows
+
+
+def v3_hideout_craft_process(station_en):
+    craft_rows = []
+    require_rows = []
+
+    levels = station_en.get("levels", [])
+
+    for level in levels:
+        hideout_level_id = level.get("id")
+        crafts = level.get("crafts", [])
+
+        for craft in crafts:
+            craft_id = craft.get("id")
+            if not craft_id:
+                continue
+
+            duration = craft.get("duration", 0)
+
+            reward_items = craft.get("rewardItems", [])
+            reward_item = reward_items[0] if reward_items else {}
+
+            reward_item_id = reward_item.get("item", {}).get("id")
+            reward_quantity = reward_item.get("quantity", 0)
+
+            craft_rows.append(
+                (
+                    craft_id,
+                    hideout_level_id,
+                    reward_item_id,
+                    duration,
+                    reward_quantity,
+                )
+            )
+
+            required_items = craft.get("requiredItems", [])
+
+            for idx, req in enumerate(required_items):
+                item_id = req.get("item", {}).get("id")
+                quantity = req.get("quantity", 0)
+
+                if not item_id:
+                    continue
+
+                require_id = f"{craft_id}-{idx}"
+
+                require_rows.append(
+                    (
+                        require_id,
+                        craft_id,
+                        item_id,
+                        quantity,
+                    )
+                )
+
+    return craft_rows, require_rows
+
+
+def v3_hideout_bonus_process(item_en, item_ko, item_ja):
+    rows = []
+
+    levels_en = item_en.get("levels", [])
+    levels_ko = item_ko.get("levels", [])
+    levels_ja = item_ja.get("levels", [])
+
+    level_ko_dict = {l["id"]: l for l in levels_ko if l.get("id")}
+    level_ja_dict = {l["id"]: l for l in levels_ja if l.get("id")}
+
+    for level_en in levels_en:
+        level_id = level_en.get("id")
+        if not level_id:
+            continue
+
+        level_ko = level_ko_dict.get(level_id, {})
+        level_ja = level_ja_dict.get(level_id, {})
+
+        bonus_en_list = level_en.get("bonuses", [])
+        bonus_ko_list = level_ko.get("bonuses", [])
+        bonus_ja_list = level_ja.get("bonuses", [])
+
+        for idx, bonus_en in enumerate(bonus_en_list):
+            bonus_ko = bonus_ko_list[idx] if idx < len(bonus_ko_list) else {}
+            bonus_ja = bonus_ja_list[idx] if idx < len(bonus_ja_list) else {}
+
+            bonus_type = bonus_en.get("type")
+            name_en = bonus_en.get("name")
+            name_ko = bonus_ko.get("name")
+            name_ja = bonus_ja.get("name")
+
+            skill_name_en = bonus_en.get("skillName")
+            skill_name_ko = bonus_ko.get("skillName")
+            skill_name_ja = bonus_ja.get("skillName")
+
+            bonus_value = bonus_en.get("value")
+            bonus_id = f"{level_id}-{idx}"
+
+            rows.append(
+                (
+                    bonus_id,
+                    level_id,
+                    bonus_type,
+                    name_en,
+                    name_ko,
+                    name_ja,
+                    skill_name_en,
+                    skill_name_ko,
+                    skill_name_ja,
+                    bonus_value,
+                )
+            )
+
+    return rows

@@ -17,6 +17,10 @@ from custom_module.v3.hideout_task_func import (
     v3_hideout_skill_require_process,
     v3_hideout_trader_require_process,
     v3_hideout_station_require_process,
+    v3_hideout_item_require_process,
+    v3_hideout_item_require_process,
+    v3_hideout_craft_process,
+    v3_hideout_bonus_process,
 )
 
 default_args = {
@@ -75,6 +79,10 @@ with DAG(
         skill_require_rows = []
         trader_require_rows = []
         station_require_rows = []
+        item_require_rows = []
+        craft_rows = []
+        require_rows = []
+        bonus_rows = []
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
@@ -92,6 +100,12 @@ with DAG(
             )
             trader_require_rows.extend(v3_hideout_trader_require_process(item_en))
             station_require_rows.extend(v3_hideout_station_require_process(item_en))
+            item_require_rows.extend(v3_hideout_item_require_process(item_en))
+
+            c_rows, r_rows = v3_hideout_craft_process(item_en)
+            craft_rows.extend(c_rows)
+            require_rows.extend(r_rows)
+            bonus_rows.extend(v3_hideout_bonus_process(item_en, item_ko, item_ja))
 
         if not master_rows:
             return
@@ -155,6 +169,76 @@ with DAG(
                 station_level = EXCLUDED.station_level
         """
 
+        item_require_sql = """
+            insert into hideout_item_require (id, hideout_level_id, item_id, quantity, in_raid)
+            values %s
+            ON CONFLICT (id) DO UPDATE
+            SET
+                hideout_level_id = EXCLUDED.hideout_level_id,
+                item_id = EXCLUDED.item_id,
+                quantity = EXCLUDED.quantity,
+                in_raid = EXCLUDED.in_raid
+        """
+
+        craft_sql = """
+            insert into hideout_crafts (
+                id,
+                hideout_level_id,
+                reward_item_id,
+                duration,
+                reward_quantity
+            )
+            values %s
+            on conflict (id) do update
+            set
+                hideout_level_id = excluded.hideout_level_id,
+                reward_item_id = excluded.reward_item_id,
+                duration = excluded.duration,
+                reward_quantity = excluded.reward_quantity
+        """
+
+        craft_require_item_sql = """
+            insert into hideout_craft_require_items (
+                id,
+                craft_id,
+                item_id,
+                quantity
+            )
+            values %s
+            on conflict (id) do update
+            set
+                craft_id = excluded.craft_id,
+                item_id = excluded.item_id,
+                quantity = excluded.quantity
+        """
+
+        bonus_sql = """
+            insert into hideout_bonus (
+                id,
+                hideout_level_id,
+                bonus_type,
+                name_en,
+                name_ko,
+                name_ja,
+                skill_name_en,
+                skill_name_ko,
+                skill_name_ja,
+                bonus_value
+            )
+            values %s
+            on conflict (id) do update
+            set
+                hideout_level_id = excluded.hideout_level_id,
+                bonus_type = excluded.bonus_type,
+                name_en = excluded.name_en,
+                name_ko = excluded.name_ko,
+                name_ja = excluded.name_ja,
+                skill_name_en = excluded.skill_name_en,
+                skill_name_ko = excluded.skill_name_ko,
+                skill_name_ja = excluded.skill_name_ja,
+                bonus_value = excluded.bonus_value
+        """
+
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -197,6 +281,25 @@ with DAG(
                         station_require_rows,
                         page_size=500,
                     )
+
+                if item_require_rows:
+                    execute_values(
+                        cursor,
+                        item_require_sql,
+                        item_require_rows,
+                        page_size=500,
+                    )
+
+                if craft_rows:
+                    execute_values(cursor, craft_sql, craft_rows, page_size=500)
+
+                if require_rows:
+                    execute_values(
+                        cursor, craft_require_item_sql, require_rows, page_size=500
+                    )
+                if bonus_rows:
+                    execute_values(cursor, bonus_sql, bonus_rows, page_size=500)
+
             conn.commit()
 
     def remove_json_files():
