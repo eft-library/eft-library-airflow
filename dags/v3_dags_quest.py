@@ -3,7 +3,6 @@ import os
 import pendulum
 
 from contextlib import closing
-from collections import Counter
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
@@ -109,13 +108,6 @@ with DAG(
             finish_reward_craft_unlock_rows.extend(
                 v3_quest_finish_reward_craft_unlocks_process(item_en)
             )
-
-        objective_ids = [row[0] for row in objective_rows]
-        duplicate_counts = Counter(objective_ids)
-        duplicated = {k: v for k, v in duplicate_counts.items() if v > 1}
-
-        if duplicated:
-            print("Duplicated objective_ids found:", duplicated)
 
         quest_sql = """
             INSERT INTO quests (
