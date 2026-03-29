@@ -146,6 +146,7 @@ def v3_quest_objectives_process(item_en):
 
     for obj in objectives:
         objective_id = obj.get("id")
+        description = obj.get("description")
 
         if not objective_id:
             continue
@@ -155,6 +156,7 @@ def v3_quest_objectives_process(item_en):
                 objective_id,
                 quest_id,
                 obj.get("type"),
+                description,
                 Json(obj),  # raw_data
             )
         )
