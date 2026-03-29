@@ -220,52 +220,58 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 # 1. quests upsert
-                execute_values(
-                    cursor,
-                    quest_sql,
-                    quest_rows,
-                    page_size=500,
+                execute_values(cursor, quest_sql, quest_rows, page_size=500)
+
+                # 2. 기존 child 삭제
+                cursor.execute(
+                    "DELETE FROM quest_objective_items WHERE objective_id IN (SELECT objective_id FROM quest_objectives WHERE quest_id = ANY(%s))",
+                    (item_ids,),
+                )
+                cursor.execute(
+                    "DELETE FROM quest_objective_maps WHERE objective_id IN (SELECT objective_id FROM quest_objectives WHERE quest_id = ANY(%s))",
+                    (item_ids,),
+                )
+                cursor.execute(
+                    "DELETE FROM quest_objectives WHERE quest_id = ANY(%s)",
+                    (item_ids,),
+                )
+                cursor.execute(
+                    "DELETE FROM quest_relations WHERE quest_id = ANY(%s)",
+                    (item_ids,),
+                )
+                cursor.execute(
+                    "DELETE FROM quest_finish_rewards WHERE quest_id = ANY(%s)",
+                    (item_ids,),
+                )
+                cursor.execute(
+                    "DELETE FROM quest_finish_reward_items WHERE quest_id = ANY(%s)",
+                    (item_ids,),
+                )
+                cursor.execute(
+                    "DELETE FROM quest_finish_reward_craft_unlocks WHERE quest_id = ANY(%s)",
+                    (item_ids,),
                 )
 
-                # 2. child table insert
+                # 3. child insert
                 if objective_rows:
-                    execute_values(
-                        cursor,
-                        objective_sql,
-                        objective_rows,
-                        page_size=500,
-                    )
+                    execute_values(cursor, objective_sql, objective_rows, page_size=500)
 
                 if objective_item_rows:
                     execute_values(
-                        cursor,
-                        objective_item_sql,
-                        objective_item_rows,
-                        page_size=500,
+                        cursor, objective_item_sql, objective_item_rows, page_size=500
                     )
 
                 if objective_map_rows:
                     execute_values(
-                        cursor,
-                        objective_map_sql,
-                        objective_map_rows,
-                        page_size=500,
+                        cursor, objective_map_sql, objective_map_rows, page_size=500
                     )
 
                 if relation_rows:
-                    execute_values(
-                        cursor,
-                        relation_sql,
-                        relation_rows,
-                        page_size=500,
-                    )
+                    execute_values(cursor, relation_sql, relation_rows, page_size=500)
 
                 if finish_reward_rows:
                     execute_values(
-                        cursor,
-                        finish_reward_sql,
-                        finish_reward_rows,
-                        page_size=500,
+                        cursor, finish_reward_sql, finish_reward_rows, page_size=500
                     )
 
                 if finish_reward_item_rows:

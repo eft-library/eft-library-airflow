@@ -209,16 +209,18 @@ def v3_quest_objective_items_process(item_en):
             )
 
         # 4) requiredKeys[]
-        for required_key in objective.get("requiredKeys") or []:
-            required_key_id = required_key.get("id")
-            if required_key_id:
-                rows.append(
-                    (
-                        objective_id,
-                        "requiredKey",
-                        required_key_id,
+        for required_keys_group in objective.get("requiredKeys") or []:
+            for required_key in required_keys_group or []:
+                required_key_id = required_key.get("id")
+
+                if required_key_id:
+                    rows.append(
+                        (
+                            objective_id,
+                            "requiredKey",
+                            required_key_id,
+                        )
                     )
-                )
 
     return rows
 
