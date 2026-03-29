@@ -30,7 +30,7 @@ with DAG(
     dag_id="v3_dags_trader",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="15 0 * * *",
+    schedule="7 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
