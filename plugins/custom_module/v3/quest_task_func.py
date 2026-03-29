@@ -90,13 +90,13 @@ def v3_quest_process(item_en, item_ko, item_ja):
     name_en = item_en.get("name")
     name_ko = item_ko.get("name")
     name_ja = item_ja.get("name")
-    trader_id = item_en["trader"].get("id")
+    trader_id = (item_en.get("trader") or {}).get("id")
     experience = item_en.get("experience")
-    delay_max = item_en.get("delay_max")
-    delay_min = item_en.get("delay_min")
-    kappa_required = item_en.get("kappa_required")
-    min_player_level = item_en.get("min_player_level")
-    wiki_url = item_en.get("wiki_url")
+    delay_max = item_en.get("availableDelaySecondsMax")
+    delay_min = item_en.get("availableDelaySecondsMin")
+    kappa_required = item_en.get("kappaRequired")
+    min_player_level = item_en.get("minPlayerLevel")
+    wiki_url = item_en.get("wikiLink")
 
     return (
         quest_id,
