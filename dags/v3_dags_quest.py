@@ -149,9 +149,8 @@ with DAG(
                 raw_data
             )
             VALUES %s
-            ON CONFLICT (objective_id) DO UPDATE
+            ON CONFLICT (objective_id, quest_id) DO UPDATE
             SET
-                quest_id = EXCLUDED.quest_id,
                 objective_type = EXCLUDED.objective_type,
                 raw_data = EXCLUDED.raw_data,
                 update_time = now()
