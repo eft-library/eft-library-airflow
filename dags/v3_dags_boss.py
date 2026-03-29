@@ -33,7 +33,7 @@ with DAG(
     dag_id="v3_dags_boss",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="10 0 * * *",
+    schedule="3 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
@@ -207,7 +207,7 @@ with DAG(
             except Exception as e:
                 print(f"Error deleting {path}: {e}")
 
-    fetch_data_task = PythonOperator(
+    fetch_boss_task = PythonOperator(
         task_id="fetch_boss",
         python_callable=fetch_boss,
     )
@@ -235,7 +235,7 @@ with DAG(
     )
 
     (
-        fetch_data_task
+        fetch_boss_task
         >> upsert_boss_task
         >> fetch_spawn_task
         >> upsert_boss_spawn_task

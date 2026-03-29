@@ -37,7 +37,7 @@ with DAG(
     dag_id="v3_dags_hideout",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="10 0 * * *",
+    schedule="5 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
 ) as dag:
@@ -315,7 +315,7 @@ with DAG(
             except Exception as e:
                 print(f"Error deleting {path}: {e}")
 
-    fetch_hideout = PythonOperator(
+    fetch_hideout_task = PythonOperator(
         task_id="fetch_hideout",
         python_callable=fetch_hideout,
     )
@@ -331,4 +331,4 @@ with DAG(
         python_callable=remove_json_files,
     )
 
-    fetch_hideout >> upsert_hideout_task >> remove_json_files_task
+    fetch_hideout_task >> upsert_hideout_task >> remove_json_files_task
