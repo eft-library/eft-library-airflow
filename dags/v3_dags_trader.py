@@ -8,7 +8,7 @@ from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from psycopg2.extras import execute_values
-from airflow.utils.trigger_rule import TriggerRule
+from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.graphql_func import get_graphql
 from custom_module.v3.trader_task_func import (

@@ -333,22 +333,23 @@ def v3_quest_finish_reward_items_process(item_en):
     quest_id = item_en.get("id")
     finish_rewards = item_en.get("finishRewards") or {}
 
-    rows = []
+    item_map = {}  # item_id 기준 dedupe
 
     for reward in finish_rewards.get("items") or []:
         item_id = (reward.get("item") or {}).get("id")
         quantity = reward.get("quantity")
 
-        if item_id:
-            rows.append(
-                (
-                    quest_id,
-                    item_id,
-                    quantity,
-                )
-            )
+        if not item_id:
+            continue
 
-    return rows
+        # 마지막 값으로 overwrite
+        item_map[item_id] = (
+            quest_id,
+            item_id,
+            quantity,
+        )
+
+    return list(item_map.values())
 
 
 def v3_quest_finish_reward_craft_unlocks_process(item_en):
