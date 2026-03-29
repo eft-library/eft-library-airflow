@@ -8,6 +8,7 @@ from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
 from psycopg2.extras import execute_values
+from airflow.utils.trigger_rule import TriggerRule
 
 from custom_module.graphql_func import get_graphql
 from custom_module.v3.boss_task_func import (
@@ -232,6 +233,7 @@ with DAG(
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
+        trigger_rule=TriggerRule.ALL_DONE,
     )
 
     (
