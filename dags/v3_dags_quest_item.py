@@ -27,7 +27,7 @@ ko_path = "/opt/airflow/tmp/v3_quest_item_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_quest_item_ja_list.json"
 
 with DAG(
-    dag_id="v3_quest_item_map",
+    dag_id="v3_dags_quest_item",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
     schedule="13 0 * * *",
