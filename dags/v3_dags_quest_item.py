@@ -41,11 +41,11 @@ with DAG(
         item_list_ja = get_graphql(generate_quest_item_graphql("ja"))
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["maps"], f)
+            json.dump(item_list_en["data"]["questItems"], f)
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["maps"], f)
+            json.dump(item_list_ko["data"]["questItems"], f)
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["maps"], f)
+            json.dump(item_list_ja["data"]["questItems"], f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
