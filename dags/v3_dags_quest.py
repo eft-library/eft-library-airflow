@@ -84,13 +84,16 @@ with DAG(
             print("No quest data to process.")
             return
 
+
         quest_rows = []
         objective_rows = []
         objective_item_rows = []
         objective_required_key_rows = []
         objective_map_rows = []
-        requirement_rows = []
-        finish_reward_rows = []
+        relation_rows = []
+        skill_reward_rows = []
+        standing_reward_rows = []
+        offer_reward_rows = []
         finish_reward_item_rows = []
         finish_reward_craft_unlock_rows = []
 
@@ -102,18 +105,15 @@ with DAG(
             quest_rows.append(v3_quest_process(item_en, item_ko, item_ja))
             objective_rows.extend(v3_quest_objectives_process(item_en))
             objective_item_rows.extend(v3_quest_objective_items_process(item_en))
-            objective_required_key_rows.extend(
-                v3_quest_objective_required_keys_process(item_en)
-            )
+            objective_required_key_rows.extend(v3_quest_objective_required_keys_process(item_en))
             objective_map_rows.extend(v3_quest_objective_maps_process(item_en))
-            requirement_rows.extend(v3_quest_requirements_process(item_en))
-            finish_reward_rows.extend(v3_quest_finish_rewards_process(item_en))
-            finish_reward_item_rows.extend(
-                v3_quest_finish_reward_items_process(item_en)
-            )
-            finish_reward_craft_unlock_rows.extend(
-                v3_quest_finish_reward_craft_unlocks_process(item_en)
-            )
+            relation_rows.extend(v3_quest_relations_process(item_en))
+            skill, standing, offer = v3_quest_finish_rewards_process(item_en)
+            skill_reward_rows.extend(skill)
+            standing_reward_rows.extend(standing)
+            offer_reward_rows.extend(offer)
+            finish_reward_item_rows.extend(v3_quest_finish_reward_items_process(item_en))
+            finish_reward_craft_unlock_rows.extend(v3_quest_finish_reward_craft_unlocks_process(item_en))
 
         quest_sql = """
             INSERT INTO quests (
@@ -146,6 +146,7 @@ with DAG(
                 wiki_url = EXCLUDED.wiki_url,
                 update_time = now()
         """
+
 
         objective_sql = """
             INSERT INTO quest_objectives (
@@ -196,21 +197,43 @@ with DAG(
             ON CONFLICT (objective_id, map_id) DO NOTHING
         """
 
-        requirement_sql = """
-            INSERT INTO quest_requirements (
+        relation_sql = """
+            INSERT INTO quest_relations (
                 quest_id,
-                required_quest_id
+                related_quest_id,
+                relation_type
             )
             VALUES %s
-            ON CONFLICT (quest_id, required_quest_id) DO NOTHING
+            ON CONFLICT (quest_id, related_quest_id, relation_type) DO NOTHING
         """
 
-        finish_reward_sql = """
-            INSERT INTO quest_finish_rewards (
+        skill_reward_sql = """
+            INSERT INTO quest_finish_reward_skills (
                 quest_id,
-                reward_type,
-                target_id,
-                reward_value,
+                skill_name,
+                level,
+                raw_data
+            )
+            VALUES %s
+        """
+
+        standing_reward_sql = """
+            INSERT INTO quest_finish_reward_trader_standing (
+                quest_id,
+                trader_id,
+                standing,
+                raw_data
+            )
+            VALUES %s
+        """
+
+        offer_reward_sql = """
+            INSERT INTO quest_finish_reward_offer_unlock (
+                quest_id,
+                offer_id,
+                trader_id,
+                item_id,
+                level,
                 raw_data
             )
             VALUES %s
@@ -280,31 +303,24 @@ with DAG(
                         cursor, objective_map_sql, objective_map_rows, page_size=500
                     )
 
-                if requirement_rows:
-                    execute_values(
-                        cursor, requirement_sql, requirement_rows, page_size=500
-                    )
 
-                if finish_reward_rows:
-                    execute_values(
-                        cursor, finish_reward_sql, finish_reward_rows, page_size=500
-                    )
+                if relation_rows:
+                    execute_values(cursor, relation_sql, relation_rows, page_size=500)
+
+                if skill_reward_rows:
+                    execute_values(cursor, skill_reward_sql, skill_reward_rows, page_size=500)
+
+                if standing_reward_rows:
+                    execute_values(cursor, standing_reward_sql, standing_reward_rows, page_size=500)
+
+                if offer_reward_rows:
+                    execute_values(cursor, offer_reward_sql, offer_reward_rows, page_size=500)
 
                 if finish_reward_item_rows:
-                    execute_values(
-                        cursor,
-                        finish_reward_item_sql,
-                        finish_reward_item_rows,
-                        page_size=500,
-                    )
+                    execute_values(cursor, finish_reward_item_sql, finish_reward_item_rows, page_size=500)
 
                 if finish_reward_craft_unlock_rows:
-                    execute_values(
-                        cursor,
-                        finish_reward_craft_unlock_sql,
-                        finish_reward_craft_unlock_rows,
-                        page_size=500,
-                    )
+                    execute_values(cursor, finish_reward_craft_unlock_sql, finish_reward_craft_unlock_rows, page_size=500)
 
             conn.commit()
 

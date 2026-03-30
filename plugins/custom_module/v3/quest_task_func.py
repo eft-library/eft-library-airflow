@@ -108,50 +108,50 @@ def generate_quest_graphql(lang: str) -> str:
 
 
 def v3_quest_objectives_process(item_en):
-    quest_id = item_en.get("id")
-    objectives = item_en.get("objectives") or []
-    rows = []
-    for idx, obj in enumerate(objectives):
-        objective_id = obj.get("id")
-        if not objective_id:
-            continue
-        rows.append(
-            (
-                objective_id,
-                quest_id,
-                obj.get("type"),
-                obj.get("description"),
-                obj.get("count"),
-                obj.get("foundInRaid"),
-                Json(obj),
-            )
-        )
-    return rows
+  quest_id = item_en.get("id")
+  objectives = item_en.get("objectives") or []
+  rows = []
+  for obj in objectives:
+    objective_id = obj.get("id")
+    if not objective_id:
+      continue
+    rows.append(
+      (
+        objective_id,
+        quest_id,
+        obj.get("type"),
+        obj.get("description"),
+        obj.get("count"),
+        obj.get("foundInRaid"),
+        Json(obj),
+      )
+    )
+  return rows
 
 
 def v3_quest_objective_items_process(item_en):
-    objectives = item_en.get("objectives") or []
-    rows = []
-    for obj in objectives:
-        objective_id = obj.get("id")
-        if not objective_id:
-            continue
-        # questItem
-        quest_item = obj.get("questItem") or {}
-        quest_item_id = quest_item.get("id")
-        if quest_item_id:
-            rows.append((objective_id, quest_item_id, "questItem"))
-        # items[]
-        for item in obj.get("items") or []:
-            item_id = item.get("id")
-            if item_id:
-                rows.append((objective_id, item_id, "item"))
-        # markerItem
-        marker_item = obj.get("markerItem") or {}
-        marker_item_id = marker_item.get("id")
-        if marker_item_id:
-            rows.append((objective_id, marker_item_id, "markerItem"))
-    return rows
+  objectives = item_en.get("objectives") or []
+  rows = []
+  for obj in objectives:
+    objective_id = obj.get("id")
+    if not objective_id:
+      continue
+    # questItem
+    quest_item = obj.get("questItem") or {}
+    quest_item_id = quest_item.get("id")
+    if quest_item_id:
+      rows.append((objective_id, quest_item_id, "questItem"))
+    # items[]
+    for item in obj.get("items") or []:
+      item_id = item.get("id")
+      if item_id:
+        rows.append((objective_id, item_id, "item"))
+    # markerItem
+    marker_item = obj.get("markerItem") or {}
+    marker_item_id = marker_item.get("id")
+    if marker_item_id:
+      rows.append((objective_id, marker_item_id, "markerItem"))
+  return rows
 
 
 def v3_quest_objective_required_keys_process(item_en):
@@ -172,17 +172,17 @@ def v3_quest_objective_required_keys_process(item_en):
 
 
 def v3_quest_objective_maps_process(item_en):
-    objectives = item_en.get("objectives") or []
-    rows = []
-    for obj in objectives:
-        objective_id = obj.get("id")
-        if not objective_id:
-            continue
-        for idx, map_data in enumerate(obj.get("maps") or []):
-            map_id = map_data.get("id")
-            if map_id:
-                rows.append((objective_id, map_id))
-    return rows
+  objectives = item_en.get("objectives") or []
+  rows = []
+  for obj in objectives:
+    objective_id = obj.get("id")
+    if not objective_id:
+      continue
+    for map_data in obj.get("maps") or []:
+      map_id = map_data.get("id")
+      if map_id:
+        rows.append((objective_id, map_id))
+  return rows
 
 
 def v3_quest_requirements_process(item_en):
@@ -228,82 +228,41 @@ def v3_quest_process(item_en, item_ko, item_ja):
 
 
 def v3_quest_relations_process(item_en):
-    quest_id = item_en.get("id")
-    task_requirements = item_en.get("taskRequirements") or []
-
-    rows = []
-
-    for relation in task_requirements:
-        required_task = relation.get("task") or {}
-        related_quest_id = required_task.get("id")
-
-        if related_quest_id:
-            rows.append(
-                (
-                    quest_id,
-                    related_quest_id,
-                    "require",
-                )
-            )
-
-    return rows
+  quest_id = item_en.get("id")
+  task_requirements = item_en.get("taskRequirements") or []
+  rows = []
+  for relation in task_requirements:
+    required_task = relation.get("task") or {}
+    related_quest_id = required_task.get("id")
+    if related_quest_id:
+      rows.append((quest_id, related_quest_id, "require"))
+  return rows
 
 
 def v3_quest_finish_rewards_process(item_en):
-    quest_id = item_en.get("id")
-    finish_rewards = item_en.get("finishRewards") or {}
-
-    rows = []
-
-    # 1) skillLevelReward
-    for reward in finish_rewards.get("skillLevelReward") or []:
-        skill_name = reward.get("name")
-        level = reward.get("level")
-
-        if skill_name:
-            rows.append(
-                (
-                    quest_id,
-                    "skill_level",
-                    skill_name,
-                    level,
-                    Json(reward),
-                )
-            )
-
-    # 2) traderStanding
-    for reward in finish_rewards.get("traderStanding") or []:
-        trader_id = (reward.get("trader") or {}).get("id")
-        standing = reward.get("standing")
-
-        if trader_id:
-            rows.append(
-                (
-                    quest_id,
-                    "trader_standing",
-                    trader_id,
-                    standing,
-                    Json(reward),
-                )
-            )
-
-    # 3) offerUnlock
-    for reward in finish_rewards.get("offerUnlock") or []:
-        offer_id = reward.get("id")
-        level = reward.get("level")
-
-        if offer_id:
-            rows.append(
-                (
-                    quest_id,
-                    "offer_unlock",
-                    offer_id,
-                    level,
-                    Json(reward),
-                )
-            )
-
-    return rows
+  quest_id = item_en.get("id")
+  finish_rewards = item_en.get("finishRewards") or {}
+  skill_rows = []
+  standing_rows = []
+  offer_rows = []
+  for reward in finish_rewards.get("skillLevelReward") or []:
+    skill_name = reward.get("name")
+    level = reward.get("level")
+    if skill_name:
+      skill_rows.append((quest_id, skill_name, level, Json(reward)))
+  for reward in finish_rewards.get("traderStanding") or []:
+    trader_id = (reward.get("trader") or {}).get("id")
+    standing = reward.get("standing")
+    if trader_id:
+      standing_rows.append((quest_id, trader_id, standing, Json(reward)))
+  for reward in finish_rewards.get("offerUnlock") or []:
+    offer_id = reward.get("id")
+    trader_id = (reward.get("trader") or {}).get("id")
+    item_id = (reward.get("item") or {}).get("id")
+    level = reward.get("level")
+    if offer_id:
+      offer_rows.append((quest_id, offer_id, trader_id, item_id, level, Json(reward)))
+  return skill_rows, standing_rows, offer_rows
 
 
 def v3_quest_finish_reward_items_process(item_en):
