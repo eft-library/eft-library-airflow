@@ -216,8 +216,7 @@ with DAG(
                 name_en,
                 name_ko,
                 name_ja,
-                skill_level,
-                raw_data
+                skill_level
             )
             VALUES %s
         """
