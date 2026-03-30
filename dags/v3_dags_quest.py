@@ -159,7 +159,7 @@ with DAG(
                 raw_data
             )
             VALUES %s
-            ON CONFLICT (objective_id) DO UPDATE
+            ON CONFLICT (objective_id, quest_id) DO UPDATE
             SET
                 type = EXCLUDED.type,
                 description_en = EXCLUDED.description_en,
