@@ -90,7 +90,7 @@ with DAG(
                 continue
             eff = get_efficiency(item.get("name"))
             if eff and len(eff) == 6:
-                ammo_efficiency_rows.append((iid, "default", *eff))
+                ammo_efficiency_rows.append((iid, *eff))
         # items
         item_rows = [
             v3_item_row_process(item_en_dict[iid], item_ko_dict[iid], item_ja_dict[iid])
@@ -206,9 +206,9 @@ with DAG(
                     cur,
                     """
                     insert into ammo_efficiency (
-                        ammo_item_id, target_name, value_1, value_2, value_3, value_4, value_5, value_6
+                        ammo_item_id, value_1, value_2, value_3, value_4, value_5, value_6
                     ) values %s
-                    on conflict (ammo_item_id, target_name) do update set
+                    on conflict (ammo_item_id) do update set
                         value_1=excluded.value_1,
                         value_2=excluded.value_2,
                         value_3=excluded.value_3,
