@@ -82,11 +82,13 @@ with DAG(
             print("No quest data to process.")
             return
 
+
         quest_rows = []
         objective_rows = []
         objective_item_rows = []
+        objective_required_key_rows = []
         objective_map_rows = []
-        relation_rows = []
+        requirement_rows = []
         finish_reward_rows = []
         finish_reward_item_rows = []
         finish_reward_craft_unlock_rows = []
@@ -99,15 +101,13 @@ with DAG(
             quest_rows.append(v3_quest_process(item_en, item_ko, item_ja))
             objective_rows.extend(v3_quest_objectives_process(item_en))
             objective_item_rows.extend(v3_quest_objective_items_process(item_en))
+            objective_required_key_rows.extend(v3_quest_objective_required_keys_process(item_en))
             objective_map_rows.extend(v3_quest_objective_maps_process(item_en))
-            relation_rows.extend(v3_quest_relations_process(item_en))
+            requirement_rows.extend(v3_quest_requirements_process(item_en))
             finish_reward_rows.extend(v3_quest_finish_rewards_process(item_en))
-            finish_reward_item_rows.extend(
-                v3_quest_finish_reward_items_process(item_en)
-            )
-            finish_reward_craft_unlock_rows.extend(
-                v3_quest_finish_reward_craft_unlocks_process(item_en)
-            )
+            finish_reward_item_rows.extend(v3_quest_finish_reward_items_process(item_en))
+            finish_reward_craft_unlock_rows.extend(v3_quest_finish_reward_craft_unlocks_process(item_en))
+
 
         quest_sql = """
             INSERT INTO quests (
@@ -145,45 +145,63 @@ with DAG(
             INSERT INTO quest_objectives (
                 objective_id,
                 quest_id,
-                objective_type,
+                type,
                 description_en,
+                count,
+                found_in_raid,
+                sort_order,
                 raw_data
             )
             VALUES %s
-            ON CONFLICT (objective_id, quest_id) DO UPDATE
+            ON CONFLICT (objective_id) DO UPDATE
             SET
-                objective_type = EXCLUDED.objective_type,
+                type = EXCLUDED.type,
                 description_en = EXCLUDED.description_en,
+                count = EXCLUDED.count,
+                found_in_raid = EXCLUDED.found_in_raid,
+                sort_order = EXCLUDED.sort_order,
                 raw_data = EXCLUDED.raw_data
         """
 
         objective_item_sql = """
             INSERT INTO quest_objective_items (
                 objective_id,
+                item_id,
                 item_type,
-                item_id
+                sort_order
             )
             VALUES %s
-            ON CONFLICT (objective_id, item_type, item_id) DO NOTHING
+            ON CONFLICT (objective_id, item_id, item_type) DO NOTHING
+        """
+
+        objective_required_key_sql = """
+            INSERT INTO quest_objective_required_keys (
+                objective_id,
+                key_group_index,
+                key_id
+            )
+            VALUES %s
+            ON CONFLICT (objective_id, key_group_index, key_id) DO NOTHING
         """
 
         objective_map_sql = """
             INSERT INTO quest_objective_maps (
                 objective_id,
-                map_id
+                map_id,
+                sort_order
             )
             VALUES %s
             ON CONFLICT (objective_id, map_id) DO NOTHING
         """
 
-        relation_sql = """
-            INSERT INTO quest_relations (
+        requirement_sql = """
+            INSERT INTO quest_requirements (
                 quest_id,
-                related_quest_id,
-                relation_type
+                required_quest_id,
+                sort_order
             )
             VALUES %s
-            ON CONFLICT (quest_id, related_quest_id, relation_type) DO NOTHING
+            ON CONFLICT (quest_id, required_quest_id) DO NOTHING
         """
 
         finish_reward_sql = """
@@ -192,6 +210,7 @@ with DAG(
                 reward_type,
                 target_id,
                 reward_value,
+                sort_order,
                 raw_data
             )
             VALUES %s
@@ -201,7 +220,8 @@ with DAG(
             INSERT INTO quest_finish_reward_items (
                 quest_id,
                 item_id,
-                quantity
+                quantity,
+                sort_order
             )
             VALUES %s
         """
@@ -210,7 +230,8 @@ with DAG(
             INSERT INTO quest_finish_reward_craft_unlocks (
                 quest_id,
                 craft_id,
-                station_level
+                station_level,
+                sort_order
             )
             VALUES %s
         """
@@ -219,18 +240,22 @@ with DAG(
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
+
                 # 하위 테이블 전체 비우기 (quests 제외)
-                cursor.execute("""
+                cursor.execute(
+                    """
                     truncate table
                         quest_objectives,
                         quest_objective_items,
+                        quest_objective_required_keys,
                         quest_objective_maps,
-                        quest_relations,
+                        quest_requirements,
                         quest_finish_rewards,
                         quest_finish_reward_items,
                         quest_finish_reward_craft_unlocks
                     restart identity cascade;
-                """)
+                """
+                )
 
                 # quests upsert
                 execute_values(cursor, quest_sql, quest_rows, page_size=500)
@@ -242,11 +267,14 @@ with DAG(
                 if objective_item_rows:
                     execute_values(cursor, objective_item_sql, objective_item_rows, page_size=500)
 
+                if objective_required_key_rows:
+                    execute_values(cursor, objective_required_key_sql, objective_required_key_rows, page_size=500)
+
                 if objective_map_rows:
                     execute_values(cursor, objective_map_sql, objective_map_rows, page_size=500)
 
-                if relation_rows:
-                    execute_values(cursor, relation_sql, relation_rows, page_size=500)
+                if requirement_rows:
+                    execute_values(cursor, requirement_sql, requirement_rows, page_size=500)
 
                 if finish_reward_rows:
                     execute_values(cursor, finish_reward_sql, finish_reward_rows, page_size=500)

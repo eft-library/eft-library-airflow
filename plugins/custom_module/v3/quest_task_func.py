@@ -1,4 +1,3 @@
-import json
 from psycopg2.extras import Json
 
 
@@ -108,6 +107,101 @@ def generate_quest_graphql(lang: str) -> str:
 """
 
 
+def v3_quest_objectives_process(item_en):
+    quest_id = item_en.get("id")
+    objectives = item_en.get("objectives") or []
+    rows = []
+    for idx, obj in enumerate(objectives):
+        objective_id = obj.get("id")
+        if not objective_id:
+            continue
+        rows.append(
+            (
+                objective_id,
+                quest_id,
+                obj.get("type"),
+                obj.get("description"),
+                obj.get("count"),
+                obj.get("foundInRaid"),
+                idx,
+                Json(obj),
+            )
+        )
+    return rows
+
+
+def v3_quest_objective_items_process(item_en):
+    objectives = item_en.get("objectives") or []
+    rows = []
+    for obj in objectives:
+        objective_id = obj.get("id")
+        if not objective_id:
+            continue
+        sort_order = 0
+        # questItem
+        quest_item = obj.get("questItem") or {}
+        quest_item_id = quest_item.get("id")
+        if quest_item_id:
+            rows.append((objective_id, quest_item_id, "questItem", sort_order))
+            sort_order += 1
+        # items[]
+        for item in obj.get("items") or []:
+            item_id = item.get("id")
+            if item_id:
+                rows.append((objective_id, item_id, "item", sort_order))
+                sort_order += 1
+        # markerItem
+        marker_item = obj.get("markerItem") or {}
+        marker_item_id = marker_item.get("id")
+        if marker_item_id:
+            rows.append((objective_id, marker_item_id, "markerItem", sort_order))
+            sort_order += 1
+    return rows
+
+
+def v3_quest_objective_required_keys_process(item_en):
+    objectives = item_en.get("objectives") or []
+    rows = []
+    for obj in objectives:
+        objective_id = obj.get("id")
+        if not objective_id:
+            continue
+        required_keys_groups = obj.get("requiredKeys")
+        if required_keys_groups:
+            for group_idx, group in enumerate(required_keys_groups):
+                for key in group or []:
+                    key_id = key.get("id")
+                    if key_id:
+                        rows.append((objective_id, group_idx, key_id))
+    return rows
+
+
+def v3_quest_objective_maps_process(item_en):
+    objectives = item_en.get("objectives") or []
+    rows = []
+    for obj in objectives:
+        objective_id = obj.get("id")
+        if not objective_id:
+            continue
+        for idx, map_data in enumerate(obj.get("maps") or []):
+            map_id = map_data.get("id")
+            if map_id:
+                rows.append((objective_id, map_id, idx))
+    return rows
+
+
+def v3_quest_requirements_process(item_en):
+    quest_id = item_en.get("id")
+    task_requirements = item_en.get("taskRequirements") or []
+    rows = []
+    for idx, relation in enumerate(task_requirements):
+        required_task = relation.get("task") or {}
+        required_quest_id = required_task.get("id")
+        if required_quest_id:
+            rows.append((quest_id, required_quest_id, idx))
+    return rows
+
+
 def v3_quest_process(item_en, item_ko, item_ja):
     quest_id = item_en.get("id")
     normalized_name = item_en.get("normalizedName")
@@ -136,120 +230,6 @@ def v3_quest_process(item_en, item_ko, item_ja):
         min_player_level,
         wiki_url,
     )
-
-
-def v3_quest_objectives_process(item_en):
-    quest_id = item_en.get("id")
-    objectives = item_en.get("objectives") or []
-
-    rows = []
-
-    for obj in objectives:
-        objective_id = obj.get("id")
-        description = obj.get("description")
-
-        if not objective_id:
-            continue
-
-        rows.append(
-            (
-                objective_id,
-                quest_id,
-                obj.get("type"),
-                description,
-                Json(obj),  # raw_data
-            )
-        )
-
-    return rows
-
-
-def v3_quest_objective_items_process(item_en):
-    objectives = item_en.get("objectives") or []
-    rows = []
-
-    for objective in objectives:
-        objective_id = objective.get("id")
-
-        if not objective_id:
-            continue
-
-        # 1) questItem
-        quest_item = objective.get("questItem") or {}
-        quest_item_id = quest_item.get("id")
-        if quest_item_id:
-            rows.append(
-                (
-                    objective_id,
-                    "questItem",
-                    quest_item_id,
-                )
-            )
-
-        # 2) items[]
-        for item in objective.get("items") or []:
-            item_id = item.get("id")
-            if item_id:
-                rows.append(
-                    (
-                        objective_id,
-                        "items",
-                        item_id,
-                    )
-                )
-
-        # 3) markerItem
-        marker_item = objective.get("markerItem") or {}
-        marker_item_id = marker_item.get("id")
-        if marker_item_id:
-            rows.append(
-                (
-                    objective_id,
-                    "markerItem",
-                    marker_item_id,
-                )
-            )
-
-        # 4) requiredKeys[]
-        required_keys_groups = objective.get("requiredKeys")
-
-        if required_keys_groups:
-            for group in required_keys_groups:
-                for required_key in group or []:
-                    required_key_id = required_key.get("id")
-
-                    if required_key_id:
-                        rows.append(
-                            (
-                                objective_id,
-                                "requiredKey",
-                                required_key_id,
-                            )
-                        )
-
-    return rows
-
-
-def v3_quest_objective_maps_process(item_en):
-    objectives = item_en.get("objectives") or []
-    rows = []
-
-    for objective in objectives:
-        objective_id = objective.get("id")
-        if not objective_id:
-            continue
-
-        for map_data in objective.get("maps") or []:
-            map_id = map_data.get("id")
-            if map_id:
-                rows.append(
-                    (
-                        objective_id,
-                        map_id,
-                    )
-                )
-
-    return rows
 
 
 def v3_quest_relations_process(item_en):

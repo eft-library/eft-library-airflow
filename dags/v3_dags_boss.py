@@ -62,17 +62,6 @@ with DAG(
         return {"spawn": spawn_path}
 
     def upsert_boss(postgres_conn_id):
-                # 하위 테이블 전체 비우기 (bosses 제외)
-                postgres_hook = PostgresHook(postgres_conn_id)
-                with closing(postgres_hook.get_conn()) as conn:
-                    with closing(conn.cursor()) as cursor:
-                        cursor.execute("""
-                            truncate table
-                                boss_item
-                            restart identity cascade;
-                        """)
-                        conn.commit()
-
         context = get_current_context()
         ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_boss")
@@ -140,6 +129,14 @@ with DAG(
         postgres_hook = PostgresHook(postgres_conn_id)
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    truncate table
+                        boss_item
+                    restart identity cascade;
+                """
+                )
+
                 execute_values(
                     cursor,
                     boss_sql,
