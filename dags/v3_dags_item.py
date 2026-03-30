@@ -458,7 +458,7 @@ with DAG(
     upsert_item_task = PythonOperator(
         task_id="upsert_item",
         python_callable=upsert_item,
-        op_args=["airflow_db"],
+        op_args=["platform_db"],
         trigger_rule=TriggerRule.ALL_SUCCESS,
     )
 
