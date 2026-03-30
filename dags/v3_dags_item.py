@@ -24,6 +24,7 @@ from custom_module.v3.item_task_func import (
     v3_protection_items_row,
     v3_consumable_items_and_effects,
     v3_usage_items_row,
+    get_efficiency,
 )
 
 default_args = {
@@ -77,6 +78,19 @@ with DAG(
 
         item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
 
+        # ammo_efficiency
+        ammo_efficiency_rows = []
+        for iid in item_ids:
+            item = item_en_dict[iid]
+            props = item.get("properties")
+            if not isinstance(props, dict):
+                continue
+            # ammo_items에 들어가는 아이템만 처리
+            if not ("damage" in props or "penetrationPower" in props):
+                continue
+            eff = get_efficiency(item.get("name"))
+            if eff and len(eff) == 6:
+                ammo_efficiency_rows.append((iid, "default", *eff))
         # items
         item_rows = [
             v3_item_row_process(item_en_dict[iid], item_ko_dict[iid], item_ja_dict[iid])
@@ -84,10 +98,13 @@ with DAG(
         ]
 
         # item_penalties
+        def has_any_penalty(row):
+            return any(x is not None for x in row[1:])
+
         penalties_rows = [
-            v3_item_penalties_row(item_en_dict[iid])
+            r
             for iid in item_ids
-            if v3_item_penalties_row(item_en_dict[iid])[1] is not None
+            if has_any_penalty(r := v3_item_penalties_row(item_en_dict[iid]))
         ]
 
         # weapon_items
@@ -179,9 +196,28 @@ with DAG(
                     height=excluded.height,
                     image=excluded.image,
                     updated_at=now()
-            """,
+                """,
                 item_rows,
             )
+
+            # ammo_efficiency
+            if ammo_efficiency_rows:
+                execute_values(
+                    cur,
+                    """
+                    insert into ammo_efficiency (
+                        ammo_item_id, target_name, value_1, value_2, value_3, value_4, value_5, value_6
+                    ) values %s
+                    on conflict (ammo_item_id, target_name) do update set
+                        value_1=excluded.value_1,
+                        value_2=excluded.value_2,
+                        value_3=excluded.value_3,
+                        value_4=excluded.value_4,
+                        value_5=excluded.value_5,
+                        value_6=excluded.value_6
+                    """,
+                    ammo_efficiency_rows,
+                )
 
             # item_penalties
             if penalties_rows:
