@@ -193,199 +193,217 @@ def v3_item_penalties_row(item_en):
 
 # weapon_items 테이블 row 변환
 def v3_weapon_items_row(item_en):
-  props = item_en.get("properties", {})
-  if not ("caliber" in props or "fireRate" in props):
-    return None
-  fire_modes = props.get("fireModes", [])
-  return (
-    item_en.get("id"),
-    props.get("caliber"),
-    props.get("fireRate"),
-    props.get("ergonomics"),
-    props.get("recoilHorizontal"),
-    props.get("recoilVertical"),
-    props.get("defaultAmmo", {}).get("id"),
-    "Single fire" in fire_modes,
-    "Full auto" in fire_modes,
-    "Burst fire" in fire_modes,
-    "Double action" in fire_modes,
-    "Double tap" in fire_modes,
-    "Semi-automatic" in fire_modes,
-  )
+    if not item_en:
+        return None
+    props = item_en.get("properties", {})
+    if not ("caliber" in props or "fireRate" in props):
+        return None
+    fire_modes = props.get("fireModes", [])
+    return (
+        item_en.get("id"),
+        props.get("caliber"),
+        props.get("fireRate"),
+        props.get("ergonomics"),
+        props.get("recoilHorizontal"),
+        props.get("recoilVertical"),
+        props.get("defaultAmmo", {}).get("id"),
+        "Single fire" in fire_modes,
+        "Full auto" in fire_modes,
+        "Burst fire" in fire_modes,
+        "Double action" in fire_modes,
+        "Double tap" in fire_modes,
+        "Semi-automatic" in fire_modes,
+    )
 
 # weapon_allowed_ammo 테이블 row 변환
 def v3_weapon_allowed_ammo_rows(item_en):
-  props = item_en.get("properties", {})
-  allowed = props.get("allowedAmmo", [])
-  return [
-    (item_en.get("id"), ammo["id"]) for ammo in allowed if "id" in ammo
-  ]
+    if not item_en:
+        return []
+    props = item_en.get("properties", {})
+    allowed = props.get("allowedAmmo", [])
+    return [
+        (item_en.get("id"), ammo["id"]) for ammo in allowed if "id" in ammo
+    ]
 
 # ammo_items 테이블 row 변환
 def v3_ammo_items_row(item_en):
-  props = item_en.get("properties", {})
-  if not ("damage" in props or "penetrationPower" in props):
-    return None
-  return (
-    item_en.get("id"),
-    props.get("damage"),
-    props.get("armorDamage"),
-    props.get("penetrationPower"),
-    props.get("recoilModifier"),
-    props.get("accuracyModifier"),
-    props.get("heavyBleedModifier"),
-    props.get("lightBleedModifier"),
-  )
+    if not item_en:
+        return None
+    props = item_en.get("properties", {})
+    if not ("damage" in props or "penetrationPower" in props):
+        return None
+    return (
+        item_en.get("id"),
+        props.get("damage"),
+        props.get("armorDamage"),
+        props.get("penetrationPower"),
+        props.get("recoilModifier"),
+        props.get("accuracyModifier"),
+        props.get("heavyBleedModifier"),
+        props.get("lightBleedModifier"),
+    )
 
 # melee_items 테이블 row 변환
 def v3_melee_items_row(item_en):
-  props = item_en.get("properties", {})
-  if not ("slashDamage" in props or "stabDamage" in props):
-    return None
-  return (
-    item_en.get("id"),
-    props.get("hitRadius"),
-    props.get("slashDamage"),
-    props.get("stabDamage"),
-  )
+    if not item_en:
+        return None
+    props = item_en.get("properties", {})
+    if not ("slashDamage" in props or "stabDamage" in props):
+        return None
+    return (
+        item_en.get("id"),
+        props.get("hitRadius"),
+        props.get("slashDamage"),
+        props.get("stabDamage"),
+    )
 
 # throwable_items 테이블 row 변환
 def v3_throwable_items_row(item_en):
-  props = item_en.get("properties", {})
-  if not ("type" in props or "fuse" in props):
-    return None
-  return (
-    item_en.get("id"),
-    props.get("type"),
-    props.get("fuse"),
-    props.get("fragments"),
-    props.get("contusionRadius"),
-    props.get("minExplosionDistance"),
-    props.get("maxExplosionDistance"),
-  )
+    if not item_en:
+        return None
+    props = item_en.get("properties", {})
+    if not ("type" in props or "fuse" in props):
+        return None
+    return (
+        item_en.get("id"),
+        props.get("type"),
+        props.get("fuse"),
+        props.get("fragments"),
+        props.get("contusionRadius"),
+        props.get("minExplosionDistance"),
+        props.get("maxExplosionDistance"),
+    )
 
 # storage_items, storage_grids 테이블 row 변환
 def v3_storage_items_and_grids(item_en):
-  props = item_en.get("properties", {})
-  # storage_type 구분
-  storage_type = None
-  if "capacity" in props and "grids" in props:
-    storage_type = "container"
-  elif "capacity" in props:
-    storage_type = "backpack"
-  if not storage_type:
-    return None, []
-  storage_row = (
-    item_en.get("id"),
-    storage_type,
-    props.get("capacity"),
-  )
-  grids = props.get("grids", [])
-  grid_rows = [
-    (item_en.get("id"), idx, grid.get("width"), grid.get("height"))
-    for idx, grid in enumerate(grids)
-  ]
-  return storage_row, grid_rows
+    if not item_en:
+        return None, []
+    props = item_en.get("properties", {})
+    # storage_type 구분
+    storage_type = None
+    if "capacity" in props and "grids" in props:
+        storage_type = "container"
+    elif "capacity" in props:
+        storage_type = "backpack"
+    if not storage_type:
+        return None, []
+    storage_row = (
+        item_en.get("id"),
+        storage_type,
+        props.get("capacity"),
+    )
+    grids = props.get("grids", [])
+    grid_rows = [
+        (item_en.get("id"), idx, grid.get("width"), grid.get("height"))
+        for idx, grid in enumerate(grids)
+    ]
+    return storage_row, grid_rows
 
 # protection_items 테이블 row 변환
 def v3_protection_items_row(item_en):
-  props = item_en.get("properties", {})
-  # armor/helmet/glasses 등
-  if not ("class" in props or "durability" in props):
-    return None
-  # zone 정보
-  zones = props.get("zones") or props.get("headZones") or []
-  zone_map = {
-    'HeadTop': 'is_head_top',
-    'HeadNape': 'is_head_nape',
-    'Ears': 'is_head_ears',
-    'Face': 'is_head_face',
-    'Jaws': 'is_head_jaws',
-    'Eyes': 'is_head_eyes',
-    'Throat': 'is_thorax_throat',
-    'Neck': 'is_thorax_neck',
-    'Thorax': 'is_thorax',
-    'UpperBack': 'is_upper_back',
-    'Stomach': 'is_stomach',
-    'LeftSide': 'is_left_side',
-    'RightSide': 'is_right_side',
-    'LowerBack': 'is_lower_back',
-    'Groin': 'is_groin',
-    'Buttocks': 'is_buttocks',
-    'LeftShoulder': 'is_left_shoulder',
-    'RightShoulder': 'is_right_shoulder',
-    'FrontPlate': 'is_front_plate',
-    'BackPlate': 'is_back_plate',
-    'LeftPlate': 'is_left_plate',
-    'RightPlate': 'is_right_plate',
-    'SidePlate': 'is_side_plate',
-  }
-  zone_flags = {k: False for k in zone_map.values()}
-  for z in zones:
-    if z in zone_map:
-      zone_flags[zone_map[z]] = True
-  return (
-    item_en.get("id"),
-    props.get("type") or props.get("protectionType"),
-    props.get("class"),
-    props.get("durability"),
-    props.get("material", {}).get("name") if isinstance(props.get("material"), dict) else props.get("material"),
-    props.get("ricochetY"),
-    props.get("deafening"),
-    props.get("blindnessProtection"),
-    *[zone_flags[k] for k in zone_map.values()]
-  )
+    if not item_en:
+        return None
+    props = item_en.get("properties", {})
+    # armor/helmet/glasses 등
+    if not ("class" in props or "durability" in props):
+        return None
+    # zone 정보
+    zones = props.get("zones") or props.get("headZones") or []
+    zone_map = {
+        'HeadTop': 'is_head_top',
+        'HeadNape': 'is_head_nape',
+        'Ears': 'is_head_ears',
+        'Face': 'is_head_face',
+        'Jaws': 'is_head_jaws',
+        'Eyes': 'is_head_eyes',
+        'Throat': 'is_thorax_throat',
+        'Neck': 'is_thorax_neck',
+        'Thorax': 'is_thorax',
+        'UpperBack': 'is_upper_back',
+        'Stomach': 'is_stomach',
+        'LeftSide': 'is_left_side',
+        'RightSide': 'is_right_side',
+        'LowerBack': 'is_lower_back',
+        'Groin': 'is_groin',
+        'Buttocks': 'is_buttocks',
+        'LeftShoulder': 'is_left_shoulder',
+        'RightShoulder': 'is_right_shoulder',
+        'FrontPlate': 'is_front_plate',
+        'BackPlate': 'is_back_plate',
+        'LeftPlate': 'is_left_plate',
+        'RightPlate': 'is_right_plate',
+        'SidePlate': 'is_side_plate',
+    }
+    zone_flags = {k: False for k in zone_map.values()}
+    for z in zones:
+        if z in zone_map:
+            zone_flags[zone_map[z]] = True
+    return (
+        item_en.get("id"),
+        props.get("type") or props.get("protectionType"),
+        props.get("class"),
+        props.get("durability"),
+        props.get("material", {}).get("name") if isinstance(props.get("material"), dict) else props.get("material"),
+        props.get("ricochetY"),
+        props.get("deafening"),
+        props.get("blindnessProtection"),
+        *[zone_flags[k] for k in zone_map.values()]
+    )
 
 # consumable_items, consumable_cures, consumable_stim_effects row 변환
 def v3_consumable_items_and_effects(item_en):
-  props = item_en.get("properties", {})
-  # consumable_type 구분
-  ctype = None
-  if "energy" in props and "hydration" in props:
-    ctype = "fooddrink"
-  elif "hitpoints" in props:
-    ctype = "medkit"
-  elif "painkillerDuration" in props:
-    ctype = "painkiller"
-  elif "stimEffects" in props:
-    ctype = "stim"
-  if not ctype:
-    return None, [], []
-  item_row = (
-    item_en.get("id"),
-    ctype,
-    props.get("energy"),
-    props.get("hydration"),
-    props.get("units"),
-    props.get("useTime"),
-    props.get("hitpoints"),
-    props.get("painkillerDuration"),
-    props.get("energyImpact"),
-    props.get("hydrationImpact"),
-  )
-  cures = props.get("cures", [])
-  cure_rows = [
-    (item_en.get("id"), cure) for cure in cures
-  ]
-  stim_effects = props.get("stimEffects", [])
-  stim_rows = [
-    (
-      item_en.get("id"), idx,
-      eff.get("type"), eff.get("value"), eff.get("delay"), eff.get("duration"), eff.get("skillName")
+    if not item_en:
+        return None, [], []
+    props = item_en.get("properties", {})
+    # consumable_type 구분
+    ctype = None
+    if "energy" in props and "hydration" in props:
+        ctype = "fooddrink"
+    elif "hitpoints" in props:
+        ctype = "medkit"
+    elif "painkillerDuration" in props:
+        ctype = "painkiller"
+    elif "stimEffects" in props:
+        ctype = "stim"
+    if not ctype:
+        return None, [], []
+    item_row = (
+        item_en.get("id"),
+        ctype,
+        props.get("energy"),
+        props.get("hydration"),
+        props.get("units"),
+        props.get("useTime"),
+        props.get("hitpoints"),
+        props.get("painkillerDuration"),
+        props.get("energyImpact"),
+        props.get("hydrationImpact"),
     )
-    for idx, eff in enumerate(stim_effects)
-  ]
-  return item_row, cure_rows, stim_rows
+    cures = props.get("cures", [])
+    cure_rows = [
+        (item_en.get("id"), cure) for cure in cures
+    ]
+    stim_effects = props.get("stimEffects", [])
+    stim_rows = [
+        (
+            item_en.get("id"), idx,
+            eff.get("type"), eff.get("value"), eff.get("delay"), eff.get("duration"), eff.get("skillName")
+        )
+        for idx, eff in enumerate(stim_effects)
+    ]
+    return item_row, cure_rows, stim_rows
 
 # usage_items 테이블 row 변환
 def v3_usage_items_row(item_en):
-  props = item_en.get("properties", {})
-  if "uses" not in props:
-    return None
-  return (
-    item_en.get("id"),
-    props.get("uses"),
-  )
+    if not item_en:
+        return None
+    props = item_en.get("properties", {})
+    if "uses" not in props:
+        return None
+    return (
+        item_en.get("id"),
+        props.get("uses"),
+    )
 
 # item 데이터 가공 함수: 언어별 데이터를 id로 매칭해 DB row로 변환
 def v3_item_row_process(item_en, item_ko, item_ja):
