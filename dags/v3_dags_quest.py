@@ -22,6 +22,8 @@ from custom_module.v3.quest_task_func import (
     v3_quest_finish_rewards_process,
     v3_quest_finish_reward_items_process,
     v3_quest_finish_reward_craft_unlocks_process,
+    v3_quest_objective_required_keys_process,
+    v3_quest_requirements_process,
 )
 
 default_args = {
@@ -82,7 +84,6 @@ with DAG(
             print("No quest data to process.")
             return
 
-
         quest_rows = []
         objective_rows = []
         objective_item_rows = []
@@ -101,13 +102,18 @@ with DAG(
             quest_rows.append(v3_quest_process(item_en, item_ko, item_ja))
             objective_rows.extend(v3_quest_objectives_process(item_en))
             objective_item_rows.extend(v3_quest_objective_items_process(item_en))
-            objective_required_key_rows.extend(v3_quest_objective_required_keys_process(item_en))
+            objective_required_key_rows.extend(
+                v3_quest_objective_required_keys_process(item_en)
+            )
             objective_map_rows.extend(v3_quest_objective_maps_process(item_en))
             requirement_rows.extend(v3_quest_requirements_process(item_en))
             finish_reward_rows.extend(v3_quest_finish_rewards_process(item_en))
-            finish_reward_item_rows.extend(v3_quest_finish_reward_items_process(item_en))
-            finish_reward_craft_unlock_rows.extend(v3_quest_finish_reward_craft_unlocks_process(item_en))
-
+            finish_reward_item_rows.extend(
+                v3_quest_finish_reward_items_process(item_en)
+            )
+            finish_reward_craft_unlock_rows.extend(
+                v3_quest_finish_reward_craft_unlocks_process(item_en)
+            )
 
         quest_sql = """
             INSERT INTO quests (
@@ -265,25 +271,48 @@ with DAG(
                     execute_values(cursor, objective_sql, objective_rows, page_size=500)
 
                 if objective_item_rows:
-                    execute_values(cursor, objective_item_sql, objective_item_rows, page_size=500)
+                    execute_values(
+                        cursor, objective_item_sql, objective_item_rows, page_size=500
+                    )
 
                 if objective_required_key_rows:
-                    execute_values(cursor, objective_required_key_sql, objective_required_key_rows, page_size=500)
+                    execute_values(
+                        cursor,
+                        objective_required_key_sql,
+                        objective_required_key_rows,
+                        page_size=500,
+                    )
 
                 if objective_map_rows:
-                    execute_values(cursor, objective_map_sql, objective_map_rows, page_size=500)
+                    execute_values(
+                        cursor, objective_map_sql, objective_map_rows, page_size=500
+                    )
 
                 if requirement_rows:
-                    execute_values(cursor, requirement_sql, requirement_rows, page_size=500)
+                    execute_values(
+                        cursor, requirement_sql, requirement_rows, page_size=500
+                    )
 
                 if finish_reward_rows:
-                    execute_values(cursor, finish_reward_sql, finish_reward_rows, page_size=500)
+                    execute_values(
+                        cursor, finish_reward_sql, finish_reward_rows, page_size=500
+                    )
 
                 if finish_reward_item_rows:
-                    execute_values(cursor, finish_reward_item_sql, finish_reward_item_rows, page_size=500)
+                    execute_values(
+                        cursor,
+                        finish_reward_item_sql,
+                        finish_reward_item_rows,
+                        page_size=500,
+                    )
 
                 if finish_reward_craft_unlock_rows:
-                    execute_values(cursor, finish_reward_craft_unlock_sql, finish_reward_craft_unlock_rows, page_size=500)
+                    execute_values(
+                        cursor,
+                        finish_reward_craft_unlock_sql,
+                        finish_reward_craft_unlock_rows,
+                        page_size=500,
+                    )
 
             conn.commit()
 
