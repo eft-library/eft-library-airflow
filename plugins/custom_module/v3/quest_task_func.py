@@ -123,7 +123,6 @@ def v3_quest_objectives_process(item_en):
                 obj.get("description"),
                 obj.get("count"),
                 obj.get("foundInRaid"),
-                idx,
                 Json(obj),
             )
         )
@@ -182,7 +181,7 @@ def v3_quest_objective_maps_process(item_en):
         for idx, map_data in enumerate(obj.get("maps") or []):
             map_id = map_data.get("id")
             if map_id:
-                rows.append((objective_id, map_id, idx))
+                rows.append((objective_id, map_id))
     return rows
 
 
@@ -194,7 +193,7 @@ def v3_quest_requirements_process(item_en):
         required_task = relation.get("task") or {}
         required_quest_id = required_task.get("id")
         if required_quest_id:
-            rows.append((quest_id, required_quest_id, idx))
+            rows.append((quest_id, required_quest_id))
     return rows
 
 
