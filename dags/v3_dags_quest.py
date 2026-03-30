@@ -270,7 +270,7 @@ with DAG(
                         quest_objective_items,
                         quest_objective_required_keys,
                         quest_objective_maps,
-                        quest_requirements,
+                        quest_relations,
                         quest_finish_rewards,
                         quest_finish_reward_items,
                         quest_finish_reward_craft_unlocks
