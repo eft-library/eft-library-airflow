@@ -183,15 +183,15 @@ def generate_item_graphql(lang: str) -> str:
 def v3_item_penalties_row(item_en):
     if not item_en:
         return (None, None, None, None, None)
-    props = item_en.get("properties", {})
-    print(props)
-    print(item_en)
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     return (
-        item_en.get("id"),
-        props.get("ergoPenalty"),
-        props.get("turnPenalty"),
-        props.get("speedPenalty"),
-        props.get("distanceModifier"),
+      item_en.get("id"),
+      props.get("ergoPenalty"),
+      props.get("turnPenalty"),
+      props.get("speedPenalty"),
+      props.get("distanceModifier"),
     )
 
 
@@ -199,24 +199,26 @@ def v3_item_penalties_row(item_en):
 def v3_weapon_items_row(item_en):
     if not item_en:
         return None
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     if not ("caliber" in props or "fireRate" in props):
-        return None
+      return None
     fire_modes = props.get("fireModes", [])
     return (
-        item_en.get("id"),
-        props.get("caliber"),
-        props.get("fireRate"),
-        props.get("ergonomics"),
-        props.get("recoilHorizontal"),
-        props.get("recoilVertical"),
-        props.get("defaultAmmo", {}).get("id"),
-        "Single fire" in fire_modes,
-        "Full auto" in fire_modes,
-        "Burst fire" in fire_modes,
-        "Double action" in fire_modes,
-        "Double tap" in fire_modes,
-        "Semi-automatic" in fire_modes,
+      item_en.get("id"),
+      props.get("caliber"),
+      props.get("fireRate"),
+      props.get("ergonomics"),
+      props.get("recoilHorizontal"),
+      props.get("recoilVertical"),
+      props.get("defaultAmmo", {}).get("id") if isinstance(props.get("defaultAmmo"), dict) else None,
+      "Single fire" in fire_modes,
+      "Full auto" in fire_modes,
+      "Burst fire" in fire_modes,
+      "Double action" in fire_modes,
+      "Double tap" in fire_modes,
+      "Semi-automatic" in fire_modes,
     )
 
 
@@ -224,7 +226,9 @@ def v3_weapon_items_row(item_en):
 def v3_weapon_allowed_ammo_rows(item_en):
     if not item_en:
         return []
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     allowed = props.get("allowedAmmo", [])
     return [(item_en.get("id"), ammo["id"]) for ammo in allowed if "id" in ammo]
 
@@ -233,18 +237,20 @@ def v3_weapon_allowed_ammo_rows(item_en):
 def v3_ammo_items_row(item_en):
     if not item_en:
         return None
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     if not ("damage" in props or "penetrationPower" in props):
-        return None
+      return None
     return (
-        item_en.get("id"),
-        props.get("damage"),
-        props.get("armorDamage"),
-        props.get("penetrationPower"),
-        props.get("recoilModifier"),
-        props.get("accuracyModifier"),
-        props.get("heavyBleedModifier"),
-        props.get("lightBleedModifier"),
+      item_en.get("id"),
+      props.get("damage"),
+      props.get("armorDamage"),
+      props.get("penetrationPower"),
+      props.get("recoilModifier"),
+      props.get("accuracyModifier"),
+      props.get("heavyBleedModifier"),
+      props.get("lightBleedModifier"),
     )
 
 
@@ -252,14 +258,16 @@ def v3_ammo_items_row(item_en):
 def v3_melee_items_row(item_en):
     if not item_en:
         return None
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     if not ("slashDamage" in props or "stabDamage" in props):
-        return None
+      return None
     return (
-        item_en.get("id"),
-        props.get("hitRadius"),
-        props.get("slashDamage"),
-        props.get("stabDamage"),
+      item_en.get("id"),
+      props.get("hitRadius"),
+      props.get("slashDamage"),
+      props.get("stabDamage"),
     )
 
 
@@ -267,17 +275,19 @@ def v3_melee_items_row(item_en):
 def v3_throwable_items_row(item_en):
     if not item_en:
         return None
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     if not ("type" in props or "fuse" in props):
-        return None
+      return None
     return (
-        item_en.get("id"),
-        props.get("type"),
-        props.get("fuse"),
-        props.get("fragments"),
-        props.get("contusionRadius"),
-        props.get("minExplosionDistance"),
-        props.get("maxExplosionDistance"),
+      item_en.get("id"),
+      props.get("type"),
+      props.get("fuse"),
+      props.get("fragments"),
+      props.get("contusionRadius"),
+      props.get("minExplosionDistance"),
+      props.get("maxExplosionDistance"),
     )
 
 
@@ -285,24 +295,26 @@ def v3_throwable_items_row(item_en):
 def v3_storage_items_and_grids(item_en):
     if not item_en:
         return None, []
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     # storage_type 구분
     storage_type = None
     if "capacity" in props and "grids" in props:
-        storage_type = "container"
+      storage_type = "container"
     elif "capacity" in props:
-        storage_type = "backpack"
+      storage_type = "backpack"
     if not storage_type:
-        return None, []
+      return None, []
     storage_row = (
-        item_en.get("id"),
-        storage_type,
-        props.get("capacity"),
+      item_en.get("id"),
+      storage_type,
+      props.get("capacity"),
     )
     grids = props.get("grids", [])
     grid_rows = [
-        (item_en.get("id"), idx, grid.get("width"), grid.get("height"))
-        for idx, grid in enumerate(grids)
+      (item_en.get("id"), idx, grid.get("width"), grid.get("height"))
+      for idx, grid in enumerate(grids)
     ]
     return storage_row, grid_rows
 
@@ -311,10 +323,12 @@ def v3_storage_items_and_grids(item_en):
 def v3_protection_items_row(item_en):
     if not item_en:
         return None
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     # armor/helmet/glasses 등
     if not ("class" in props or "durability" in props):
-        return None
+      return None
     # zone 정보
     zones = props.get("zones") or props.get("headZones") or []
     zone_map = {
@@ -367,45 +381,47 @@ def v3_protection_items_row(item_en):
 def v3_consumable_items_and_effects(item_en):
     if not item_en:
         return None, [], []
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     # consumable_type 구분
     ctype = None
     if "energy" in props and "hydration" in props:
-        ctype = "fooddrink"
+      ctype = "fooddrink"
     elif "hitpoints" in props:
-        ctype = "medkit"
+      ctype = "medkit"
     elif "painkillerDuration" in props:
-        ctype = "painkiller"
+      ctype = "painkiller"
     elif "stimEffects" in props:
-        ctype = "stim"
+      ctype = "stim"
     if not ctype:
-        return None, [], []
+      return None, [], []
     item_row = (
-        item_en.get("id"),
-        ctype,
-        props.get("energy"),
-        props.get("hydration"),
-        props.get("units"),
-        props.get("useTime"),
-        props.get("hitpoints"),
-        props.get("painkillerDuration"),
-        props.get("energyImpact"),
-        props.get("hydrationImpact"),
+      item_en.get("id"),
+      ctype,
+      props.get("energy"),
+      props.get("hydration"),
+      props.get("units"),
+      props.get("useTime"),
+      props.get("hitpoints"),
+      props.get("painkillerDuration"),
+      props.get("energyImpact"),
+      props.get("hydrationImpact"),
     )
     cures = props.get("cures", [])
     cure_rows = [(item_en.get("id"), cure) for cure in cures]
     stim_effects = props.get("stimEffects", [])
     stim_rows = [
-        (
-            item_en.get("id"),
-            idx,
-            eff.get("type"),
-            eff.get("value"),
-            eff.get("delay"),
-            eff.get("duration"),
-            eff.get("skillName"),
-        )
-        for idx, eff in enumerate(stim_effects)
+      (
+        item_en.get("id"),
+        idx,
+        eff.get("type"),
+        eff.get("value"),
+        eff.get("delay"),
+        eff.get("duration"),
+        eff.get("skillName"),
+      )
+      for idx, eff in enumerate(stim_effects)
     ]
     return item_row, cure_rows, stim_rows
 
@@ -414,12 +430,14 @@ def v3_consumable_items_and_effects(item_en):
 def v3_usage_items_row(item_en):
     if not item_en:
         return None
-    props = item_en.get("properties", {})
+    props = item_en.get("properties")
+    if not isinstance(props, dict):
+      props = {}
     if "uses" not in props:
-        return None
+      return None
     return (
-        item_en.get("id"),
-        props.get("uses"),
+      item_en.get("id"),
+      props.get("uses"),
     )
 
 
