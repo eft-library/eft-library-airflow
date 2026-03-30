@@ -178,11 +178,14 @@ def generate_item_graphql(lang: str) -> str:
   }}
 """
 
+
 # item_penalties 테이블 row 변환
 def v3_item_penalties_row(item_en):
     if not item_en:
         return (None, None, None, None, None)
     props = item_en.get("properties", {})
+    print(props)
+    print(item_en)
     return (
         item_en.get("id"),
         props.get("ergoPenalty"),
@@ -190,6 +193,7 @@ def v3_item_penalties_row(item_en):
         props.get("speedPenalty"),
         props.get("distanceModifier"),
     )
+
 
 # weapon_items 테이블 row 변환
 def v3_weapon_items_row(item_en):
@@ -215,15 +219,15 @@ def v3_weapon_items_row(item_en):
         "Semi-automatic" in fire_modes,
     )
 
+
 # weapon_allowed_ammo 테이블 row 변환
 def v3_weapon_allowed_ammo_rows(item_en):
     if not item_en:
         return []
     props = item_en.get("properties", {})
     allowed = props.get("allowedAmmo", [])
-    return [
-        (item_en.get("id"), ammo["id"]) for ammo in allowed if "id" in ammo
-    ]
+    return [(item_en.get("id"), ammo["id"]) for ammo in allowed if "id" in ammo]
+
 
 # ammo_items 테이블 row 변환
 def v3_ammo_items_row(item_en):
@@ -243,6 +247,7 @@ def v3_ammo_items_row(item_en):
         props.get("lightBleedModifier"),
     )
 
+
 # melee_items 테이블 row 변환
 def v3_melee_items_row(item_en):
     if not item_en:
@@ -256,6 +261,7 @@ def v3_melee_items_row(item_en):
         props.get("slashDamage"),
         props.get("stabDamage"),
     )
+
 
 # throwable_items 테이블 row 변환
 def v3_throwable_items_row(item_en):
@@ -273,6 +279,7 @@ def v3_throwable_items_row(item_en):
         props.get("minExplosionDistance"),
         props.get("maxExplosionDistance"),
     )
+
 
 # storage_items, storage_grids 테이블 row 변환
 def v3_storage_items_and_grids(item_en):
@@ -299,6 +306,7 @@ def v3_storage_items_and_grids(item_en):
     ]
     return storage_row, grid_rows
 
+
 # protection_items 테이블 row 변환
 def v3_protection_items_row(item_en):
     if not item_en:
@@ -310,29 +318,29 @@ def v3_protection_items_row(item_en):
     # zone 정보
     zones = props.get("zones") or props.get("headZones") or []
     zone_map = {
-        'HeadTop': 'is_head_top',
-        'HeadNape': 'is_head_nape',
-        'Ears': 'is_head_ears',
-        'Face': 'is_head_face',
-        'Jaws': 'is_head_jaws',
-        'Eyes': 'is_head_eyes',
-        'Throat': 'is_thorax_throat',
-        'Neck': 'is_thorax_neck',
-        'Thorax': 'is_thorax',
-        'UpperBack': 'is_upper_back',
-        'Stomach': 'is_stomach',
-        'LeftSide': 'is_left_side',
-        'RightSide': 'is_right_side',
-        'LowerBack': 'is_lower_back',
-        'Groin': 'is_groin',
-        'Buttocks': 'is_buttocks',
-        'LeftShoulder': 'is_left_shoulder',
-        'RightShoulder': 'is_right_shoulder',
-        'FrontPlate': 'is_front_plate',
-        'BackPlate': 'is_back_plate',
-        'LeftPlate': 'is_left_plate',
-        'RightPlate': 'is_right_plate',
-        'SidePlate': 'is_side_plate',
+        "HeadTop": "is_head_top",
+        "HeadNape": "is_head_nape",
+        "Ears": "is_head_ears",
+        "Face": "is_head_face",
+        "Jaws": "is_head_jaws",
+        "Eyes": "is_head_eyes",
+        "Throat": "is_thorax_throat",
+        "Neck": "is_thorax_neck",
+        "Thorax": "is_thorax",
+        "UpperBack": "is_upper_back",
+        "Stomach": "is_stomach",
+        "LeftSide": "is_left_side",
+        "RightSide": "is_right_side",
+        "LowerBack": "is_lower_back",
+        "Groin": "is_groin",
+        "Buttocks": "is_buttocks",
+        "LeftShoulder": "is_left_shoulder",
+        "RightShoulder": "is_right_shoulder",
+        "FrontPlate": "is_front_plate",
+        "BackPlate": "is_back_plate",
+        "LeftPlate": "is_left_plate",
+        "RightPlate": "is_right_plate",
+        "SidePlate": "is_side_plate",
     }
     zone_flags = {k: False for k in zone_map.values()}
     for z in zones:
@@ -343,12 +351,17 @@ def v3_protection_items_row(item_en):
         props.get("type") or props.get("protectionType"),
         props.get("class"),
         props.get("durability"),
-        props.get("material", {}).get("name") if isinstance(props.get("material"), dict) else props.get("material"),
+        (
+            props.get("material", {}).get("name")
+            if isinstance(props.get("material"), dict)
+            else props.get("material")
+        ),
         props.get("ricochetY"),
         props.get("deafening"),
         props.get("blindnessProtection"),
-        *[zone_flags[k] for k in zone_map.values()]
+        *[zone_flags[k] for k in zone_map.values()],
     )
+
 
 # consumable_items, consumable_cures, consumable_stim_effects row 변환
 def v3_consumable_items_and_effects(item_en):
@@ -380,18 +393,22 @@ def v3_consumable_items_and_effects(item_en):
         props.get("hydrationImpact"),
     )
     cures = props.get("cures", [])
-    cure_rows = [
-        (item_en.get("id"), cure) for cure in cures
-    ]
+    cure_rows = [(item_en.get("id"), cure) for cure in cures]
     stim_effects = props.get("stimEffects", [])
     stim_rows = [
         (
-            item_en.get("id"), idx,
-            eff.get("type"), eff.get("value"), eff.get("delay"), eff.get("duration"), eff.get("skillName")
+            item_en.get("id"),
+            idx,
+            eff.get("type"),
+            eff.get("value"),
+            eff.get("delay"),
+            eff.get("duration"),
+            eff.get("skillName"),
         )
         for idx, eff in enumerate(stim_effects)
     ]
     return item_row, cure_rows, stim_rows
+
 
 # usage_items 테이블 row 변환
 def v3_usage_items_row(item_en):
@@ -405,21 +422,22 @@ def v3_usage_items_row(item_en):
         props.get("uses"),
     )
 
+
 # item 데이터 가공 함수: 언어별 데이터를 id로 매칭해 DB row로 변환
 def v3_item_row_process(item_en, item_ko, item_ja):
-  # category 정보 추출
-  parent_category = item_en.get("category", {}).get("parent", {}).get("name")
-  category = item_en.get("category", {}).get("name")
-  return (
-    item_en.get("id"),
-    parent_category,
-    category,
-    item_en.get("name"),
-    item_ko.get("name"),
-    item_ja.get("name"),
-    item_en.get("normalizedName"),
-    item_en.get("weight"),
-    item_en.get("width"),
-    item_en.get("height"),
-    item_en.get("gridImageLink"),
-  )
+    # category 정보 추출
+    parent_category = item_en.get("category", {}).get("parent", {}).get("name")
+    category = item_en.get("category", {}).get("name")
+    return (
+        item_en.get("id"),
+        parent_category,
+        category,
+        item_en.get("name"),
+        item_ko.get("name"),
+        item_ja.get("name"),
+        item_en.get("normalizedName"),
+        item_en.get("weight"),
+        item_en.get("width"),
+        item_en.get("height"),
+        item_en.get("gridImageLink"),
+    )
