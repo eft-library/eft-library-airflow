@@ -62,6 +62,8 @@ def v3_item_price_row(item_en, game_mode, trader_name_map):
 
     item_id = item_en.get("id")
     sell_for = item_en.get("sellFor") or []
+    if not sell_for:
+        return None
     highest_trader_price = None
     highest_trader_id = None
     flea_market_price = None
@@ -109,9 +111,12 @@ def v3_item_trader_price_rows(item_en, game_mode, trader_name_map):
         return []
 
     item_id = item_en.get("id")
+    sell_for = item_en.get("sellFor") or []
+    if not sell_for:
+        return []
     rows = []
 
-    for sell in item_en.get("sellFor") or []:
+    for sell in sell_for:
         vendor = sell.get("vendor") or {}
         vendor_name = vendor.get("name")
         price = sell.get("priceRUB")
@@ -137,6 +142,9 @@ def v3_item_price_history_rows(item_en, game_mode):
         return []
 
     item_id = item_en.get("id")
+    sell_for = item_en.get("sellFor") or []
+    if not sell_for:
+        return []
     rows = []
 
     for price_info in item_en.get("historicalPrices") or []:
