@@ -109,7 +109,9 @@ with DAG(
             )
             objective_map_rows.extend(v3_quest_objective_maps_process(item_en))
             relation_rows.extend(v3_quest_relations_process(item_en))
-            skill, standing, offer = v3_quest_finish_rewards_process(item_en)
+            skill, standing, offer = v3_quest_finish_rewards_process(
+                item_en, item_ko, item_ja
+            )
             skill_reward_rows.extend(skill)
             standing_reward_rows.extend(standing)
             offer_reward_rows.extend(offer)
@@ -159,8 +161,7 @@ with DAG(
                 type,
                 description_en,
                 count,
-                found_in_raid,
-                raw_data
+                found_in_raid
             )
             VALUES %s
             ON CONFLICT (objective_id, quest_id) DO UPDATE
@@ -168,8 +169,7 @@ with DAG(
                 type = EXCLUDED.type,
                 description_en = EXCLUDED.description_en,
                 count = EXCLUDED.count,
-                found_in_raid = EXCLUDED.found_in_raid,
-                raw_data = EXCLUDED.raw_data
+                found_in_raid = EXCLUDED.found_in_raid
         """
 
         objective_item_sql = """
@@ -185,11 +185,10 @@ with DAG(
         objective_required_key_sql = """
             INSERT INTO quest_objective_required_keys (
                 objective_id,
-                key_group_index,
                 key_id
             )
             VALUES %s
-            ON CONFLICT (objective_id, key_group_index, key_id) DO NOTHING
+            ON CONFLICT (objective_id, key_id) DO NOTHING
         """
 
         objective_map_sql = """
@@ -214,7 +213,9 @@ with DAG(
         skill_reward_sql = """
             INSERT INTO quest_finish_reward_skills (
                 quest_id,
-                skill_name,
+                name_en,
+                name_ko,
+                name_ja,
                 level,
                 raw_data
             )
@@ -225,8 +226,7 @@ with DAG(
             INSERT INTO quest_finish_reward_trader_standing (
                 quest_id,
                 trader_id,
-                standing,
-                raw_data
+                standing
             )
             VALUES %s
         """
@@ -237,8 +237,7 @@ with DAG(
                 offer_id,
                 trader_id,
                 item_id,
-                level,
-                raw_data
+                level
             )
             VALUES %s
         """
