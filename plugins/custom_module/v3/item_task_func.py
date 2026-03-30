@@ -180,14 +180,16 @@ def generate_item_graphql(lang: str) -> str:
 
 # item_penalties 테이블 row 변환
 def v3_item_penalties_row(item_en):
-  props = item_en.get("properties", {})
-  return (
-    item_en.get("id"),
-    props.get("ergoPenalty"),
-    props.get("turnPenalty"),
-    props.get("speedPenalty"),
-    props.get("distanceModifier"),
-  )
+    if not item_en:
+        return (None, None, None, None, None)
+    props = item_en.get("properties", {})
+    return (
+        item_en.get("id"),
+        props.get("ergoPenalty"),
+        props.get("turnPenalty"),
+        props.get("speedPenalty"),
+        props.get("distanceModifier"),
+    )
 
 # weapon_items 테이블 row 변환
 def v3_weapon_items_row(item_en):
