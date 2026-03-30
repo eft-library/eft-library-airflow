@@ -96,7 +96,8 @@ with DAG(
                 name_en = EXCLUDED.name_en,
                 name_ko = EXCLUDED.name_ko,
                 name_ja = EXCLUDED.name_ja,
-                image = EXCLUDED.image
+                image = EXCLUDED.image,
+                update_time = now()
         """
 
         barter_sql = """
@@ -146,6 +147,15 @@ with DAG(
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
+                # 하위 테이블 전체 비우기 (traders 제외)
+                cursor.execute("""
+                    truncate table
+                        trader_barters,
+                        barter_required_items,
+                        barter_reward_items
+                    restart identity cascade;
+                """)
+
                 execute_values(
                     cursor,
                     trader_sql,

@@ -177,6 +177,25 @@ with DAG(
 
         hook = PostgresHook(postgres_conn_id)
         with closing(hook.get_conn()) as conn, conn.cursor() as cur:
+            # 하위 테이블 전체 비우기 (items 제외)
+            cur.execute("""
+                truncate table
+                    item_penalties,
+                    weapon_items,
+                    weapon_allowed_ammo,
+                    ammo_items,
+                    melee_items,
+                    throwable_items,
+                    storage_items,
+                    storage_grids,
+                    protection_items,
+                    consumable_items,
+                    consumable_cures,
+                    consumable_stim_effects,
+                    usage_items,
+                    ammo_efficiency
+                restart identity cascade;
+            """)
             # items
             execute_values(
                 cur,
@@ -195,7 +214,7 @@ with DAG(
                     width=excluded.width,
                     height=excluded.height,
                     image=excluded.image,
-                    updated_at=now()
+                    update_time=now()
                 """,
                 item_rows,
             )

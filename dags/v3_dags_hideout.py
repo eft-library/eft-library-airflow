@@ -241,9 +241,23 @@ with DAG(
         """
 
         postgres_hook = PostgresHook(postgres_conn_id)
-
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    truncate table
+                        hideout_levels,
+                        hideout_skill_require,
+                        hideout_trader_require,
+                        hideout_station_require,
+                        hideout_item_require,
+                        hideout_crafts,
+                        hideout_craft_require_items,
+                        hideout_bonus
+                    restart identity cascade;
+                """
+                )
+
                 execute_values(
                     cursor,
                     master_sql,
