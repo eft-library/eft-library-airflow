@@ -154,8 +154,7 @@ with DAG(
             SET
                 objective_type = EXCLUDED.objective_type,
                 description_en = EXCLUDED.description_en,
-                raw_data = EXCLUDED.raw_data,
-                update_time = now()
+                raw_data = EXCLUDED.raw_data
         """
 
         objective_item_sql = """
