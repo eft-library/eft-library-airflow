@@ -16,7 +16,6 @@ from custom_module.graphql_func import get_graphql
 from custom_module.v3.item_price_task_func import (
     generate_pvp_item_price_graphql,
     generate_pve_item_price_graphql,
-    normalize_vendor_name,
     v3_item_price_row,
     v3_item_trader_price_rows,
     v3_item_price_history_rows,
@@ -73,7 +72,7 @@ with DAG(
         trader_name_map = {}
 
         for trader_id, name_en in rows:
-            normalized_name = normalize_vendor_name(name_en)
+            normalized_name = name_en
             if normalized_name:
                 trader_name_map[normalized_name] = trader_id
 
