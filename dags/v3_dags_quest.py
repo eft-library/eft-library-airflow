@@ -155,7 +155,6 @@ with DAG(
                 description_en,
                 count,
                 found_in_raid,
-                sort_order,
                 raw_data
             )
             VALUES %s
@@ -165,7 +164,6 @@ with DAG(
                 description_en = EXCLUDED.description_en,
                 count = EXCLUDED.count,
                 found_in_raid = EXCLUDED.found_in_raid,
-                sort_order = EXCLUDED.sort_order,
                 raw_data = EXCLUDED.raw_data
         """
 
@@ -173,8 +171,7 @@ with DAG(
             INSERT INTO quest_objective_items (
                 objective_id,
                 item_id,
-                item_type,
-                sort_order
+                item_type
             )
             VALUES %s
             ON CONFLICT (objective_id, item_id, item_type) DO NOTHING
@@ -193,8 +190,7 @@ with DAG(
         objective_map_sql = """
             INSERT INTO quest_objective_maps (
                 objective_id,
-                map_id,
-                sort_order
+                map_id
             )
             VALUES %s
             ON CONFLICT (objective_id, map_id) DO NOTHING
@@ -203,8 +199,7 @@ with DAG(
         requirement_sql = """
             INSERT INTO quest_requirements (
                 quest_id,
-                required_quest_id,
-                sort_order
+                required_quest_id
             )
             VALUES %s
             ON CONFLICT (quest_id, required_quest_id) DO NOTHING
@@ -216,7 +211,6 @@ with DAG(
                 reward_type,
                 target_id,
                 reward_value,
-                sort_order,
                 raw_data
             )
             VALUES %s
@@ -226,8 +220,7 @@ with DAG(
             INSERT INTO quest_finish_reward_items (
                 quest_id,
                 item_id,
-                quantity,
-                sort_order
+                quantity
             )
             VALUES %s
         """
@@ -236,8 +229,7 @@ with DAG(
             INSERT INTO quest_finish_reward_craft_unlocks (
                 quest_id,
                 craft_id,
-                station_level,
-                sort_order
+                station_level
             )
             VALUES %s
         """

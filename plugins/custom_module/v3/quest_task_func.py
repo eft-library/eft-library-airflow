@@ -137,25 +137,21 @@ def v3_quest_objective_items_process(item_en):
         objective_id = obj.get("id")
         if not objective_id:
             continue
-        sort_order = 0
         # questItem
         quest_item = obj.get("questItem") or {}
         quest_item_id = quest_item.get("id")
         if quest_item_id:
-            rows.append((objective_id, quest_item_id, "questItem", sort_order))
-            sort_order += 1
+            rows.append((objective_id, quest_item_id, "questItem"))
         # items[]
         for item in obj.get("items") or []:
             item_id = item.get("id")
             if item_id:
-                rows.append((objective_id, item_id, "item", sort_order))
-                sort_order += 1
+                rows.append((objective_id, item_id, "item"))
         # markerItem
         marker_item = obj.get("markerItem") or {}
         marker_item_id = marker_item.get("id")
         if marker_item_id:
-            rows.append((objective_id, marker_item_id, "markerItem", sort_order))
-            sort_order += 1
+            rows.append((objective_id, marker_item_id, "markerItem"))
     return rows
 
 
