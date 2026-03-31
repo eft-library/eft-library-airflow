@@ -356,6 +356,32 @@ with DAG(
             except Exception as e:
                 print(f"Error deleting {path}: {e}")
 
+    def build_next_relations(postgres_conn_id):
+        postgres_hook = PostgresHook(postgres_conn_id)
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    insert into quest_relations (
+                        quest_id,
+                        related_quest_id,
+                        relation_type,
+                        sort_order
+                    )
+                    select
+                        related_quest_id as quest_id,
+                        quest_id as related_quest_id,
+                        'next' as relation_type,
+                        sort_order
+                    from quest_relations
+                    where relation_type = 'require'
+                    on conflict (quest_id, related_quest_id, relation_type) do nothing
+                    """
+                )
+
+            conn.commit()
+
     fetch_quest_task = PythonOperator(
         task_id="fetch_quest",
         python_callable=fetch_quest,
@@ -367,10 +393,16 @@ with DAG(
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
+    build_next_relations_task = PythonOperator(
+        task_id="build_next_relations",
+        python_callable=build_next_relations,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    fetch_quest_task >> upsert_quest_task >> remove_json_files_task
+    fetch_quest_task >> upsert_quest_task >> build_next_relations_task >> remove_json_files_task
