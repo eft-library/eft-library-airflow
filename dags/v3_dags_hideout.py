@@ -112,10 +112,17 @@ with DAG(
             return
 
         master_sql = """
-            insert into hideout_master (id, name_en, name_ko, name_ja)
+            insert into hideout_master (
+                id,
+                normalized_name,
+                name_en,
+                name_ko,
+                name_ja
+            )
             VALUES %s
             ON CONFLICT (id) DO UPDATE
             SET
+                normalized_name = EXCLUDED.normalized_name,
                 name_en = EXCLUDED.name_en,
                 name_ko = EXCLUDED.name_ko,
                 name_ja = EXCLUDED.name_ja

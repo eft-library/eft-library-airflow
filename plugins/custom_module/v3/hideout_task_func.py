@@ -1,3 +1,6 @@
+import re
+
+
 def generate_hideout_graphql(lang: str) -> str:
     return f"""
 {{
@@ -80,8 +83,21 @@ def v3_hideout_master_process(item_en, item_ko, item_ja):
     name_en = item_en.get("name")
     name_ko = item_ko.get("name")
     name_ja = item_ja.get("name")
+    normalized_name = normalize_hideout_name(name_en)
 
-    return (master_id, name_en, name_ko, name_ja)
+    return (master_id, normalized_name, name_en, name_ko, name_ja)
+
+
+def normalize_hideout_name(name_en):
+    if not name_en:
+        return None
+
+    normalized_name = name_en.lower()
+    normalized_name = re.sub(r"['\"]", "", normalized_name)
+    normalized_name = re.sub(r"[^a-z0-9]+", "-", normalized_name)
+    normalized_name = re.sub(r"-+", "-", normalized_name).strip("-")
+
+    return normalized_name or None
 
 
 def v3_hideout_level_process(item_en):

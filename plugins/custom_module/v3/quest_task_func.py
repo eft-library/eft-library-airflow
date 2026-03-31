@@ -181,18 +181,6 @@ def v3_quest_objective_maps_process(item_en):
     return rows
 
 
-def v3_quest_requirements_process(item_en):
-    quest_id = item_en.get("id")
-    task_requirements = item_en.get("taskRequirements") or []
-    rows = []
-    for idx, relation in enumerate(task_requirements):
-        required_task = relation.get("task") or {}
-        required_quest_id = required_task.get("id")
-        if required_quest_id:
-            rows.append((quest_id, required_quest_id))
-    return rows
-
-
 def v3_quest_process(item_en, item_ko, item_ja):
     quest_id = item_en.get("id")
     normalized_name = item_en.get("normalizedName")
