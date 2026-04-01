@@ -1,3 +1,6 @@
+import re
+
+
 def generate_trader_graphql(lang: str) -> str:
     return f"""
 {{
@@ -31,8 +34,21 @@ def v3_trader_process(item_en, item_ko, item_ja):
     name_ko = item_ko.get("name")
     name_ja = item_ja.get("name")
     image = item_en.get("imageLink")
+    normalized_name = normalize_trader_name(name_en)
 
-    return (trader_id, name_en, name_ko, name_ja, image)
+    return (trader_id, name_en, name_ko, name_ja, image, normalized_name)
+
+
+def normalize_trader_name(name_en):
+    if not name_en:
+        return None
+
+    normalized_name = name_en.lower()
+    normalized_name = re.sub(r"['\"]", "", normalized_name)
+    normalized_name = re.sub(r"[^a-z0-9]+", "-", normalized_name)
+    normalized_name = re.sub(r"-+", "-", normalized_name).strip("-")
+
+    return normalized_name or None
 
 
 def v3_trader_barter_process(trader_en):

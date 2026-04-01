@@ -89,7 +89,7 @@ with DAG(
             return
 
         trader_sql = """
-            insert into traders (id, name_en, name_ko, name_ja, image)
+            insert into traders (id, name_en, name_ko, name_ja, image, normalized_name)
             VALUES %s
             ON CONFLICT (id) DO UPDATE
             SET
@@ -97,6 +97,7 @@ with DAG(
                 name_ko = EXCLUDED.name_ko,
                 name_ja = EXCLUDED.name_ja,
                 image = EXCLUDED.image,
+                normalized_name = EXCLUDED.normalized_name,
                 update_time = now()
         """
 
