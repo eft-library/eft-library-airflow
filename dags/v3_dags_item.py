@@ -14,6 +14,7 @@ from custom_module.graphql_func import get_graphql
 from custom_module.v3.item_task_func import (
     generate_item_graphql,
     v3_item_row_process,
+    assign_unique_normalized_names,
     v3_item_penalties_row,
     v3_weapon_items_row,
     v3_weapon_allowed_ammo_rows,
@@ -177,6 +178,12 @@ with DAG(
 
         hook = PostgresHook(postgres_conn_id)
         with closing(hook.get_conn()) as conn, conn.cursor() as cur:
+            cur.execute("select id, normalized_name from items where normalized_name is not null")
+            existing_normalized_names_by_id = dict(cur.fetchall())
+            item_rows = assign_unique_normalized_names(
+                item_rows, existing_normalized_names_by_id
+            )
+
             # 하위 테이블 전체 비우기 (items 제외)
             cur.execute("""
                 truncate table

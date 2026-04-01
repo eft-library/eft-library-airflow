@@ -15,6 +15,7 @@ from custom_module.v3.quest_item_task_func import (
     generate_quest_item_graphql,
     v3_quest_item_process,
 )
+from custom_module.v3.item_task_func import assign_unique_normalized_names
 
 default_args = {
     "owner": "airflow",
@@ -101,6 +102,14 @@ with DAG(
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "select id, normalized_name from items where normalized_name is not null"
+                )
+                existing_normalized_names_by_id = dict(cursor.fetchall())
+                rows = assign_unique_normalized_names(
+                    rows, existing_normalized_names_by_id
+                )
+
                 execute_values(
                     cursor,
                     sql,

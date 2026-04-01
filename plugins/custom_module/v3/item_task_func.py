@@ -1,3 +1,7 @@
+import re
+from collections import defaultdict
+
+
 def generate_item_graphql(lang: str) -> str:
     return f"""
 {{
@@ -463,6 +467,73 @@ def v3_item_row_process(item_en, item_ko, item_ja):
         item_en.get("height"),
         item_en.get("gridImageLink"),
     )
+
+
+def assign_unique_normalized_names(item_rows, existing_normalized_names_by_id):
+    incoming_ids = {row[0] for row in item_rows}
+    used_names = {
+        normalized_name
+        for item_id, normalized_name in existing_normalized_names_by_id.items()
+        if item_id not in incoming_ids and normalized_name
+    }
+    existing_for_incoming = {
+        item_id: normalized_name
+        for item_id, normalized_name in existing_normalized_names_by_id.items()
+        if item_id in incoming_ids and normalized_name
+    }
+
+    assigned_names_by_id = {}
+    pending_rows_by_base = defaultdict(list)
+
+    for row in sorted(item_rows, key=lambda r: ((r[6] or ""), r[0])):
+        item_id = row[0]
+        base_name = row[6]
+        existing_name = existing_for_incoming.get(item_id)
+
+        if _is_same_slug_family(base_name, existing_name) and existing_name not in used_names:
+            assigned_names_by_id[item_id] = existing_name
+            used_names.add(existing_name)
+            continue
+
+        pending_rows_by_base[base_name].append(row)
+
+    unique_rows = []
+    for row in item_rows:
+        item_id = row[0]
+        base_name = row[6]
+
+        if item_id not in assigned_names_by_id:
+            assigned_names_by_id[item_id] = _next_available_slug(base_name, used_names)
+
+        unique_rows.append((*row[:6], assigned_names_by_id[item_id], *row[7:]))
+
+    return unique_rows
+
+
+def _is_same_slug_family(base_name, candidate_name):
+    if not base_name or not candidate_name:
+        return False
+
+    return candidate_name == base_name or bool(
+        re.fullmatch(rf"{re.escape(base_name)}-\d+", candidate_name)
+    )
+
+
+def _next_available_slug(base_name, used_names):
+    if not base_name:
+        return None
+
+    if base_name not in used_names:
+        used_names.add(base_name)
+        return base_name
+
+    suffix = 1
+    while True:
+        candidate = f"{base_name}-{suffix}"
+        if candidate not in used_names:
+            used_names.add(candidate)
+            return candidate
+        suffix += 1
 
 
 def get_efficiency(name):
