@@ -21,7 +21,7 @@ def dump_script():
     today = get_today()
 
     return f"""
-        pg_dump -h 192.168.219.102 -p 13245 -U tkl \
+        pg_dump -h 172.30.1.100 -p 13245 -U tkl \
         --inserts \
         prd \
         -t public.boss_i18n \
