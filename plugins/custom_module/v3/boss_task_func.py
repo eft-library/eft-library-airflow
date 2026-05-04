@@ -38,6 +38,8 @@ def generate_boss_spawn_graphql() -> str:
 
 
 def v3_boss_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     boss_id = item_en.get("id")
     name_en = item_en.get("name")
     name_ko = item_ko.get("name")

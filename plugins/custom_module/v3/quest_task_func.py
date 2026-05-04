@@ -182,6 +182,8 @@ def v3_quest_objective_maps_process(item_en):
 
 
 def v3_quest_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     quest_id = item_en.get("id")
     normalized_name = item_en.get("normalizedName")
     name_en = item_en.get("name")
@@ -224,6 +226,8 @@ def v3_quest_relations_process(item_en):
 
 
 def v3_quest_finish_rewards_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     quest_id = item_en.get("id")
     finish_rewards = item_en.get("finishRewards") or {}
     finish_rewards_ko = item_ko.get("finishRewards") or {}

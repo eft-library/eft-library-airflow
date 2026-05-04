@@ -451,6 +451,8 @@ def v3_usage_items_row(item_en):
 
 # item 데이터 가공 함수: 언어별 데이터를 id로 매칭해 DB row로 변환
 def v3_item_row_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     # category 정보 추출
     parent_category = item_en.get("category", {}).get("parent", {}).get("name")
     category = item_en.get("category", {}).get("name")

@@ -79,6 +79,8 @@ def generate_hideout_graphql(lang: str) -> str:
 
 
 def v3_hideout_master_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     master_id = item_en.get("id")
     name_en = item_en.get("name")
     name_ko = item_ko.get("name")
@@ -117,6 +119,8 @@ def v3_hideout_level_process(item_en):
 
 
 def v3_hideout_skill_require_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     rows = []
 
     levels_en = item_en.get("levels", [])
@@ -291,6 +295,8 @@ def v3_hideout_craft_process(station_en):
 
 
 def v3_hideout_bonus_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     rows = []
 
     levels_en = item_en.get("levels", [])

@@ -14,6 +14,8 @@ def generate_quest_item_graphql(lang: str) -> str:
 
 
 def v3_quest_item_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     item_id = item_en.get("id")
     normalized_name = item_en.get("normalizedName")
     name_en = item_en.get("name")

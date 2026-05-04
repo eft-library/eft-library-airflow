@@ -11,6 +11,8 @@ def generate_map_graphql(lang: str):
 
 
 def v3_map_process(item_en, item_ko, item_ja):
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
     map_id = item_en.get("id")
     name_en = item_en.get("name")
     name_ko = item_ko.get("name")

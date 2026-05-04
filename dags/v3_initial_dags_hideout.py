@@ -30,24 +30,32 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/v3_hideout_en_list.json"
+en_path = "/opt/airflow/tmp/v3_initial_hideout_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_initial_hideout_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_initial_hideout_ja_list.json"
 
 with DAG(
-    dag_id="v3_dags_hideout",
+    dag_id="v3_initial_dags_hideout",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="5 0 * * *",
-    tags=["postgresql", "tarkov-dev-api"],
+    schedule=None,
+    tags=["postgresql", "tarkov-dev-api", "initial-load", "manual-only"],
     catchup=False,
 ) as dag:
 
     def fetch_hideout():
         item_list_en = get_graphql(generate_hideout_graphql("en"))
+        item_list_ko = get_graphql(generate_hideout_graphql("ko"))
+        item_list_ja = get_graphql(generate_hideout_graphql("ja"))
 
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["hideoutStations"], f)
+        with open(ko_path, "w") as f:
+            json.dump(item_list_ko["data"]["hideoutStations"], f)
+        with open(ja_path, "w") as f:
+            json.dump(item_list_ja["data"]["hideoutStations"], f)
 
-        return {"en": en_path}
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
     def upsert_hideout(postgres_conn_id):
         context = get_current_context()
@@ -56,10 +64,16 @@ with DAG(
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
 
         item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = set(item_en_dict)
+        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
 
         master_rows = []
         level_rows = []
@@ -73,14 +87,16 @@ with DAG(
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
+            item_ko = item_ko_dict[item_id]
+            item_ja = item_ja_dict[item_id]
 
-            master_rows.append(v3_hideout_master_process(item_en, None, None))
+            master_rows.append(v3_hideout_master_process(item_en, item_ko, item_ja))
             level_rows.extend(v3_hideout_level_process(item_en))
             skill_require_rows.extend(
                 v3_hideout_skill_require_process(
                     item_en,
-                    None,
-                    None,
+                    item_ko,
+                    item_ja,
                 )
             )
             trader_require_rows.extend(v3_hideout_trader_require_process(item_en))
@@ -90,7 +106,7 @@ with DAG(
             c_rows, r_rows = v3_hideout_craft_process(item_en)
             craft_rows.extend(c_rows)
             require_rows.extend(r_rows)
-            bonus_rows.extend(v3_hideout_bonus_process(item_en, None, None))
+            bonus_rows.extend(v3_hideout_bonus_process(item_en, item_ko, item_ja))
 
         if not master_rows:
             return
@@ -107,7 +123,9 @@ with DAG(
             ON CONFLICT (id) DO UPDATE
             SET
                 normalized_name = EXCLUDED.normalized_name,
-                name_en = EXCLUDED.name_en
+                name_en = EXCLUDED.name_en,
+                name_ko = EXCLUDED.name_ko,
+                name_ja = EXCLUDED.name_ja
         """
 
         level_sql = """
@@ -134,7 +152,9 @@ with DAG(
             SET
                 hideout_level_id = EXCLUDED.hideout_level_id,
                 require_level = EXCLUDED.require_level,
-                name_en = EXCLUDED.name_en
+                name_en = EXCLUDED.name_en,
+                name_ko = EXCLUDED.name_ko,
+                name_ja = EXCLUDED.name_ja
         """
 
         trader_require_sql = """
@@ -219,84 +239,17 @@ with DAG(
                 hideout_level_id = excluded.hideout_level_id,
                 bonus_type = excluded.bonus_type,
                 name_en = excluded.name_en,
+                name_ko = excluded.name_ko,
+                name_ja = excluded.name_ja,
                 skill_name_en = excluded.skill_name_en,
+                skill_name_ko = excluded.skill_name_ko,
+                skill_name_ja = excluded.skill_name_ja,
                 bonus_value = excluded.bonus_value
         """
 
         postgres_hook = PostgresHook(postgres_conn_id)
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    """
-                    select id, name_ko, name_ja
-                    from hideout_skill_require
-                    """
-                )
-                existing_skill_names = {
-                    row_id: (name_ko, name_ja)
-                    for row_id, name_ko, name_ja in cursor.fetchall()
-                }
-                skill_require_rows = [
-                    (
-                        row_id,
-                        hideout_level_id,
-                        require_level,
-                        name_en,
-                        existing_skill_names.get(row_id, (name_ko, name_ja))[0],
-                        existing_skill_names.get(row_id, (name_ko, name_ja))[1],
-                    )
-                    for row_id, hideout_level_id, require_level, name_en, name_ko, name_ja in skill_require_rows
-                ]
-
-                cursor.execute(
-                    """
-                    select id, name_ko, name_ja, skill_name_ko, skill_name_ja
-                    from hideout_bonus
-                    """
-                )
-                existing_bonus_names = {
-                    row_id: (name_ko, name_ja, skill_name_ko, skill_name_ja)
-                    for row_id, name_ko, name_ja, skill_name_ko, skill_name_ja in cursor.fetchall()
-                }
-                bonus_rows = [
-                    (
-                        row_id,
-                        hideout_level_id,
-                        bonus_type,
-                        name_en,
-                        existing_bonus_names.get(
-                            row_id,
-                            (name_ko, name_ja, skill_name_ko, skill_name_ja),
-                        )[0],
-                        existing_bonus_names.get(
-                            row_id,
-                            (name_ko, name_ja, skill_name_ko, skill_name_ja),
-                        )[1],
-                        skill_name_en,
-                        existing_bonus_names.get(
-                            row_id,
-                            (name_ko, name_ja, skill_name_ko, skill_name_ja),
-                        )[2],
-                        existing_bonus_names.get(
-                            row_id,
-                            (name_ko, name_ja, skill_name_ko, skill_name_ja),
-                        )[3],
-                        bonus_value,
-                    )
-                    for (
-                        row_id,
-                        hideout_level_id,
-                        bonus_type,
-                        name_en,
-                        name_ko,
-                        name_ja,
-                        skill_name_en,
-                        skill_name_ko,
-                        skill_name_ja,
-                        bonus_value,
-                    ) in bonus_rows
-                ]
-
                 cursor.execute(
                     """
                     truncate table
@@ -372,7 +325,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path]
+        files = [en_path, ko_path, ja_path]
 
         for path in files:
             try:

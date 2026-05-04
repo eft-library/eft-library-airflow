@@ -23,24 +23,32 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/v3_trader_en_list.json"
+en_path = "/opt/airflow/tmp/v3_initial_trader_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_initial_trader_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_initial_trader_ja_list.json"
 
 with DAG(
-    dag_id="v3_dags_trader",
+    dag_id="v3_initial_dags_trader",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="7 0 * * *",
-    tags=["postgresql", "tarkov-dev-api"],
+    schedule=None,
+    tags=["postgresql", "tarkov-dev-api", "initial-load", "manual-only"],
     catchup=False,
 ) as dag:
 
     def fetch_trader():
         item_list_en = get_graphql(generate_trader_graphql("en"))
+        item_list_ko = get_graphql(generate_trader_graphql("ko"))
+        item_list_ja = get_graphql(generate_trader_graphql("ja"))
 
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["traders"], f)
+        with open(ko_path, "w") as f:
+            json.dump(item_list_ko["data"]["traders"], f)
+        with open(ja_path, "w") as f:
+            json.dump(item_list_ja["data"]["traders"], f)
 
-        return {"en": en_path}
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
     def upsert_trader(postgres_conn_id):
         context = get_current_context()
@@ -49,10 +57,16 @@ with DAG(
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
 
         item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = set(item_en_dict)
+        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
 
         trader_rows = []
         barter_rows = []
@@ -61,8 +75,10 @@ with DAG(
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
+            item_ko = item_ko_dict[item_id]
+            item_ja = item_ja_dict[item_id]
 
-            trader_rows.append(v3_trader_process(item_en, None, None))
+            trader_rows.append(v3_trader_process(item_en, item_ko, item_ja))
 
             b_rows, req_rows, rew_rows = v3_trader_barter_process(item_en)
             barter_rows.extend(b_rows)
@@ -78,6 +94,8 @@ with DAG(
             ON CONFLICT (id) DO UPDATE
             SET
                 name_en = EXCLUDED.name_en,
+                name_ko = EXCLUDED.name_ko,
+                name_ja = EXCLUDED.name_ja,
                 image = EXCLUDED.image,
                 normalized_name = EXCLUDED.normalized_name,
                 update_time = now()
@@ -162,7 +180,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path]
+        files = [en_path, ko_path, ja_path]
 
         for path in files:
             try:

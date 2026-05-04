@@ -34,24 +34,32 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/v3_item_en_list.json"
+en_path = "/opt/airflow/tmp/v3_initial_item_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_initial_item_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_initial_item_ja_list.json"
 
 with DAG(
-    dag_id="v3_dags_item",
+    dag_id="v3_initial_dags_item",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="11 0 * * *",
-    tags=["postgresql", "tarkov-dev-api"],
+    schedule=None,
+    tags=["postgresql", "tarkov-dev-api", "initial-load", "manual-only"],
     catchup=False,
 ) as dag:
 
     def fetch_item():
         item_list_en = get_graphql(generate_item_graphql("en"))
+        item_list_ko = get_graphql(generate_item_graphql("ko"))
+        item_list_ja = get_graphql(generate_item_graphql("ja"))
 
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["items"], f)
+        with open(ko_path, "w") as f:
+            json.dump(item_list_ko["data"]["items"], f)
+        with open(ja_path, "w") as f:
+            json.dump(item_list_ja["data"]["items"], f)
 
-        return {"en": en_path}
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
     def upsert_item(postgres_conn_id):
         context = get_current_context()
@@ -60,10 +68,16 @@ with DAG(
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
 
         item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = set(item_en_dict)
+        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
 
         # ammo_efficiency
         ammo_efficiency_rows = []
@@ -80,7 +94,7 @@ with DAG(
                 ammo_efficiency_rows.append((iid, *eff))
         # items
         item_rows = [
-            v3_item_row_process(item_en_dict[iid], None, None)
+            v3_item_row_process(item_en_dict[iid], item_ko_dict[iid], item_ja_dict[iid])
             for iid in item_ids
         ]
 
@@ -200,6 +214,8 @@ with DAG(
                     parent_category=excluded.parent_category,
                     category=excluded.category,
                     name_en=excluded.name_en,
+                    name_ko=excluded.name_ko,
+                    name_ja=excluded.name_ja,
                     normalized_name=excluded.normalized_name,
                     weight=excluded.weight,
                     width=excluded.width,
@@ -484,7 +500,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path]
+        files = [en_path, ko_path, ja_path]
 
         for path in files:
             try:

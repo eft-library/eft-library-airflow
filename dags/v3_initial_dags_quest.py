@@ -31,25 +31,35 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/v3_quest_en_list.json"
+en_path = "/opt/airflow/tmp/v3_initial_quest_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_initial_quest_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_initial_quest_ja_list.json"
 
 
 with DAG(
-    dag_id="v3_dags_quest",
+    dag_id="v3_initial_dags_quest",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
-    schedule="9 0 * * *",
-    tags=["postgresql", "tarkov-dev-api"],
+    schedule=None,
+    tags=["postgresql", "tarkov-dev-api", "initial-load", "manual-only"],
     catchup=False,
 ) as dag:
 
     def fetch_quest():
         item_list_en = get_graphql(generate_quest_graphql("en"))
+        item_list_ko = get_graphql(generate_quest_graphql("ko"))
+        item_list_ja = get_graphql(generate_quest_graphql("ja"))
 
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["tasks"], f)
 
-        return {"en": en_path}
+        with open(ko_path, "w") as f:
+            json.dump(item_list_ko["data"]["tasks"], f)
+
+        with open(ja_path, "w") as f:
+            json.dump(item_list_ja["data"]["tasks"], f)
+
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
     def upsert_quest(postgres_conn_id):
         context = get_current_context()
@@ -58,10 +68,16 @@ with DAG(
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
 
         item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
 
-        item_ids = sorted(set(item_en_dict))
+        item_ids = sorted(set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict))
 
         if not item_ids:
             print("No quest data to process.")
@@ -81,8 +97,10 @@ with DAG(
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
+            item_ko = item_ko_dict[item_id]
+            item_ja = item_ja_dict[item_id]
 
-            quest_rows.append(v3_quest_process(item_en, None, None))
+            quest_rows.append(v3_quest_process(item_en, item_ko, item_ja))
             objective_rows.extend(v3_quest_objectives_process(item_en))
             objective_item_rows.extend(v3_quest_objective_items_process(item_en))
             objective_required_key_rows.extend(
@@ -91,7 +109,7 @@ with DAG(
             objective_map_rows.extend(v3_quest_objective_maps_process(item_en))
             relation_rows.extend(v3_quest_relations_process(item_en))
             skill, standing, offer = v3_quest_finish_rewards_process(
-                item_en, None, None
+                item_en, item_ko, item_ja
             )
             skill_reward_rows.extend(skill)
             standing_reward_rows.extend(standing)
@@ -123,6 +141,8 @@ with DAG(
             SET
                 normalized_name = EXCLUDED.normalized_name,
                 name_en = EXCLUDED.name_en,
+                name_ko = EXCLUDED.name_ko,
+                name_ja = EXCLUDED.name_ja,
                 trader_id = EXCLUDED.trader_id,
                 experience = EXCLUDED.experience,
                 delay_max = EXCLUDED.delay_max,
@@ -242,30 +262,6 @@ with DAG(
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    """
-                    select quest_id, name_en, skill_level, name_ko, name_ja
-                    from quest_finish_reward_skills
-                    """
-                )
-                existing_skill_names = {
-                    (quest_id, name_en, skill_level): (name_ko, name_ja)
-                    for quest_id, name_en, skill_level, name_ko, name_ja in cursor.fetchall()
-                }
-                skill_reward_rows = [
-                    (
-                        quest_id,
-                        name_en,
-                        existing_skill_names.get(
-                            (quest_id, name_en, skill_level), (name_ko, name_ja)
-                        )[0],
-                        existing_skill_names.get(
-                            (quest_id, name_en, skill_level), (name_ko, name_ja)
-                        )[1],
-                        skill_level,
-                    )
-                    for quest_id, name_en, name_ko, name_ja, skill_level in skill_reward_rows
-                ]
 
                 # 하위 테이블 전체 비우기 (quests 제외)
                 cursor.execute(
@@ -347,7 +343,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path]
+        files = [en_path, ko_path, ja_path]
 
         for path in files:
             try:
