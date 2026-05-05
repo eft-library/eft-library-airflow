@@ -60,6 +60,7 @@ FROM (SELECT autocomplete_text_en,
                    'QUEST'                             AS category,
                    sort_order
             FROM quests
+            WHERE sort_order IS NOT NULL
             UNION ALL
             SELECT 'Trader: ' || name_en        AS autocomplete_text_en,
                    '상인: ' || name_ko            AS autocomplete_text_ko,
