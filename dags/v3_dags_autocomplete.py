@@ -78,9 +78,9 @@ FROM (SELECT autocomplete_text_en,
                    'ITEM'                           AS category,
                    0
             FROM items) AS base) AS numbered
-ORDER BY rn
 where autocomplete_text_ja is not null
 and autocomplete_text_ko is not null
+ORDER BY rn
 ON CONFLICT (url)
     DO UPDATE SET autocomplete_text_en = EXCLUDED.autocomplete_text_en,
                   autocomplete_text_ko = EXCLUDED.autocomplete_text_ko,
