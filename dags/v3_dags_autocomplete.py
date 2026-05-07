@@ -79,6 +79,8 @@ FROM (SELECT autocomplete_text_en,
                    0
             FROM items) AS base) AS numbered
 ORDER BY rn
+where autocomplete_text_ja is not null
+and autocomplete_text_ko is not null
 ON CONFLICT (url)
     DO UPDATE SET autocomplete_text_en = EXCLUDED.autocomplete_text_en,
                   autocomplete_text_ko = EXCLUDED.autocomplete_text_ko,
