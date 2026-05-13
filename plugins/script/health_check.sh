@@ -54,7 +54,7 @@ check "Kafka" \
 # Database
 # =========================
 check "PostgreSQL" \
-  "psql -U tkl -h 172.30.1.100 -p 13245 -d prd -c 'SELECT 1;'"
+  "psql -U tkl -h 172.30.1.100 -p 13245 -d platform_db -c 'SELECT 1;'"
 
 # =========================
 # Docker 내부 서비스
