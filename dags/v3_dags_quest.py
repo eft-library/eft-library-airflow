@@ -439,6 +439,86 @@ with DAG(
 
             conn.commit()
 
+    def sync_roadmap(postgres_conn_id):
+        postgres_hook = PostgresHook(postgres_conn_id)
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    insert into roadmap_node (
+                        id,
+                        total_x_coordinate,
+                        total_y_coordinate,
+                        single_x_coordinate,
+                        single_y_coordinate,
+                        total_kappa_x_coordinate,
+                        total_kappa_y_coordinate,
+                        single_kappa_x_coordinate,
+                        single_kappa_y_coordinate
+                    )
+                    select
+                        q.id,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    from quests q
+                    on conflict (id) do nothing
+                    """
+                )
+
+                cursor.execute(
+                    """
+                    delete from roadmap_edge
+                    """
+                )
+
+                cursor.execute(
+                    """
+                    with relation_edges as (
+                        select distinct
+                            case
+                                when qr.relation_type = 'require'
+                                    then qr.related_quest_id
+                                else qr.quest_id
+                            end as source_id,
+                            case
+                                when qr.relation_type = 'require'
+                                    then qr.quest_id
+                                else qr.related_quest_id
+                            end as target_id
+                        from quest_relations qr
+                        where qr.relation_type in ('require', 'next')
+                    )
+                    insert into roadmap_edge (
+                        id,
+                        source_id,
+                        target_id
+                    )
+                    select
+                        concat(
+                            edge.source_id,
+                            ':',
+                            edge.target_id
+                        ) as id,
+                        edge.source_id,
+                        edge.target_id
+                    from relation_edges edge
+                    on conflict (id) do update
+                    set
+                        source_id = excluded.source_id,
+                        target_id = excluded.target_id,
+                        update_time = now()
+                    """
+                )
+
+            conn.commit()
+
     fetch_quest_task = PythonOperator(
         task_id="fetch_quest",
         python_callable=fetch_quest,
@@ -456,10 +536,22 @@ with DAG(
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
+    sync_roadmap_task = PythonOperator(
+        task_id="sync_roadmap",
+        python_callable=sync_roadmap,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
     remove_json_files_task = PythonOperator(
         task_id="remove_json_files",
         python_callable=remove_json_files,
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    fetch_quest_task >> upsert_quest_task >> build_next_relations_task >> remove_json_files_task
+    (
+        fetch_quest_task
+        >> upsert_quest_task
+        >> build_next_relations_task
+        >> sync_roadmap_task
+        >> remove_json_files_task
+    )
