@@ -1,6 +1,50 @@
 import pendulum
 
 
+DATA_DUMP_TABLES = [
+    "bosses",
+    "maps",
+    "map_points",
+    "main_contents",
+    "menu_groups",
+    "menu_sub_groups",
+    "news_items",
+    "user_info",
+    "information",
+    "user_roadmap",
+    "roadmap_node",
+    "roadmap_edge",
+    "wipe",
+    "user_hideout",
+    "where_am_i",
+    "sitemap",
+    "user_progress_item",
+    "progress_item",
+    "story",
+    "story_roadmap",
+    "community_posts",
+    "community_posts_views",
+    "community_posts_reactions",
+    "community_posts_hot_issue",
+    "user_follows",
+    "community_posts_bookmark",
+    "community_comments",
+    "community_comments_reactions",
+    "user_block",
+    "user_penalty",
+    "comment_report",
+    "post_report",
+    "user_report",
+    "user_notifications",
+    "live_map_floors",
+    "live_map_points",
+    "live_map_point_details",
+    "live_map_static_points",
+    "quests",
+    "quest_objectives",
+]
+
+
 def get_today():
     """
     년, 월, 일 추출
@@ -19,43 +63,15 @@ def dump_script():
     postgresql dump 뜨고 결과 넘기기
     """
     today = get_today()
+    table_args = " \\\n        ".join(
+        f"-t public.{table_name}" for table_name in DATA_DUMP_TABLES
+    )
 
     return f"""
-        pg_dump -h 172.30.1.100 -p 13245 -U tkl \
-        --inserts \
-        prd \
-        -t public.boss_i18n \
-        -t public.extraction_18n \
-        -t public.transit_i18n \
-        -t public.main_i18n \
-        -t public.menu_group_i18n \
-        -t public.community_comments \
-        -t public.community_posts \
-        -t public.community_posts_reactions \
-        -t public.community_posts_views \
-        -t public.dynamic_info_i18n \
-        -t public.extraction_i18n \
-        -t public.information_i18n \
-        -t public.main_i18n \
-        -t public.map_group_i18n \
-        -t public.menu_group_i18n \
-        -t public.menu_sub_group_i18n \
-        -t public.npc_i18n \
-        -t public.progress_item_i18n \
-        -t public.quest_i18n \
-        -t public.roadmap_node \
-        -t public.roadmap_edge \
-        -t public.sitemap \
-        -t public.story_i18n \
-        -t public.story_roadmap_i18n \
-        -t public.user_follows \
-        -t public.user_hideout \
-        -t public.user_info \
-        -t public.user_progress_item \
-        -t public.user_quest \
-        -t public.user_roadmap \
-        -t public.where_am_i_i18n \
-        -t public.wipe_i18n \
+        pg_dump -h 172.30.1.100 -p 13245 -U tkl \\
+        --inserts \\
+        {table_args} \\
+        platform_db \\
         > /opt/airflow/latest_data/{today}_backup.sql 2>&1
 
         exit_code=$?

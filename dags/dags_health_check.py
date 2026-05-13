@@ -4,7 +4,6 @@ from airflow.providers.standard.operators.python import BranchPythonOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
-from custom_module.psql_func import read_sql
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 from datetime import datetime, timezone
@@ -27,6 +26,16 @@ LOG_PATTERN = re.compile(
 )
 
 log_path = "/opt/airflow/latest_data/health_check.log"
+
+INSERT_RESPONSE_TIME_SQL = """
+INSERT INTO response_time (service_name, response_ms, checked_time)
+VALUES (%s, %s, %s);
+"""
+
+INSERT_HEALTH_CHECK_SQL = """
+INSERT INTO health_check (service_name, status, checked_time)
+VALUES (%s, %s, %s);
+"""
 
 default_args = {
     "owner": "airflow",
@@ -58,7 +67,6 @@ with DAG(
         }
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_response_time.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -70,7 +78,10 @@ with DAG(
                     except Exception:
                         elapsed = None  # 실패 시 NULL 처리
 
-                    cursor.execute(sql, (service_name, elapsed, datetime.now()))
+                    cursor.execute(
+                        INSERT_RESPONSE_TIME_SQL,
+                        (service_name, elapsed, datetime.now()),
+                    )
             conn.commit()
 
 
@@ -79,7 +90,6 @@ with DAG(
             return
 
         postgres_hook = PostgresHook(postgres_conn_id)
-        sql = read_sql("insert_health_check.sql")
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
@@ -97,7 +107,7 @@ with DAG(
                         status = match.group("status")
 
                         cursor.execute(
-                            sql,
+                            INSERT_HEALTH_CHECK_SQL,
                             (service_name, status, checked_at),
                         )
             conn.commit()
