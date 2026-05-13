@@ -439,7 +439,7 @@ with DAG(
 
             conn.commit()
 
-    def sync_roadmap(postgres_conn_id):
+    def sync_roadmap_node(postgres_conn_id):
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -491,9 +491,9 @@ with DAG(
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
-    sync_roadmap_task = PythonOperator(
-        task_id="sync_roadmap",
-        python_callable=sync_roadmap,
+    sync_roadmap_node_task = PythonOperator(
+        task_id="sync_roadmap_node",
+        python_callable=sync_roadmap_node,
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
@@ -507,6 +507,6 @@ with DAG(
         fetch_quest_task
         >> upsert_quest_task
         >> build_next_relations_task
-        >> sync_roadmap_task
+        >> sync_roadmap_node_task
         >> remove_json_files_task
     )
