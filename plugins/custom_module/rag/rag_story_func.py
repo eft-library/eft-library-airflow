@@ -339,5 +339,5 @@ async def _run(postgres_conn_id: str, batch_size: int):
 
 
 # ── DAG 진입점
-def run_story_rag_embed(postgres_conn_id: str = "tkl_db", batch_size: int = BATCH_SIZE):
+def run_story_rag_embed(postgres_conn_id: str = "platform_db", batch_size: int = BATCH_SIZE):
     asyncio.run(_run(postgres_conn_id, batch_size))

@@ -138,7 +138,7 @@ with DAG(
     save_to_postgres = PythonOperator(
         task_id="save_to_postgres",
         python_callable=save_health_check,
-        op_kwargs={"postgres_conn_id": "tkl_db"},
+        op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
     prepare_email_body = PythonOperator(
@@ -149,7 +149,7 @@ with DAG(
     measure_response_time_task = PythonOperator(
         task_id="measure_response_time",
         python_callable=measure_response_time,
-        op_kwargs={"postgres_conn_id": "tkl_db"},
+        op_kwargs={"postgres_conn_id": "platform_db"},
     )
 
     # 4. 이메일 전송 (FAIL이 있을 때만 실행됨)

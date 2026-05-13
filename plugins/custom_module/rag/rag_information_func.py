@@ -356,5 +356,5 @@ async def _run(postgres_conn_id: str):
 
 
 # ── DAG 진입점
-def run_information_rag_embed(postgres_conn_id: str = "tkl_db"):
+def run_information_rag_embed(postgres_conn_id: str = "platform_db"):
     asyncio.run(_run(postgres_conn_id))
