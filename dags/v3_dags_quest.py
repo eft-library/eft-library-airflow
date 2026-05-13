@@ -472,51 +472,6 @@ with DAG(
                     """
                 )
 
-                cursor.execute(
-                    """
-                    delete from roadmap_edge
-                    """
-                )
-
-                cursor.execute(
-                    """
-                    with relation_edges as (
-                        select distinct
-                            case
-                                when qr.relation_type = 'require'
-                                    then qr.related_quest_id
-                                else qr.quest_id
-                            end as source_id,
-                            case
-                                when qr.relation_type = 'require'
-                                    then qr.quest_id
-                                else qr.related_quest_id
-                            end as target_id
-                        from quest_relations qr
-                        where qr.relation_type in ('require', 'next')
-                    )
-                    insert into roadmap_edge (
-                        id,
-                        source_id,
-                        target_id
-                    )
-                    select
-                        concat(
-                            edge.source_id,
-                            ':',
-                            edge.target_id
-                        ) as id,
-                        edge.source_id,
-                        edge.target_id
-                    from relation_edges edge
-                    on conflict (id) do update
-                    set
-                        source_id = excluded.source_id,
-                        target_id = excluded.target_id,
-                        update_time = now()
-                    """
-                )
-
             conn.commit()
 
     fetch_quest_task = PythonOperator(
