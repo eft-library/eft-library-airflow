@@ -108,10 +108,16 @@ def v3_quest_objectives_process(item_en):
     quest_id = item_en.get("id")
     objectives = item_en.get("objectives") or []
     rows = []
-    for sort_order, obj in enumerate(objectives, start=1):
+    seen = set()
+    for obj in objectives:
         objective_id = obj.get("id")
         if not objective_id:
             continue
+        key = (objective_id, quest_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        sort_order = len(rows) + 1
         rows.append(
             (
                 objective_id,
