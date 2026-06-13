@@ -140,7 +140,8 @@ with DAG(
                 type,
                 description_en,
                 count,
-                found_in_raid
+                found_in_raid,
+                sort_order
             )
             VALUES %s
             ON CONFLICT (objective_id, quest_id) DO UPDATE
@@ -148,7 +149,8 @@ with DAG(
                 type = EXCLUDED.type,
                 description_en = EXCLUDED.description_en,
                 count = EXCLUDED.count,
-                found_in_raid = EXCLUDED.found_in_raid
+                found_in_raid = EXCLUDED.found_in_raid,
+                sort_order = EXCLUDED.sort_order
         """
 
         objective_item_sql = """

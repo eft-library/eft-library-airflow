@@ -108,7 +108,7 @@ def v3_quest_objectives_process(item_en):
     quest_id = item_en.get("id")
     objectives = item_en.get("objectives") or []
     rows = []
-    for obj in objectives:
+    for sort_order, obj in enumerate(objectives, start=1):
         objective_id = obj.get("id")
         if not objective_id:
             continue
@@ -120,6 +120,7 @@ def v3_quest_objectives_process(item_en):
                 obj.get("description"),
                 obj.get("count"),
                 obj.get("foundInRaid"),
+                sort_order,
             )
         )
     return rows
