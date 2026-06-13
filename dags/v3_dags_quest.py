@@ -14,6 +14,7 @@ from psycopg2.extras import execute_values
 from custom_module.graphql_func import get_graphql
 from custom_module.v3.quest_task_func import (
     generate_quest_graphql,
+    generate_quest_name_graphql,
     v3_quest_process,
     v3_quest_objectives_process,
     v3_quest_objective_items_process,
@@ -32,6 +33,8 @@ default_args = {
 }
 
 en_path = "/opt/airflow/tmp/v3_quest_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_quest_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_quest_ja_list.json"
 
 
 with DAG(
@@ -45,11 +48,19 @@ with DAG(
 
     def fetch_quest():
         item_list_en = get_graphql(generate_quest_graphql("en"))
+        item_list_ko = get_graphql(generate_quest_name_graphql("ko"))
+        item_list_ja = get_graphql(generate_quest_name_graphql("ja"))
 
         with open(en_path, "w") as f:
             json.dump(item_list_en["data"]["tasks"], f)
 
-        return {"en": en_path}
+        with open(ko_path, "w") as f:
+            json.dump(item_list_ko["data"]["tasks"], f)
+
+        with open(ja_path, "w") as f:
+            json.dump(item_list_ja["data"]["tasks"], f)
+
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
     def upsert_quest(postgres_conn_id):
         context = get_current_context()
@@ -58,8 +69,14 @@ with DAG(
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
 
         item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
 
         item_ids = sorted(set(item_en_dict))
 
@@ -81,8 +98,10 @@ with DAG(
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
+            item_ko = item_ko_dict.get(item_id)
+            item_ja = item_ja_dict.get(item_id)
 
-            quest_rows.append(v3_quest_process(item_en, None, None))
+            quest_rows.append(v3_quest_process(item_en, item_ko, item_ja))
             objective_rows.extend(v3_quest_objectives_process(item_en))
             objective_item_rows.extend(v3_quest_objective_items_process(item_en))
             objective_required_key_rows.extend(
@@ -123,6 +142,8 @@ with DAG(
             SET
                 normalized_name = EXCLUDED.normalized_name,
                 name_en = EXCLUDED.name_en,
+                name_ko = COALESCE(EXCLUDED.name_ko, quests.name_ko),
+                name_ja = COALESCE(EXCLUDED.name_ja, quests.name_ja),
                 trader_id = EXCLUDED.trader_id,
                 experience = EXCLUDED.experience,
                 delay_max = EXCLUDED.delay_max,
@@ -403,7 +424,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path]
+        files = [en_path, ko_path, ja_path]
 
         for path in files:
             try:

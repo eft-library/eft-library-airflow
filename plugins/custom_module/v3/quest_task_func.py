@@ -104,6 +104,17 @@ def generate_quest_graphql(lang: str) -> str:
 """
 
 
+def generate_quest_name_graphql(lang: str) -> str:
+    return f"""
+{{
+  tasks(lang: {lang}) {{
+    id
+    name
+  }}
+}}
+"""
+
+
 def v3_quest_objectives_process(item_en):
     quest_id = item_en.get("id")
     objectives = item_en.get("objectives") or []
