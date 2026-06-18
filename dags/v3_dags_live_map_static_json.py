@@ -54,6 +54,42 @@ def _write_json_atomic(path, payload):
     os.replace(tmp_path, path)
 
 
+def _write_bytes_atomic(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+
+    with open(tmp_path, "wb") as f:
+        f.write(content)
+
+    os.replace(tmp_path, path)
+
+
+def _download_file(url, path):
+    response = requests.get(url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    _write_bytes_atomic(path, response.content)
+
+
+def _localize_map_floor_images(payload, normalized_name, root):
+    floors = ((payload.get("data") or {}).get("floors")) or []
+    for floor in floors:
+        image_url = floor.get("image")
+        if not image_url or not image_url.startswith(("http://", "https://")):
+            continue
+
+        floor_no = floor.get("floor_no")
+        floor_id = floor.get("id")
+        filename_parts = [
+            _safe_filename(normalized_name),
+            _safe_filename(floor_no if floor_no is not None else floor_id),
+        ]
+        filename = "-".join(filename_parts) + ".svg"
+        asset_path = root / "assets" / "maps" / filename
+
+        _download_file(image_url, asset_path)
+        floor["image"] = f"/live-map/v3/assets/maps/{filename}"
+
+
 def _fetch_targets(postgres_conn_id):
     postgres_hook = PostgresHook(postgres_conn_id)
 
@@ -141,6 +177,7 @@ def generate_live_map_static_json(postgres_conn_id):
 
     for normalized_name in targets["maps"]:
         payload = _fetch_json(f"/live-map/v3/detail/{quote(normalized_name, safe='')}")
+        _localize_map_floor_images(payload, normalized_name, root)
         filename = f"{_safe_filename(normalized_name)}.json"
         target_path = root / "maps" / filename
         _write_json_atomic(target_path, payload)
