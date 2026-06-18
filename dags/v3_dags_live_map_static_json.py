@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from contextlib import closing
 from pathlib import Path
 from urllib.parse import quote
@@ -65,6 +66,7 @@ def _write_bytes_atomic(path, content):
 
 
 def _download_file(url, path):
+    print(f"[live-map-static] download asset: {url} -> {path}")
     response = requests.get(url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     _write_bytes_atomic(path, response.content)
@@ -91,6 +93,7 @@ def _localize_map_floor_images(payload, normalized_name, root):
 
 
 def _fetch_targets(postgres_conn_id):
+    print("[live-map-static] fetch targets from database")
     postgres_hook = PostgresHook(postgres_conn_id)
 
     with closing(postgres_hook.get_conn()) as conn:
@@ -156,15 +159,22 @@ def _fetch_targets(postgres_conn_id):
             )
             events = [row[0] for row in cursor.fetchall()]
 
-    return {
+    targets = {
         "maps": maps,
         "quests": quests,
         "stories": stories,
         "events": events,
     }
+    print(
+        "[live-map-static] targets fetched: "
+        f"maps={len(maps)}, quests={len(quests)}, "
+        f"stories={len(stories)}, events={len(events)}"
+    )
+    return targets
 
 
 def generate_live_map_static_json(postgres_conn_id):
+    started_at = time.monotonic()
     targets = _fetch_targets(postgres_conn_id)
     root = OUTPUT_DIR / "v3"
     generated_at = pendulum.now("UTC").to_iso8601_string()
@@ -175,7 +185,14 @@ def generate_live_map_static_json(postgres_conn_id):
         "events": [],
     }
 
-    for normalized_name in targets["maps"]:
+    print(f"[live-map-static] output root: {root}")
+
+    for index, normalized_name in enumerate(targets["maps"], start=1):
+        item_started_at = time.monotonic()
+        print(
+            f"[live-map-static] maps {index}/{len(targets['maps'])}: "
+            f"{normalized_name}"
+        )
         payload = _fetch_json(f"/live-map/v3/detail/{quote(normalized_name, safe='')}")
         _localize_map_floor_images(payload, normalized_name, root)
         filename = f"{_safe_filename(normalized_name)}.json"
@@ -187,8 +204,17 @@ def generate_live_map_static_json(postgres_conn_id):
                 "path": f"/live-map/v3/maps/{filename}",
             }
         )
+        print(
+            f"[live-map-static] maps {index}/{len(targets['maps'])} done: "
+            f"{normalized_name} ({time.monotonic() - item_started_at:.2f}s)"
+        )
 
-    for normalized_name in targets["quests"]:
+    for index, normalized_name in enumerate(targets["quests"], start=1):
+        item_started_at = time.monotonic()
+        print(
+            f"[live-map-static] quests {index}/{len(targets['quests'])}: "
+            f"{normalized_name}"
+        )
         payload = _fetch_json(f"/live-map/v3/quest/{quote(normalized_name, safe='')}")
         filename = f"{_safe_filename(normalized_name)}.json"
         target_path = root / "quests" / filename
@@ -199,8 +225,17 @@ def generate_live_map_static_json(postgres_conn_id):
                 "path": f"/live-map/v3/quests/{filename}",
             }
         )
+        print(
+            f"[live-map-static] quests {index}/{len(targets['quests'])} done: "
+            f"{normalized_name} ({time.monotonic() - item_started_at:.2f}s)"
+        )
 
-    for story_id in targets["stories"]:
+    for index, story_id in enumerate(targets["stories"], start=1):
+        item_started_at = time.monotonic()
+        print(
+            f"[live-map-static] stories {index}/{len(targets['stories'])}: "
+            f"{story_id}"
+        )
         payload = _fetch_json(f"/live-map/v3/story/{quote(story_id, safe='')}")
         filename = f"{_safe_filename(story_id)}.json"
         target_path = root / "stories" / filename
@@ -211,8 +246,17 @@ def generate_live_map_static_json(postgres_conn_id):
                 "path": f"/live-map/v3/stories/{filename}",
             }
         )
+        print(
+            f"[live-map-static] stories {index}/{len(targets['stories'])} done: "
+            f"{story_id} ({time.monotonic() - item_started_at:.2f}s)"
+        )
 
-    for event_id in targets["events"]:
+    for index, event_id in enumerate(targets["events"], start=1):
+        item_started_at = time.monotonic()
+        print(
+            f"[live-map-static] events {index}/{len(targets['events'])}: "
+            f"{event_id}"
+        )
         payload = _fetch_json(f"/live-map/v3/event/{quote(event_id, safe='')}")
         filename = f"{_safe_filename(event_id)}.json"
         target_path = root / "events" / filename
@@ -223,9 +267,19 @@ def generate_live_map_static_json(postgres_conn_id):
                 "path": f"/live-map/v3/events/{filename}",
             }
         )
+        print(
+            f"[live-map-static] events {index}/{len(targets['events'])} done: "
+            f"{event_id} ({time.monotonic() - item_started_at:.2f}s)"
+        )
 
+    print("[live-map-static] completion graph: start")
+    item_started_at = time.monotonic()
     completion_graph = _fetch_json("/quest/v3/completion-graph")
     _write_json_atomic(root / "completion-graph.json", completion_graph)
+    print(
+        "[live-map-static] completion graph: done "
+        f"({time.monotonic() - item_started_at:.2f}s)"
+    )
 
     index_payload = {
         "status": 200,
@@ -253,7 +307,8 @@ def generate_live_map_static_json(postgres_conn_id):
         f"quests={len(files['quests'])}, "
         f"stories={len(files['stories'])}, "
         f"events={len(files['events'])}, "
-        f"output={root}"
+        f"output={root}, "
+        f"elapsed={time.monotonic() - started_at:.2f}s"
     )
 
 
