@@ -78,8 +78,8 @@ with DAG(
                     select id,
                            map_id,
                            floor_no,
-                           min_z,
-                           max_z,
+                           min_y,
+                           max_y,
                            sort_order
                     from live_map_floors
                     order by map_id, sort_order, floor_no;
@@ -92,8 +92,8 @@ with DAG(
                             "id": row[0],
                             "map_id": row[1],
                             "floor_no": row[2],
-                            "min_z": row[3],
-                            "max_z": row[4],
+                            "min_y": row[3],
+                            "max_y": row[4],
                             "sort_order": row[5],
                         }
                     )

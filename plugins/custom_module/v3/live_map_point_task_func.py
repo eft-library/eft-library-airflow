@@ -18,11 +18,11 @@ def match_floor(floors, y_value):
     if y_value is not None:
         y_float = float(y_value)
         for floor in floors:
-            min_z = floor.get("min_z")
-            max_z = floor.get("max_z")
-            if min_z is None or max_z is None:
+            min_y = floor.get("min_y")
+            max_y = floor.get("max_y")
+            if min_y is None or max_y is None:
                 continue
-            if float(min_z) <= y_float <= float(max_z):
+            if float(min_y) <= y_float <= float(max_y):
                 return floor.get("id"), floor.get("floor_no")
 
     default_floor = floors[0]
