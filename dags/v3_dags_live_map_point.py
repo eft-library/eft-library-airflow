@@ -203,8 +203,7 @@ with DAG(
                             floor_no,
                             x,
                             z,
-                            y,
-                            sort_order
+                            y
                         )
                         VALUES %s
                         ON CONFLICT (id) DO UPDATE
@@ -217,7 +216,6 @@ with DAG(
                             x = EXCLUDED.x,
                             z = EXCLUDED.z,
                             y = EXCLUDED.y,
-                            sort_order = EXCLUDED.sort_order,
                             update_time = now()
                         """,
                         point_rows,

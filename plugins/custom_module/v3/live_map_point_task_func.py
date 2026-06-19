@@ -210,7 +210,6 @@ def build_point_row(
     position,
     source_type,
     source_key,
-    sort_order,
 ):
     map_id = local_map["id"]
     floor_id, floor_no = match_floor(floors_by_map_id.get(map_id, []), position.get("y"))
@@ -231,7 +230,6 @@ def build_point_row(
         position.get("x"),
         position.get("z"),
         position.get("y"),
-        sort_order,
     )
 
 
@@ -279,7 +277,6 @@ def build_live_map_point_rows(
 
     for task in tasks_en:
         quest_id = task.get("id")
-        sort_order = 1
 
         for objective in task.get("objectives") or []:
             objective_id = objective.get("id")
@@ -310,9 +307,7 @@ def build_live_map_point_rows(
                         f"{zone.get('id')}:{zone_index}:"
                         f"{position.get('x')}:{position.get('y')}:{position.get('z')}"
                     ),
-                    sort_order=sort_order,
                 )
-                sort_order += 1
 
             for location_index, location in enumerate(
                 objective.get("possibleLocations") or []
@@ -340,9 +335,7 @@ def build_live_map_point_rows(
                             f"{location_index}:{position_index}:"
                             f"{position.get('x')}:{position.get('y')}:{position.get('z')}"
                         ),
-                        sort_order=sort_order,
                     )
-                    sort_order += 1
 
             if len(point_rows) == before_count:
                 continue
