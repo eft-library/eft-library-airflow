@@ -3,6 +3,8 @@ import re
 
 from psycopg2.extras import Json
 
+from custom_module.v3.live_map_point_task_func import match_floor
+
 
 def generate_live_map_static_point_graphql():
     return """
@@ -86,32 +88,11 @@ def build_metadata(source_type, raw):
     )
 
 
-def match_floor(floors, y_value):
-    if not floors:
-        return None
-
-    if y_value is not None:
-        y_float = float(y_value)
-        for floor in floors:
-            min_y = floor.get("min_y")
-            max_y = floor.get("max_y")
-            if min_y is None or max_y is None:
-                continue
-            if float(min_y) <= y_float <= float(max_y):
-                return floor.get("id")
-
-    default_floor = floors[0]
-    for floor in floors:
-        if floor.get("floor_no") == 1:
-            default_floor = floor
-            break
-    return default_floor.get("id")
-
-
 def build_static_point_row(
     *,
     map_id,
     floors,
+    floor_zones,
     category,
     source_key,
     name,
@@ -119,7 +100,7 @@ def build_static_point_row(
     metadata,
     sort_order,
 ):
-    floor_id = match_floor(floors, position.get("y"))
+    floor_id = match_floor(floors, floor_zones, position)
     return (
         build_static_point_id(map_id, category, source_key),
         map_id,
@@ -138,7 +119,12 @@ def build_static_point_row(
     )
 
 
-def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
+def build_live_map_static_point_rows(
+    api_maps,
+    local_maps,
+    floors_by_map_id,
+    floor_zones_by_map_id,
+):
     rows = []
     skipped_maps = []
 
@@ -150,6 +136,7 @@ def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
 
         map_id = local_map["id"]
         floors = floors_by_map_id.get(map_id, [])
+        floor_zones = floor_zones_by_map_id.get(map_id, [])
         sort_order = 1
 
         for stop in api_map.get("btrStops") or []:
@@ -158,6 +145,7 @@ def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
                 build_static_point_row(
                     map_id=map_id,
                     floors=floors,
+                    floor_zones=floor_zones,
                     category="btr_stop",
                     source_key=f"btr:{stop.get('name')}:{position}",
                     name=stop.get("name"),
@@ -175,6 +163,7 @@ def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
                 build_static_point_row(
                     map_id=map_id,
                     floors=floors,
+                    floor_zones=floor_zones,
                     category="stationary_weapon",
                     source_key=(
                         f"stationary:{stationary_weapon.get('id')}:{position}"
@@ -194,6 +183,7 @@ def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
                 build_static_point_row(
                     map_id=map_id,
                     floors=floors,
+                    floor_zones=floor_zones,
                     category="transit",
                     source_key=f"transit:{target_map.get('id')}:{position}",
                     name=target_map.get("name"),
@@ -212,6 +202,7 @@ def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
                     build_static_point_row(
                         map_id=map_id,
                         floors=floors,
+                        floor_zones=floor_zones,
                         category="transit_switch",
                         source_key=(
                             f"transit_switch:{target_map.get('id')}:"
@@ -234,6 +225,7 @@ def build_live_map_static_point_rows(api_maps, local_maps, floors_by_map_id):
                 build_static_point_row(
                     map_id=map_id,
                     floors=floors,
+                    floor_zones=floor_zones,
                     category="extract",
                     source_key=f"extract:{extract.get('id')}:{position}",
                     name=extract.get("name"),

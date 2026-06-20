@@ -98,10 +98,44 @@ with DAG(
                         }
                     )
 
+                cursor.execute(
+                    """
+                    select id,
+                           floor_id,
+                           map_id,
+                           area_x_min,
+                           area_x_max,
+                           area_z_min,
+                           area_z_max,
+                           override_min_y,
+                           override_max_y,
+                           sort_order
+                    from live_map_floor_zones
+                    order by map_id, sort_order nulls last, id;
+                    """
+                )
+                floor_zones_by_map_id = {}
+                for row in cursor.fetchall():
+                    floor_zones_by_map_id.setdefault(row[2], []).append(
+                        {
+                            "id": row[0],
+                            "floor_id": row[1],
+                            "map_id": row[2],
+                            "area_x_min": row[3],
+                            "area_x_max": row[4],
+                            "area_z_min": row[5],
+                            "area_z_max": row[6],
+                            "override_min_y": row[7],
+                            "override_max_y": row[8],
+                            "sort_order": row[9],
+                        }
+                    )
+
                 rows = build_live_map_static_point_rows(
                     api_maps,
                     local_maps,
                     floors_by_map_id,
+                    floor_zones_by_map_id,
                 )
 
                 if not rows:
@@ -125,22 +159,7 @@ with DAG(
                         sort_order
                     )
                     VALUES %s
-                    ON CONFLICT (id) DO UPDATE
-                    SET
-                        map_id = EXCLUDED.map_id,
-                        floor_id = EXCLUDED.floor_id,
-                        category = EXCLUDED.category,
-                        name_en = EXCLUDED.name_en,
-                        name_ko = EXCLUDED.name_ko,
-                        name_ja = EXCLUDED.name_ja,
-                        description_en = EXCLUDED.description_en,
-                        description_ko = EXCLUDED.description_ko,
-                        description_ja = EXCLUDED.description_ja,
-                        x = EXCLUDED.x,
-                        z = EXCLUDED.z,
-                        metadata = EXCLUDED.metadata,
-                        sort_order = EXCLUDED.sort_order,
-                        update_time = now()
+                    ON CONFLICT (id) DO NOTHING
                 """
 
                 execute_values(
