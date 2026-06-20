@@ -16,9 +16,13 @@ def is_within_range(value, minimum, maximum):
         return False
 
     value = float(value)
-    return (minimum is None or float(minimum) <= value) and (
-        maximum is None or value <= float(maximum)
-    )
+    if minimum is None:
+        return value <= float(maximum)
+    if maximum is None:
+        return float(minimum) <= value
+
+    lower, upper = sorted((float(minimum), float(maximum)))
+    return lower <= value <= upper
 
 
 def is_within_floor_zone(zone, x_value, z_value):
@@ -35,7 +39,7 @@ def is_within_floor_zone(zone, x_value, z_value):
 
 def match_floor(floors, floor_zones, position):
     if not floors:
-        return None, None
+        return None
 
     x_value = position.get("x")
     z_value = position.get("z")
@@ -57,21 +61,21 @@ def match_floor(floors, floor_zones, position):
             zone.get("override_max_y"),
         ):
             floor = floors_by_id[zone.get("floor_id")]
-            return floor.get("id"), floor.get("floor_no")
+            return floor.get("id")
 
     overridden_floor_ids = {zone.get("floor_id") for zone in matching_zones}
     for floor in floors:
         if floor.get("id") in overridden_floor_ids:
             continue
         if is_within_range(y_value, floor.get("min_y"), floor.get("max_y")):
-            return floor.get("id"), floor.get("floor_no")
+            return floor.get("id")
 
     default_floor = floors[0]
     for floor in floors:
         if floor.get("floor_no") == 1:
             default_floor = floor
             break
-    return default_floor.get("id"), default_floor.get("floor_no")
+    return default_floor.get("id")
 
 
 def generate_live_map_point_graphql(lang: str):
@@ -254,7 +258,7 @@ def build_point_row(
     source_key,
 ):
     map_id = local_map["id"]
-    floor_id, floor_no = match_floor(
+    floor_id = match_floor(
         floors_by_map_id.get(map_id, []),
         floor_zones_by_map_id.get(map_id, []),
         position,
@@ -272,10 +276,8 @@ def build_point_row(
         objective_id,
         map_id,
         floor_id,
-        floor_no,
         position.get("x"),
         position.get("z"),
-        position.get("y"),
     )
 
 

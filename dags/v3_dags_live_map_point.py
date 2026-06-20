@@ -234,10 +234,8 @@ with DAG(
                             objective_id,
                             map_id,
                             floor_id,
-                            floor_no,
                             x,
-                            z,
-                            y
+                            z
                         )
                         VALUES %s
                         ON CONFLICT (id) DO UPDATE
@@ -246,10 +244,8 @@ with DAG(
                             objective_id = EXCLUDED.objective_id,
                             map_id = EXCLUDED.map_id,
                             floor_id = EXCLUDED.floor_id,
-                            floor_no = EXCLUDED.floor_no,
                             x = EXCLUDED.x,
                             z = EXCLUDED.z,
-                            y = EXCLUDED.y,
                             update_time = now()
                         """,
                         point_rows,

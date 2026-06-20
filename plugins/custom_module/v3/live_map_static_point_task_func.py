@@ -88,7 +88,7 @@ def build_metadata(source_type, raw):
 
 def match_floor(floors, y_value):
     if not floors:
-        return None, None
+        return None
 
     if y_value is not None:
         y_float = float(y_value)
@@ -98,14 +98,14 @@ def match_floor(floors, y_value):
             if min_y is None or max_y is None:
                 continue
             if float(min_y) <= y_float <= float(max_y):
-                return floor.get("id"), floor.get("floor_no")
+                return floor.get("id")
 
     default_floor = floors[0]
     for floor in floors:
         if floor.get("floor_no") == 1:
             default_floor = floor
             break
-    return default_floor.get("id"), default_floor.get("floor_no")
+    return default_floor.get("id")
 
 
 def build_static_point_row(
@@ -119,12 +119,11 @@ def build_static_point_row(
     metadata,
     sort_order,
 ):
-    floor_id, floor_no = match_floor(floors, position.get("y"))
+    floor_id = match_floor(floors, position.get("y"))
     return (
         build_static_point_id(map_id, category, source_key),
         map_id,
         floor_id,
-        floor_no,
         category,
         name,
         name,
@@ -134,7 +133,6 @@ def build_static_point_row(
         None,
         position.get("x"),
         position.get("z"),
-        position.get("y"),
         metadata,
         sort_order,
     )

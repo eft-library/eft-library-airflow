@@ -112,7 +112,6 @@ with DAG(
                         id,
                         map_id,
                         floor_id,
-                        floor_no,
                         category,
                         name_en,
                         name_ko,
@@ -122,7 +121,6 @@ with DAG(
                         description_ja,
                         x,
                         z,
-                        y,
                         metadata,
                         sort_order
                     )
@@ -131,7 +129,6 @@ with DAG(
                     SET
                         map_id = EXCLUDED.map_id,
                         floor_id = EXCLUDED.floor_id,
-                        floor_no = EXCLUDED.floor_no,
                         category = EXCLUDED.category,
                         name_en = EXCLUDED.name_en,
                         name_ko = EXCLUDED.name_ko,
@@ -141,7 +138,6 @@ with DAG(
                         description_ja = EXCLUDED.description_ja,
                         x = EXCLUDED.x,
                         z = EXCLUDED.z,
-                        y = EXCLUDED.y,
                         metadata = EXCLUDED.metadata,
                         sort_order = EXCLUDED.sort_order,
                         update_time = now()
