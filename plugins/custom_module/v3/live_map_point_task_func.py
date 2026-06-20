@@ -11,19 +11,60 @@ def normalize_map_name(value):
     return normalized.strip("-")
 
 
-def match_floor(floors, y_value):
+def is_within_range(value, minimum, maximum):
+    if value is None or (minimum is None and maximum is None):
+        return False
+
+    value = float(value)
+    return (minimum is None or float(minimum) <= value) and (
+        maximum is None or value <= float(maximum)
+    )
+
+
+def is_within_floor_zone(zone, x_value, z_value):
+    return is_within_range(
+        x_value,
+        zone.get("area_x_min"),
+        zone.get("area_x_max"),
+    ) and is_within_range(
+        z_value,
+        zone.get("area_z_min"),
+        zone.get("area_z_max"),
+    )
+
+
+def match_floor(floors, floor_zones, position):
     if not floors:
         return None, None
 
-    if y_value is not None:
-        y_float = float(y_value)
-        for floor in floors:
-            min_y = floor.get("min_y")
-            max_y = floor.get("max_y")
-            if min_y is None or max_y is None:
-                continue
-            if float(min_y) <= y_float <= float(max_y):
-                return floor.get("id"), floor.get("floor_no")
+    x_value = position.get("x")
+    z_value = position.get("z")
+    y_value = position.get("y")
+    floors_by_id = {floor.get("id"): floor for floor in floors}
+
+    matching_zones = [
+        zone
+        for zone in floor_zones
+        if zone.get("floor_id") in floors_by_id
+        and is_within_floor_zone(zone, x_value, z_value)
+    ]
+
+    # A zone's height range replaces the floor's default range at that x/z.
+    for zone in matching_zones:
+        if is_within_range(
+            y_value,
+            zone.get("override_min_y"),
+            zone.get("override_max_y"),
+        ):
+            floor = floors_by_id[zone.get("floor_id")]
+            return floor.get("id"), floor.get("floor_no")
+
+    overridden_floor_ids = {zone.get("floor_id") for zone in matching_zones}
+    for floor in floors:
+        if floor.get("id") in overridden_floor_ids:
+            continue
+        if is_within_range(y_value, floor.get("min_y"), floor.get("max_y")):
+            return floor.get("id"), floor.get("floor_no")
 
     default_floor = floors[0]
     for floor in floors:
@@ -207,12 +248,17 @@ def build_point_row(
     objective_id,
     local_map,
     floors_by_map_id,
+    floor_zones_by_map_id,
     position,
     source_type,
     source_key,
 ):
     map_id = local_map["id"]
-    floor_id, floor_no = match_floor(floors_by_map_id.get(map_id, []), position.get("y"))
+    floor_id, floor_no = match_floor(
+        floors_by_map_id.get(map_id, []),
+        floor_zones_by_map_id.get(map_id, []),
+        position,
+    )
     point_id = build_live_map_point_id(
         objective_id,
         map_id,
@@ -267,6 +313,7 @@ def build_live_map_point_rows(
     tasks_ja,
     local_maps,
     floors_by_map_id,
+    floor_zones_by_map_id,
 ):
     descriptions_ko = objective_description_by_id(tasks_ko)
     descriptions_ja = objective_description_by_id(tasks_ja)
@@ -301,6 +348,7 @@ def build_live_map_point_rows(
                     objective_id=objective_id,
                     local_map=local_map,
                     floors_by_map_id=floors_by_map_id,
+                    floor_zones_by_map_id=floor_zones_by_map_id,
                     position=position,
                     source_type="zone",
                     source_key=(
@@ -329,6 +377,7 @@ def build_live_map_point_rows(
                         objective_id=objective_id,
                         local_map=local_map,
                         floors_by_map_id=floors_by_map_id,
+                        floor_zones_by_map_id=floor_zones_by_map_id,
                         position=position,
                         source_type="possible_location",
                         source_key=(

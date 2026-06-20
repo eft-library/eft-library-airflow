@@ -111,12 +111,46 @@ with DAG(
                         }
                     )
 
+                cursor.execute(
+                    """
+                    select id,
+                           floor_id,
+                           map_id,
+                           area_x_min,
+                           area_x_max,
+                           area_z_min,
+                           area_z_max,
+                           override_min_y,
+                           override_max_y,
+                           sort_order
+                    from live_map_floor_zones
+                    order by map_id, sort_order nulls last, id;
+                    """
+                )
+                floor_zones_by_map_id = {}
+                for row in cursor.fetchall():
+                    floor_zones_by_map_id.setdefault(row[2], []).append(
+                        {
+                            "id": row[0],
+                            "floor_id": row[1],
+                            "map_id": row[2],
+                            "area_x_min": row[3],
+                            "area_x_max": row[4],
+                            "area_z_min": row[5],
+                            "area_z_max": row[6],
+                            "override_min_y": row[7],
+                            "override_max_y": row[8],
+                            "sort_order": row[9],
+                        }
+                    )
+
                 point_rows, detail_rows = build_live_map_point_rows(
                     tasks_en,
                     tasks_ko,
                     tasks_ja,
                     local_maps,
                     floors_by_map_id,
+                    floor_zones_by_map_id,
                 )
 
                 quest_ids = [(task.get("id"),) for task in tasks_en if task.get("id")]
