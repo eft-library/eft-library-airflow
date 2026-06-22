@@ -56,6 +56,35 @@ def _write_json_atomic(path, payload):
     os.replace(tmp_path, path)
 
 
+def _write_bytes_atomic(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+
+    with open(tmp_path, "wb") as f:
+        f.write(content)
+
+    os.replace(tmp_path, path)
+
+
+def _download_file(url, path):
+    print(f"[map-static] download asset: {url} -> {path}")
+    response = requests.get(url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    _write_bytes_atomic(path, response.content)
+
+
+def _localize_map_image(payload, normalized_name, root):
+    map_info = (payload.get("data") or {}).get("map") or {}
+    image_url = map_info.get("three_image")
+    if not image_url or not image_url.startswith(("http://", "https://")):
+        return
+
+    filename = f"{_safe_filename(normalized_name)}.svg"
+    asset_path = root / "assets" / "maps" / filename
+    _download_file(image_url, asset_path)
+    map_info["three_image"] = f"{PUBLIC_BASE_PATH}/v3/assets/maps/{filename}"
+
+
 def _fetch_targets(postgres_conn_id):
     print("[map-static] fetch targets from database")
     postgres_hook = PostgresHook(postgres_conn_id)
@@ -93,6 +122,7 @@ def generate_map_static_json(postgres_conn_id):
             f"{normalized_name}"
         )
         payload = _fetch_json(f"/map/v3/detail/{quote(normalized_name, safe='')}")
+        _localize_map_image(payload, normalized_name, root)
         filename = f"{_safe_filename(normalized_name)}.json"
         _write_json_atomic(root / "details" / filename, payload)
         files["details"].append(
