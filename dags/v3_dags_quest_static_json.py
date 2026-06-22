@@ -72,8 +72,21 @@ def _fetch_targets(postgres_conn_id):
             )
             quests = [row[0] for row in cursor.fetchall()]
 
-    print(f"[quest-static] targets fetched: quests={len(quests)}")
-    return {"quests": quests}
+            cursor.execute(
+                """
+                select normalized_name
+                from traders
+                where normalized_name is not null
+                order by name_en, normalized_name;
+                """
+            )
+            traders = [row[0] for row in cursor.fetchall()]
+
+    print(
+        "[quest-static] targets fetched: "
+        f"quests={len(quests)}, traders={len(traders)}"
+    )
+    return {"quests": quests, "traders": traders}
 
 
 def generate_quest_static_json(postgres_conn_id):
@@ -81,7 +94,7 @@ def generate_quest_static_json(postgres_conn_id):
     targets = _fetch_targets(postgres_conn_id)
     root = OUTPUT_DIR / "static" / "quest" / "v3"
     generated_at = pendulum.now("UTC").to_iso8601_string()
-    files = {"details": []}
+    files = {"details": [], "list_with_trader": []}
 
     print(f"[quest-static] output root: {root}")
 
@@ -91,6 +104,15 @@ def generate_quest_static_json(postgres_conn_id):
     _write_json_atomic(root / "all.json", all_payload)
     print(
         "[quest-static] all: done "
+        f"({time.monotonic() - item_started_at:.2f}s)"
+    )
+
+    print("[quest-static] feed: start")
+    item_started_at = time.monotonic()
+    feed_payload = _fetch_json("/quest/v3/feed")
+    _write_json_atomic(root / "feed.json", feed_payload)
+    print(
+        "[quest-static] feed: done "
         f"({time.monotonic() - item_started_at:.2f}s)"
     )
 
@@ -123,6 +145,28 @@ def generate_quest_static_json(postgres_conn_id):
             f"{normalized_name} ({time.monotonic() - item_started_at:.2f}s)"
         )
 
+    for index, trader_name in enumerate(targets["traders"], start=1):
+        item_started_at = time.monotonic()
+        print(
+            f"[quest-static] list-with-trader {index}/{len(targets['traders'])}: "
+            f"{trader_name}"
+        )
+        payload = _fetch_json(
+            f"/quest/v3/list-with-trader/{quote(trader_name, safe='')}"
+        )
+        filename = f"{_safe_filename(trader_name)}.json"
+        _write_json_atomic(root / "list-with-trader" / filename, payload)
+        files["list_with_trader"].append(
+            {
+                "id": trader_name,
+                "path": f"{PUBLIC_BASE_PATH}/v3/list-with-trader/{filename}",
+            }
+        )
+        print(
+            f"[quest-static] list-with-trader {index}/{len(targets['traders'])} done: "
+            f"{trader_name} ({time.monotonic() - item_started_at:.2f}s)"
+        )
+
     index_payload = {
         "status": 200,
         "msg": "OK",
@@ -132,10 +176,12 @@ def generate_quest_static_json(postgres_conn_id):
             "files": {
                 **files,
                 "all": f"{PUBLIC_BASE_PATH}/v3/all.json",
+                "feed": f"{PUBLIC_BASE_PATH}/v3/feed.json",
                 "completion_graph": f"{PUBLIC_BASE_PATH}/v3/completion-graph.json",
             },
             "counts": {
                 "details": len(files["details"]),
+                "list_with_trader": len(files["list_with_trader"]),
             },
         },
     }
@@ -144,6 +190,7 @@ def generate_quest_static_json(postgres_conn_id):
     print(
         "Generated quest static JSON: "
         f"details={len(files['details'])}, "
+        f"list_with_trader={len(files['list_with_trader'])}, "
         f"output={root}, "
         f"elapsed={time.monotonic() - started_at:.2f}s"
     )
