@@ -20,6 +20,7 @@ default_args = {
 
 API_BASE_URL = "https://back.eftlibrary.com/api"
 OUTPUT_DIR = Path("/opt/airflow/next-public")
+PUBLIC_BASE_PATH = "/static/live-map"
 REQUEST_TIMEOUT = 60
 
 
@@ -89,7 +90,7 @@ def _localize_map_floor_images(payload, normalized_name, root):
         asset_path = root / "assets" / "maps" / filename
 
         _download_file(image_url, asset_path)
-        floor["image"] = f"/live-map/v3/assets/maps/{filename}"
+        floor["image"] = f"{PUBLIC_BASE_PATH}/v3/assets/maps/{filename}"
 
 
 def _fetch_targets(postgres_conn_id):
@@ -176,7 +177,7 @@ def _fetch_targets(postgres_conn_id):
 def generate_live_map_static_json(postgres_conn_id):
     started_at = time.monotonic()
     targets = _fetch_targets(postgres_conn_id)
-    root = OUTPUT_DIR / "v3"
+    root = OUTPUT_DIR / "static" / "live-map" / "v3"
     generated_at = pendulum.now("UTC").to_iso8601_string()
     files = {
         "maps": [],
@@ -201,7 +202,7 @@ def generate_live_map_static_json(postgres_conn_id):
         files["maps"].append(
             {
                 "id": normalized_name,
-                "path": f"/live-map/v3/maps/{filename}",
+                "path": f"{PUBLIC_BASE_PATH}/v3/maps/{filename}",
             }
         )
         print(
@@ -222,7 +223,7 @@ def generate_live_map_static_json(postgres_conn_id):
         files["quests"].append(
             {
                 "id": normalized_name,
-                "path": f"/live-map/v3/quests/{filename}",
+                "path": f"{PUBLIC_BASE_PATH}/v3/quests/{filename}",
             }
         )
         print(
@@ -243,7 +244,7 @@ def generate_live_map_static_json(postgres_conn_id):
         files["stories"].append(
             {
                 "id": story_id,
-                "path": f"/live-map/v3/stories/{filename}",
+                "path": f"{PUBLIC_BASE_PATH}/v3/stories/{filename}",
             }
         )
         print(
@@ -264,7 +265,7 @@ def generate_live_map_static_json(postgres_conn_id):
         files["events"].append(
             {
                 "id": event_id,
-                "path": f"/live-map/v3/events/{filename}",
+                "path": f"{PUBLIC_BASE_PATH}/v3/events/{filename}",
             }
         )
         print(
@@ -289,7 +290,7 @@ def generate_live_map_static_json(postgres_conn_id):
         "data": {
             "files": {
                 **files,
-                "completion_graph": "/live-map/v3/completion-graph.json",
+                "completion_graph": f"{PUBLIC_BASE_PATH}/v3/completion-graph.json",
             },
             "counts": {
                 "maps": len(files["maps"]),
