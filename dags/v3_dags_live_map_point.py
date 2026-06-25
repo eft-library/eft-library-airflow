@@ -153,77 +153,6 @@ with DAG(
                     floor_zones_by_map_id,
                 )
 
-                quest_ids = [(task.get("id"),) for task in tasks_en if task.get("id")]
-                cursor.execute(
-                    """
-                    create temporary table incoming_live_map_quests (
-                        quest_id text
-                    ) on commit drop
-                    """
-                )
-                if quest_ids:
-                    execute_values(
-                        cursor,
-                        """
-                        insert into incoming_live_map_quests (
-                            quest_id
-                        ) values %s
-                        """,
-                        quest_ids,
-                        page_size=500,
-                    )
-
-                cursor.execute(
-                    """
-                    create temporary table incoming_live_map_points (
-                        point_id text
-                    ) on commit drop
-                    """
-                )
-                if point_rows:
-                    execute_values(
-                        cursor,
-                        """
-                        insert into incoming_live_map_points (
-                            point_id
-                        ) values %s
-                        """,
-                        [(row[0],) for row in point_rows],
-                        page_size=500,
-                    )
-
-                cursor.execute(
-                    """
-                    delete from live_map_point_details lmpd
-                    using live_map_points lmp
-                    where lmpd.point_id = lmp.id
-                      and lmp.quest_id in (
-                          select quest_id
-                          from incoming_live_map_quests
-                      )
-                      and not exists (
-                          select 1
-                          from incoming_live_map_points incoming
-                          where incoming.point_id = lmp.id
-                      );
-                    """
-                )
-
-                cursor.execute(
-                    """
-                    delete from live_map_points lmp
-                    where lmp.quest_id in (
-                        select quest_id
-                        from incoming_live_map_quests
-                    )
-                    and not exists (
-                        select 1
-                        from incoming_live_map_points incoming
-                        where incoming.point_id = lmp.id
-                    );
-                    """
-                )
-
                 if point_rows:
                     execute_values(
                         cursor,
@@ -238,15 +167,7 @@ with DAG(
                             z
                         )
                         VALUES %s
-                        ON CONFLICT (id) DO UPDATE
-                        SET
-                            quest_id = EXCLUDED.quest_id,
-                            objective_id = EXCLUDED.objective_id,
-                            map_id = EXCLUDED.map_id,
-                            floor_id = EXCLUDED.floor_id,
-                            x = EXCLUDED.x,
-                            z = EXCLUDED.z,
-                            update_time = now()
+                        ON CONFLICT (id) DO NOTHING
                         """,
                         point_rows,
                         page_size=500,
@@ -266,15 +187,7 @@ with DAG(
                             sort_order
                         )
                         VALUES %s
-                        ON CONFLICT (id) DO UPDATE
-                        SET
-                            point_id = EXCLUDED.point_id,
-                            description_en = EXCLUDED.description_en,
-                            description_ko = EXCLUDED.description_ko,
-                            description_ja = EXCLUDED.description_ja,
-                            image = COALESCE(EXCLUDED.image, live_map_point_details.image),
-                            sort_order = EXCLUDED.sort_order,
-                            update_time = now()
+                        ON CONFLICT (id) DO NOTHING
                         """,
                         detail_rows,
                         page_size=500,
