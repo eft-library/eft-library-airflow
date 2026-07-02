@@ -107,6 +107,16 @@ def _serialize_trader_price(row):
     }
 
 
+def _build_price_trend(history_by_type):
+    return {
+        game_mode: [
+            _to_float(history["price"])
+            for history in history_by_type.get(game_mode, [])[-8:]
+        ]
+        for game_mode in ("pvp", "pve")
+    }
+
+
 def _build_price_tiers(rows):
     tiers = ["S", "A", "B", "C", "D", "E", "F"]
     tier_size = 100
@@ -297,6 +307,7 @@ def generate_price_static_json(postgres_conn_id):
                 "width": item["width"],
                 "height": item["height"],
                 "prices": detail["prices"],
+                "trend_by_type": _build_price_trend(detail["history_by_type"]),
             }
         )
 
