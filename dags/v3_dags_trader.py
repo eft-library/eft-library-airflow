@@ -29,6 +29,8 @@ default_args = {
 
 en_path = "/opt/airflow/tmp/v3_trader_en_list.json"
 
+MANUAL_TRADER_IDS = {"FLEA_MARKET"}
+
 with DAG(
     dag_id="v3_dags_trader",
     default_args=default_args,
@@ -145,7 +147,7 @@ with DAG(
 
         for trader_id in sorted(api_ids - db_ids):
             add_change(trader_id, "상인 추가")
-        for trader_id in sorted(db_ids - api_ids):
+        for trader_id in sorted(db_ids - api_ids - MANUAL_TRADER_IDS):
             add_change(trader_id, "상인 삭제")
 
         field_labels = {

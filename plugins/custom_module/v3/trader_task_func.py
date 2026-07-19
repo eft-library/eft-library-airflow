@@ -1,4 +1,7 @@
+import hashlib
+import json
 import re
+from decimal import Decimal, InvalidOperation
 
 
 def generate_trader_graphql(lang: str) -> str:
@@ -64,12 +67,44 @@ def v3_trader_barter_process(trader_en):
     if not trader_id:
         return barter_rows, required_rows, reward_rows
 
-    for barter_idx, barter in enumerate(barters):
+    def item_signature(item_info):
+        quantity = item_info.get("quantity", 0)
+        try:
+            quantity = format(Decimal(str(quantity)).normalize(), "f")
+        except (InvalidOperation, TypeError, ValueError):
+            quantity = str(quantity)
+        return (
+            (item_info.get("item") or {}).get("id") or "",
+            quantity,
+        )
+
+    def barter_signature(barter):
+        payload = {
+            "level": barter.get("level"),
+            "required": sorted(
+                item_signature(item) for item in barter.get("requiredItems", [])
+            ),
+            "reward": sorted(
+                item_signature(item) for item in barter.get("rewardItems", [])
+            ),
+        }
+        serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:16]
+
+    sorted_barters = sorted(
+        ((barter_signature(barter), barter) for barter in barters),
+        key=lambda value: value[0],
+    )
+    signature_counts = {}
+
+    for signature, barter in sorted_barters:
         trader_level = barter.get("level")
         if trader_level is None:
             continue
 
-        barter_id = f"{trader_id}-barter-{barter_idx}"
+        occurrence = signature_counts.get(signature, 0)
+        signature_counts[signature] = occurrence + 1
+        barter_id = f"{trader_id}-barter-{signature}-{occurrence}"
 
         barter_rows.append(
             (
@@ -79,7 +114,9 @@ def v3_trader_barter_process(trader_en):
             )
         )
 
-        required_items = barter.get("requiredItems", [])
+        required_items = sorted(
+            barter.get("requiredItems", []), key=item_signature
+        )
         for req_idx, req in enumerate(required_items):
             item_id = req.get("item", {}).get("id")
             quantity = req.get("quantity", 0)
@@ -98,7 +135,9 @@ def v3_trader_barter_process(trader_en):
                 )
             )
 
-        reward_items = barter.get("rewardItems", [])
+        reward_items = sorted(
+            barter.get("rewardItems", []), key=item_signature
+        )
         for reward_idx, reward in enumerate(reward_items):
             item_id = reward.get("item", {}).get("id")
             quantity = reward.get("quantity", 0)
