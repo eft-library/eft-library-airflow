@@ -3,6 +3,7 @@ import pendulum
 import os
 from decimal import Decimal
 from html import escape
+from uuid import UUID
 
 from airflow import DAG
 from airflow.providers.smtp.operators.smtp import EmailOperator
@@ -131,7 +132,10 @@ with DAG(
                 cursor.execute(
                     "select id, normalized_name, name_en, name_ko, name_ja from hideout_master"
                 )
-                db_master = {row[0]: row for row in cursor.fetchall()}
+                db_master = {
+                    str(row[0]): (str(row[0]), *row[1:])
+                    for row in cursor.fetchall()
+                }
 
                 section_queries = {
                     "레벨": """
@@ -187,7 +191,7 @@ with DAG(
                 for section, query in section_queries.items():
                     cursor.execute(query)
                     db_sections[section] = {
-                        row[0]: (row[1], tuple(row[2:]))
+                        str(row[0]): (str(row[1]), tuple(row[2:]))
                         for row in cursor.fetchall()
                     }
 
@@ -222,6 +226,8 @@ with DAG(
                 add_change(station_id, f"기본 정보 변경 ({', '.join(fields)})")
 
         def normalize(value):
+            if isinstance(value, UUID):
+                return str(value)
             if isinstance(value, Decimal):
                 return value.normalize()
             if isinstance(value, float):

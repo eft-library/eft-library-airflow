@@ -67,7 +67,7 @@ with DAG(
                     """
                 )
                 db_by_id = {
-                    row[0]: {
+                    str(row[0]): {
                         "name_en": row[1],
                         "normalized_name": row[2],
                     }

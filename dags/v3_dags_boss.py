@@ -93,15 +93,24 @@ with DAG(
                     from bosses
                     """
                 )
-                db_boss_by_id = {row[0]: row for row in cursor.fetchall()}
+                db_boss_by_id = {
+                    str(row[0]): (str(row[0]), *row[1:])
+                    for row in cursor.fetchall()
+                }
 
                 cursor.execute("select boss_id, item_id, quantity from boss_item")
-                db_items = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+                db_items = {
+                    (str(row[0]), str(row[1])): row[2]
+                    for row in cursor.fetchall()
+                }
 
                 cursor.execute(
                     "select boss_id, map_id, spawn_chance from boss_spawn"
                 )
-                db_spawns = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+                db_spawns = {
+                    (str(row[0]), str(row[1])): row[2]
+                    for row in cursor.fetchall()
+                }
 
         api_ids = set(api_boss_by_id)
         db_ids = set(db_boss_by_id)
