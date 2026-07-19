@@ -195,6 +195,11 @@ with DAG(
                         for row in cursor.fetchall()
                     }
 
+                cursor.execute("select id, name_en from items")
+                item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+                cursor.execute("select id, name_en from traders")
+                trader_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+
         api_ids = set(api_master)
         db_ids = set(db_master)
         changes_by_station = {}
@@ -218,7 +223,10 @@ with DAG(
         master_fields = {1: "정규화 이름", 2: "영문 이름"}
         for station_id in sorted(api_ids & db_ids):
             fields = [
-                label
+                (
+                    f"{label}: {db_master[station_id][index]}"
+                    f" → {api_master[station_id][index]}"
+                )
                 for index, label in master_fields.items()
                 if api_master[station_id][index] != db_master[station_id][index]
             ]
@@ -237,6 +245,52 @@ with DAG(
             return value
 
         common_ids = api_ids & db_ids
+        section_fields = {
+            "레벨": ("시설 ID", "레벨", "건설 시간"),
+            "스킬 요구조건": ("레벨 ID", "요구 레벨", "스킬"),
+            "상인 요구조건": ("레벨 ID", "상인 ID", "상인 레벨"),
+            "선행 시설": ("레벨 ID", "선행 시설 ID", "시설 레벨"),
+            "필요 아이템": ("레벨 ID", "아이템 ID", "수량", "인레이드"),
+            "제작": ("레벨 ID", "보상 아이템 ID", "시간", "보상 수량"),
+            "제작 재료": ("제작 ID", "아이템 ID", "수량"),
+            "보너스": ("레벨 ID", "유형", "이름", "스킬", "값"),
+        }
+
+        station_names = {str(key): value[2] for key, value in db_master.items()}
+        station_names.update(
+            {str(key): value[2] for key, value in api_master.items()}
+        )
+
+        def display_value(field, value):
+            names = None
+            if "아이템 ID" in field:
+                names = item_names
+            elif "상인 ID" in field:
+                names = trader_names
+            elif "시설 ID" in field:
+                names = station_names
+            if names:
+                name = names.get(str(value))
+                if name:
+                    return f"{name} ({value})"
+            return value
+
+        def format_values(section, values):
+            return ", ".join(
+                f"{name}={display_value(name, value)}"
+                for name, value in zip(section_fields[section], values)
+            )
+
+        def format_changed_values(section, db_value, api_value):
+            return ", ".join(
+                f"{name}: {display_value(name, old)}"
+                f" → {display_value(name, new)}"
+                for name, old, new in zip(
+                    section_fields[section], db_value, api_value
+                )
+                if normalize(old) != normalize(new)
+            )
+
         for section, api_values in api_sections.items():
             db_values = db_sections[section]
             api_keys = {
@@ -246,16 +300,27 @@ with DAG(
                 key for key, value in db_values.items() if value[0] in common_ids
             }
             counts = {}
-            for key in api_keys - db_keys:
+            detail_by_station = {}
+            for key in sorted(api_keys - db_keys):
                 owner_id = api_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[0] += 1
-            for key in db_keys - api_keys:
+                detail_by_station.setdefault(owner_id, []).append(
+                    f"추가: {key} ({format_values(section, api_values[key][1])})"
+                )
+            for key in sorted(db_keys - api_keys):
                 owner_id = db_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[1] += 1
-            for key in api_keys & db_keys:
+                detail_by_station.setdefault(owner_id, []).append(
+                    f"삭제: {key} ({format_values(section, db_values[key][1])})"
+                )
+            for key in sorted(api_keys & db_keys):
                 if normalize(api_values[key][1]) != normalize(db_values[key][1]):
                     owner_id = api_values[key][0]
                     counts.setdefault(owner_id, [0, 0, 0])[2] += 1
+                    detail_by_station.setdefault(owner_id, []).append(
+                        f"변경: {key} ("
+                        f"{format_changed_values(section, db_values[key][1], api_values[key][1])})"
+                    )
 
             for station_id, (added, deleted, changed) in sorted(counts.items()):
                 details = []
@@ -266,6 +331,14 @@ with DAG(
                 if changed:
                     details.append(f"변경 {changed}건")
                 add_change(station_id, f"{section} ({', '.join(details)})")
+                detail_rows = detail_by_station.get(station_id, [])
+                for detail in detail_rows[:20]:
+                    add_change(station_id, f"↳ {section} {detail}")
+                if len(detail_rows) > 20:
+                    add_change(
+                        station_id,
+                        f"↳ {section} 외 {len(detail_rows) - 20}건",
+                    )
 
         changes = [
             changes_by_station[station_id]
@@ -663,7 +736,7 @@ with DAG(
 
     send_change_email_task = EmailOperator(
         task_id="send_change_email",
-        to=["poeynus@gmail.com"],
+        to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
         subject="[EFT Library] Hideout API 데이터 변경 감지",
         html_content="{{ ti.xcom_pull(task_ids='compare_hideout')['html_content'] }}",
         conn_id="smtp_gmail",

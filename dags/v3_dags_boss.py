@@ -112,6 +112,11 @@ with DAG(
                     for row in cursor.fetchall()
                 }
 
+                cursor.execute("select id, name_en from items")
+                item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+                cursor.execute("select id, name_en from maps")
+                map_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+
         api_ids = set(api_boss_by_id)
         db_ids = set(db_boss_by_id)
         changes_by_boss = {}
@@ -147,7 +152,10 @@ with DAG(
         }
         for boss_id in sorted(api_ids & db_ids):
             fields = [
-                label
+                (
+                    f"{label}: {db_boss_by_id[boss_id][index]}"
+                    f" → {api_boss_by_id[boss_id][index]}"
+                )
                 for index, label in field_labels.items()
                 if api_boss_by_id[boss_id][index] != db_boss_by_id[boss_id][index]
             ]
@@ -155,16 +163,31 @@ with DAG(
                 add_change(boss_id, f"기본 정보 변경 ({', '.join(fields)})")
 
         def add_section_changes(section_name, api_values, db_values):
+            names = item_names if section_name == "소지 아이템" else map_names
+
+            def target_label(target_id):
+                name = names.get(str(target_id))
+                return f"{name} ({target_id})" if name else str(target_id)
+
             common_boss_ids = api_ids & db_ids
             api_keys = {key for key in api_values if key[0] in common_boss_ids}
             db_keys = {key for key in db_values if key[0] in common_boss_ids}
 
             counts = {}
-            for boss_id, _ in api_keys - db_keys:
+            detail_by_boss = {}
+            for boss_id, target_id in sorted(api_keys - db_keys):
                 counts.setdefault(boss_id, [0, 0, 0])[0] += 1
-            for boss_id, _ in db_keys - api_keys:
+                detail_by_boss.setdefault(boss_id, []).append(
+                    f"추가: {target_label(target_id)} = "
+                    f"{api_values[(boss_id, target_id)]}"
+                )
+            for boss_id, target_id in sorted(db_keys - api_keys):
                 counts.setdefault(boss_id, [0, 0, 0])[1] += 1
-            for key in api_keys & db_keys:
+                detail_by_boss.setdefault(boss_id, []).append(
+                    f"삭제: {target_label(target_id)} = "
+                    f"{db_values[(boss_id, target_id)]}"
+                )
+            for key in sorted(api_keys & db_keys):
                 try:
                     values_changed = Decimal(str(api_values[key])) != Decimal(
                         str(db_values[key])
@@ -173,16 +196,30 @@ with DAG(
                     values_changed = api_values[key] != db_values[key]
                 if values_changed:
                     counts.setdefault(key[0], [0, 0, 0])[2] += 1
+                    detail_by_boss.setdefault(key[0], []).append(
+                        f"변경: {target_label(key[1])} = "
+                        f"{db_values[key]} → {api_values[key]}"
+                    )
 
             for boss_id, (added, deleted, changed) in sorted(counts.items()):
-                details = []
+                summary_details = []
                 if added:
-                    details.append(f"추가 {added}건")
+                    summary_details.append(f"추가 {added}건")
                 if deleted:
-                    details.append(f"삭제 {deleted}건")
+                    summary_details.append(f"삭제 {deleted}건")
                 if changed:
-                    details.append(f"변경 {changed}건")
-                add_change(boss_id, f"{section_name} ({', '.join(details)})")
+                    summary_details.append(f"변경 {changed}건")
+                add_change(
+                    boss_id, f"{section_name} ({', '.join(summary_details)})"
+                )
+                detail_rows = detail_by_boss.get(boss_id, [])
+                for detail in detail_rows[:20]:
+                    add_change(boss_id, f"↳ {section_name} {detail}")
+                if len(detail_rows) > 20:
+                    add_change(
+                        boss_id,
+                        f"↳ {section_name} 외 {len(detail_rows) - 20}건",
+                    )
 
         add_section_changes("소지 아이템", api_items, db_items)
         add_section_changes("출현 정보", api_spawns, db_spawns)
@@ -409,7 +446,7 @@ with DAG(
 
     send_change_email_task = EmailOperator(
         task_id="send_change_email",
-        to=["poeynus@gmail.com"],
+        to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
         subject="[EFT Library] Boss API 데이터 변경 감지",
         html_content="{{ ti.xcom_pull(task_ids='compare_boss')['html_content'] }}",
         conn_id="smtp_gmail",

@@ -130,6 +130,9 @@ with DAG(
                             (str(row[2]), str(row[3]), row[4]),
                         )
 
+                cursor.execute("select id, name_en from items")
+                item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+
         api_ids = set(api_traders)
         db_ids = set(db_traders)
         changes_by_trader = {}
@@ -157,7 +160,10 @@ with DAG(
         }
         for trader_id in sorted(api_ids & db_ids):
             fields = [
-                label
+                (
+                    f"{label}: {db_traders[trader_id][index]}"
+                    f" → {api_traders[trader_id][index]}"
+                )
                 for index, label in field_labels.items()
                 if api_traders[trader_id][index] != db_traders[trader_id][index]
             ]
@@ -174,6 +180,34 @@ with DAG(
             return value
 
         common_ids = api_ids & db_ids
+        section_fields = {
+            "물물교환": ("상인 ID", "상인 레벨"),
+            "보상 아이템": ("물물교환 ID", "아이템 ID", "수량"),
+        }
+
+        def format_values(section, values):
+            return ", ".join(
+                f"{name}={value}"
+                for name, value in zip(section_fields[section], values)
+            )
+
+        def format_changed_values(section, db_value, api_value):
+            return ", ".join(
+                f"{name}: {old} → {new}"
+                for name, old, new in zip(
+                    section_fields[section], db_value, api_value
+                )
+                if normalize(old) != normalize(new)
+            )
+
+        def format_key(section, key, values):
+            if section == "보상 아이템":
+                item_id = values[1]
+                item_name = item_names.get(str(item_id))
+                if item_name:
+                    return f"{item_name} ({item_id})"
+            return str(key)
+
         for section, api_values in api_sections.items():
             db_values = db_sections[section]
 
@@ -204,16 +238,29 @@ with DAG(
                 key for key, value in db_values.items() if value[0] in common_ids
             }
             counts = {}
-            for key in api_keys - db_keys:
+            detail_by_trader = {}
+            for key in sorted(api_keys - db_keys):
                 owner_id = api_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[0] += 1
-            for key in db_keys - api_keys:
+                detail_by_trader.setdefault(owner_id, []).append(
+                    f"추가: {format_key(section, key, api_values[key][1])} "
+                    f"({format_values(section, api_values[key][1])})"
+                )
+            for key in sorted(db_keys - api_keys):
                 owner_id = db_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[1] += 1
-            for key in api_keys & db_keys:
+                detail_by_trader.setdefault(owner_id, []).append(
+                    f"삭제: {format_key(section, key, db_values[key][1])} "
+                    f"({format_values(section, db_values[key][1])})"
+                )
+            for key in sorted(api_keys & db_keys):
                 if normalize(api_values[key][1]) != normalize(db_values[key][1]):
                     owner_id = api_values[key][0]
                     counts.setdefault(owner_id, [0, 0, 0])[2] += 1
+                    detail_by_trader.setdefault(owner_id, []).append(
+                        f"변경: {format_key(section, key, api_values[key][1])} ("
+                        f"{format_changed_values(section, db_values[key][1], api_values[key][1])})"
+                    )
 
             for trader_id, (added, deleted, changed) in sorted(counts.items()):
                 details = []
@@ -224,6 +271,14 @@ with DAG(
                 if changed:
                     details.append(f"변경 {changed}건")
                 add_change(trader_id, f"{section} ({', '.join(details)})")
+                detail_rows = detail_by_trader.get(trader_id, [])
+                for detail in detail_rows[:20]:
+                    add_change(trader_id, f"↳ {section} {detail}")
+                if len(detail_rows) > 20:
+                    add_change(
+                        trader_id,
+                        f"↳ {section} 외 {len(detail_rows) - 20}건",
+                    )
 
         changes = [
             changes_by_trader[trader_id]
@@ -418,7 +473,7 @@ with DAG(
 
     send_change_email_task = EmailOperator(
         task_id="send_change_email",
-        to=["poeynus@gmail.com"],
+        to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
         subject="[EFT Library] Trader API 데이터 변경 감지",
         html_content="{{ ti.xcom_pull(task_ids='compare_trader')['html_content'] }}",
         conn_id="smtp_gmail",

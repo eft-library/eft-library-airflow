@@ -116,7 +116,10 @@ with DAG(
         changed = []
         for map_id in sorted(api_ids & db_ids):
             changed_fields = [
-                field_labels[field]
+                (
+                    f"{field_labels[field]}: "
+                    f"{db_by_id[map_id][field]} → {api_by_id[map_id][field]}"
+                )
                 for field in field_labels
                 if api_by_id[map_id][field] != db_by_id[map_id][field]
             ]
@@ -136,12 +139,14 @@ with DAG(
                 return ""
 
             lines = []
-            for item in items:
+            for item in items[:20]:
                 label = f'{escape(str(item["name"]))} ({escape(str(item["id"]))})'
                 if field_key:
                     fields = ", ".join(escape(field) for field in item[field_key])
                     label = f"{label}: {fields}"
                 lines.append(f"<li>{label}</li>")
+            if len(items) > 20:
+                lines.append(f"<li>외 {len(items) - 20}건</li>")
             return f"<h3>{title} ({len(items)}건)</h3><ul>{''.join(lines)}</ul>"
 
         change_count = len(added) + len(deleted) + len(changed)
@@ -265,7 +270,7 @@ with DAG(
 
     send_change_email_task = EmailOperator(
         task_id="send_change_email",
-        to=["poeynus@gmail.com"],
+        to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
         subject="[EFT Library] Map API 데이터 변경 감지",
         html_content="{{ ti.xcom_pull(task_ids='compare_map')['html_content'] }}",
         conn_id="smtp_gmail",

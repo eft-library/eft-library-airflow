@@ -225,6 +225,13 @@ with DAG(
                             tuple(row[2:]),
                         )
 
+                cursor.execute("select id, name_en from items")
+                item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+                cursor.execute("select id, name_en from maps")
+                map_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+                cursor.execute("select id, name_en from traders")
+                trader_names = {str(row[0]): row[1] for row in cursor.fetchall()}
+
         api_ids = set(api_quests)
         db_ids = set(db_quests)
         changes_by_quest = {}
@@ -274,7 +281,10 @@ with DAG(
 
         for quest_id in sorted(api_ids & db_ids):
             fields = [
-                label
+                (
+                    f"{label}: {db_quests[quest_id][index]}"
+                    f" → {api_quests[quest_id][index]}"
+                )
                 for index, label in quest_fields.items()
                 if normalize(api_quests[quest_id][index])
                 != normalize(db_quests[quest_id][index])
@@ -283,6 +293,64 @@ with DAG(
                 add_change(quest_id, f"기본 정보 변경 ({', '.join(fields)})")
 
         common_ids = api_ids & db_ids
+        section_fields = {
+            "목표": ("유형", "설명", "수량", "인레이드", "순서"),
+            "목표 아이템": (),
+            "목표 필요 열쇠": (),
+            "목표 맵": (),
+            "선행 퀘스트": (),
+            "완료 보상 - 스킬": ("스킬 레벨",),
+            "완료 보상 - 상인 평판": ("평판",),
+            "완료 보상 - 거래 잠금 해제": (
+                "상인 ID",
+                "아이템 ID",
+                "레벨",
+            ),
+            "완료 보상 - 아이템": ("수량",),
+            "완료 보상 - 제작 잠금 해제": ("시설 레벨",),
+        }
+
+        def format_values(section, values):
+            if not values:
+                return ""
+            return ", ".join(
+                f"{name}={value}"
+                for name, value in zip(section_fields[section], values)
+            )
+
+        def format_changed_values(section, db_value, api_value):
+            return ", ".join(
+                f"{name}: {old} → {new}"
+                for name, old, new in zip(
+                    section_fields[section], db_value, api_value
+                )
+                if normalize(old) != normalize(new)
+            )
+
+        def named_id(value, names):
+            name = names.get(str(value))
+            return f"{name} ({value})" if name else str(value)
+
+        quest_names = {str(key): value[2] for key, value in db_quests.items()}
+        quest_names.update(
+            {str(key): value[2] for key, value in api_quests.items()}
+        )
+
+        def format_key(section, key):
+            if section == "목표 아이템":
+                return f"목표 {key[0]}, {named_id(key[1], item_names)}, {key[2]}"
+            if section == "목표 필요 열쇠":
+                return f"목표 {key[0]}, {named_id(key[1], item_names)}"
+            if section == "목표 맵":
+                return f"목표 {key[0]}, {named_id(key[1], map_names)}"
+            if section == "선행 퀘스트":
+                return f"선행 {named_id(key[1], quest_names)}"
+            if section == "완료 보상 - 상인 평판":
+                return named_id(key[1], trader_names)
+            if section == "완료 보상 - 아이템":
+                return named_id(key[1], item_names)
+            return str(key)
+
         for section in section_names:
             api_values = api_sections[section]
             db_values = db_sections[section]
@@ -293,16 +361,31 @@ with DAG(
                 key for key, value in db_values.items() if value[0] in common_ids
             }
             counts = {}
-            for key in api_keys - db_keys:
+            detail_by_quest = {}
+            for key in sorted(api_keys - db_keys):
                 owner_id = api_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[0] += 1
-            for key in db_keys - api_keys:
+                values = format_values(section, api_values[key][1])
+                detail_by_quest.setdefault(owner_id, []).append(
+                    f"추가: {format_key(section, key)}"
+                    f"{f' ({values})' if values else ''}"
+                )
+            for key in sorted(db_keys - api_keys):
                 owner_id = db_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[1] += 1
-            for key in api_keys & db_keys:
+                values = format_values(section, db_values[key][1])
+                detail_by_quest.setdefault(owner_id, []).append(
+                    f"삭제: {format_key(section, key)}"
+                    f"{f' ({values})' if values else ''}"
+                )
+            for key in sorted(api_keys & db_keys):
                 if normalize(api_values[key][1]) != normalize(db_values[key][1]):
                     owner_id = api_values[key][0]
                     counts.setdefault(owner_id, [0, 0, 0])[2] += 1
+                    detail_by_quest.setdefault(owner_id, []).append(
+                        f"변경: {format_key(section, key)} ("
+                        f"{format_changed_values(section, db_values[key][1], api_values[key][1])})"
+                    )
 
             for quest_id, (added, deleted, changed) in sorted(counts.items()):
                 details = []
@@ -313,6 +396,14 @@ with DAG(
                 if changed:
                     details.append(f"변경 {changed}건")
                 add_change(quest_id, f"{section} ({', '.join(details)})")
+                detail_rows = detail_by_quest.get(quest_id, [])
+                for detail in detail_rows[:20]:
+                    add_change(quest_id, f"↳ {section} {detail}")
+                if len(detail_rows) > 20:
+                    add_change(
+                        quest_id,
+                        f"↳ {section} 외 {len(detail_rows) - 20}건",
+                    )
 
         changes = [changes_by_quest[key] for key in sorted(changes_by_quest)]
         html_items = []
@@ -819,7 +910,7 @@ with DAG(
 
     send_change_email_task = EmailOperator(
         task_id="send_change_email",
-        to=["poeynus@gmail.com"],
+        to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
         subject="[EFT Library] Quest API 데이터 변경 감지",
         html_content="{{ ti.xcom_pull(task_ids='compare_quest')['html_content'] }}",
         conn_id="smtp_gmail",
