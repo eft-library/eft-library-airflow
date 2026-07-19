@@ -3,9 +3,14 @@ import os
 import pendulum
 
 from contextlib import closing
+from decimal import Decimal
+from html import escape
+from uuid import UUID
 
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator, PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.sdk import get_current_context
 from airflow.task.trigger_rule import TriggerRule
@@ -61,6 +66,281 @@ with DAG(
             json.dump(item_list_ja["data"]["tasks"], f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
+
+    def compare_quest(postgres_conn_id):
+        context = get_current_context()
+        item_paths = context["ti"].xcom_pull(task_ids="fetch_quest")
+        with open(item_paths["en"], "r") as f:
+            en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            ja_list = json.load(f)
+
+        ko_by_id = {item["id"]: item for item in ko_list}
+        ja_by_id = {item["id"]: item for item in ja_list}
+        api_quests = {}
+        section_names = [
+            "목표",
+            "목표 아이템",
+            "목표 필요 열쇠",
+            "목표 맵",
+            "선행 퀘스트",
+            "완료 보상 - 스킬",
+            "완료 보상 - 상인 평판",
+            "완료 보상 - 거래 잠금 해제",
+            "완료 보상 - 아이템",
+            "완료 보상 - 제작 잠금 해제",
+        ]
+        api_sections = {name: {} for name in section_names}
+
+        def store(section, key, owner_id, values=()):
+            api_sections[section][key] = (owner_id, tuple(values))
+
+        for item in en_list:
+            quest_id = item["id"]
+            api_quests[quest_id] = v3_quest_process(
+                item, ko_by_id.get(quest_id), ja_by_id.get(quest_id)
+            )
+            objective_rows = v3_quest_objectives_process(item)
+            objective_owner = {row[0]: row[1] for row in objective_rows}
+            for row in objective_rows:
+                store("목표", (row[0], row[1]), row[1], row[2:])
+            for row in v3_quest_objective_items_process(item):
+                store("목표 아이템", tuple(row), objective_owner.get(row[0]), ())
+            for row in v3_quest_objective_required_keys_process(item):
+                store("목표 필요 열쇠", tuple(row), objective_owner.get(row[0]), ())
+            for row in v3_quest_objective_maps_process(item):
+                store("목표 맵", tuple(row), objective_owner.get(row[0]), ())
+            for row in v3_quest_relations_process(item):
+                store("선행 퀘스트", tuple(row), row[0], ())
+
+            skill_rows, standing_rows, offer_rows = v3_quest_finish_rewards_process(
+                item, None, None
+            )
+            for row in skill_rows:
+                store("완료 보상 - 스킬", (row[0], row[1]), row[0], (row[4],))
+            for row in standing_rows:
+                store("완료 보상 - 상인 평판", (row[0], row[1]), row[0], (row[2],))
+            for row in offer_rows:
+                store("완료 보상 - 거래 잠금 해제", (row[0], row[1]), row[0], row[2:])
+            for row in v3_quest_finish_reward_items_process(item):
+                store("완료 보상 - 아이템", (row[0], row[1]), row[0], (row[2],))
+            for row in v3_quest_finish_reward_craft_unlocks_process(item):
+                store(
+                    "완료 보상 - 제작 잠금 해제",
+                    (row[0], row[1]),
+                    row[0],
+                    (row[2],),
+                )
+
+        db_sections = {name: {} for name in section_names}
+        postgres_hook = PostgresHook(postgres_conn_id)
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    select id, normalized_name, name_en, name_ko, name_ja,
+                           trader_id, experience, delay_max, delay_min,
+                           kappa_required, min_player_level, wiki_url
+                    from quests
+                    """
+                )
+                db_quests = {
+                    str(row[0]): (str(row[0]), *row[1:])
+                    for row in cursor.fetchall()
+                }
+
+                cursor.execute(
+                    """
+                    select objective_id, quest_id, type, description_en,
+                           count, found_in_raid, sort_order
+                    from quest_objectives
+                    """
+                )
+                objective_owner = {}
+                for row in cursor.fetchall():
+                    objective_id = str(row[0])
+                    quest_id = str(row[1])
+                    objective_owner[objective_id] = quest_id
+                    db_sections["목표"][(objective_id, quest_id)] = (
+                        quest_id,
+                        tuple(row[2:]),
+                    )
+
+                child_queries = {
+                    "목표 아이템": "select objective_id, item_id, item_type from quest_objective_items",
+                    "목표 필요 열쇠": "select objective_id, key_id from quest_objective_required_keys",
+                    "목표 맵": "select objective_id, map_id from quest_objective_maps",
+                }
+                for section, query in child_queries.items():
+                    cursor.execute(query)
+                    for row in cursor.fetchall():
+                        key = tuple(str(value) for value in row)
+                        db_sections[section][key] = (
+                            objective_owner.get(key[0]),
+                            (),
+                        )
+
+                cursor.execute(
+                    """
+                    select quest_id, related_quest_id, relation_type
+                    from quest_relations
+                    where relation_type = 'require'
+                    """
+                )
+                for row in cursor.fetchall():
+                    key = tuple(str(value) for value in row)
+                    db_sections["선행 퀘스트"][key] = (key[0], ())
+
+                reward_queries = {
+                    "완료 보상 - 스킬": """
+                        select quest_id, name_en, skill_level
+                        from quest_finish_reward_skills
+                    """,
+                    "완료 보상 - 상인 평판": """
+                        select quest_id, trader_id, standing
+                        from quest_finish_reward_trader_standing
+                    """,
+                    "완료 보상 - 거래 잠금 해제": """
+                        select quest_id, offer_id, trader_id, item_id, level
+                        from quest_finish_reward_offer_unlock
+                    """,
+                    "완료 보상 - 아이템": """
+                        select quest_id, item_id, quantity
+                        from quest_finish_reward_items
+                    """,
+                    "완료 보상 - 제작 잠금 해제": """
+                        select quest_id, craft_id, station_level
+                        from quest_finish_reward_craft_unlocks
+                    """,
+                }
+                for section, query in reward_queries.items():
+                    cursor.execute(query)
+                    for row in cursor.fetchall():
+                        quest_id = str(row[0])
+                        child_id = str(row[1])
+                        db_sections[section][(quest_id, child_id)] = (
+                            quest_id,
+                            tuple(row[2:]),
+                        )
+
+        api_ids = set(api_quests)
+        db_ids = set(db_quests)
+        changes_by_quest = {}
+
+        def quest_name(quest_id):
+            api_row = api_quests.get(quest_id)
+            db_row = db_quests.get(quest_id)
+            return (api_row and api_row[2]) or (db_row and db_row[2]) or quest_id
+
+        def add_change(quest_id, message):
+            if not quest_id:
+                return
+            changes_by_quest.setdefault(
+                quest_id,
+                {"id": quest_id, "name": quest_name(quest_id), "changes": []},
+            )["changes"].append(message)
+
+        for quest_id in sorted(api_ids - db_ids):
+            add_change(quest_id, "퀘스트 추가")
+        for quest_id in sorted(db_ids - api_ids):
+            add_change(quest_id, "퀘스트 삭제")
+
+        quest_fields = {
+            1: "정규화 이름",
+            2: "영문 이름",
+            3: "한국어 이름",
+            4: "일본어 이름",
+            5: "상인",
+            6: "경험치",
+            7: "최대 지연 시간",
+            8: "최소 지연 시간",
+            9: "카파 필수 여부",
+            10: "최소 플레이어 레벨",
+            11: "Wiki URL",
+        }
+
+        def normalize(value):
+            if isinstance(value, UUID):
+                return str(value)
+            if isinstance(value, Decimal):
+                return value.normalize()
+            if isinstance(value, float):
+                return Decimal(str(value)).normalize()
+            if isinstance(value, (tuple, list)):
+                return tuple(normalize(item) for item in value)
+            return value
+
+        for quest_id in sorted(api_ids & db_ids):
+            fields = [
+                label
+                for index, label in quest_fields.items()
+                if normalize(api_quests[quest_id][index])
+                != normalize(db_quests[quest_id][index])
+            ]
+            if fields:
+                add_change(quest_id, f"기본 정보 변경 ({', '.join(fields)})")
+
+        common_ids = api_ids & db_ids
+        for section in section_names:
+            api_values = api_sections[section]
+            db_values = db_sections[section]
+            api_keys = {
+                key for key, value in api_values.items() if value[0] in common_ids
+            }
+            db_keys = {
+                key for key, value in db_values.items() if value[0] in common_ids
+            }
+            counts = {}
+            for key in api_keys - db_keys:
+                owner_id = api_values[key][0]
+                counts.setdefault(owner_id, [0, 0, 0])[0] += 1
+            for key in db_keys - api_keys:
+                owner_id = db_values[key][0]
+                counts.setdefault(owner_id, [0, 0, 0])[1] += 1
+            for key in api_keys & db_keys:
+                if normalize(api_values[key][1]) != normalize(db_values[key][1]):
+                    owner_id = api_values[key][0]
+                    counts.setdefault(owner_id, [0, 0, 0])[2] += 1
+
+            for quest_id, (added, deleted, changed) in sorted(counts.items()):
+                details = []
+                if added:
+                    details.append(f"추가 {added}건")
+                if deleted:
+                    details.append(f"삭제 {deleted}건")
+                if changed:
+                    details.append(f"변경 {changed}건")
+                add_change(quest_id, f"{section} ({', '.join(details)})")
+
+        changes = [changes_by_quest[key] for key in sorted(changes_by_quest)]
+        html_items = []
+        for change in changes:
+            details = "".join(
+                f"<li>{escape(message)}</li>" for message in change["changes"]
+            )
+            html_items.append(
+                f'<li><strong>{escape(str(change["name"]))}</strong> '
+                f'({escape(str(change["id"]))})<ul>{details}</ul></li>'
+            )
+
+        return {
+            "change_count": sum(len(change["changes"]) for change in changes),
+            "quest_count": len(changes),
+            "changes": changes,
+            "html_content": (
+                f"<h2>Quest API 데이터 변경 내역 ({len(changes)}개 퀘스트)</h2>"
+                f"<ul>{''.join(html_items)}</ul>"
+            ),
+        }
+
+    def choose_email_branch():
+        context = get_current_context()
+        diff = context["ti"].xcom_pull(task_ids="compare_quest") or {}
+        if diff.get("change_count", 0) > 0:
+            return "send_change_email"
+        return "no_quest_changes"
 
     def upsert_quest(postgres_conn_id):
         context = get_current_context()
@@ -502,6 +782,12 @@ with DAG(
         python_callable=fetch_quest,
     )
 
+    compare_quest_task = PythonOperator(
+        task_id="compare_quest",
+        python_callable=compare_quest,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
     upsert_quest_task = PythonOperator(
         task_id="upsert_quest",
         python_callable=upsert_quest,
@@ -526,10 +812,29 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
+    choose_email_branch_task = BranchPythonOperator(
+        task_id="choose_email_branch",
+        python_callable=choose_email_branch,
+    )
+
+    send_change_email_task = EmailOperator(
+        task_id="send_change_email",
+        to=["poeynus@gmail.com"],
+        subject="[EFT Library] Quest API 데이터 변경 감지",
+        html_content="{{ ti.xcom_pull(task_ids='compare_quest')['html_content'] }}",
+        conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
+    )
+
+    no_quest_changes_task = EmptyOperator(task_id="no_quest_changes")
+
     (
         fetch_quest_task
+        >> compare_quest_task
         >> upsert_quest_task
         >> build_next_relations_task
         >> sync_roadmap_node_task
-        >> remove_json_files_task
     )
+    sync_roadmap_node_task >> remove_json_files_task
+    sync_roadmap_node_task >> choose_email_branch_task
+    choose_email_branch_task >> [send_change_email_task, no_quest_changes_task]
