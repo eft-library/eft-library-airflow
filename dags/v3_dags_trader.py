@@ -176,6 +176,27 @@ with DAG(
         common_ids = api_ids & db_ids
         for section, api_values in api_sections.items():
             db_values = db_sections[section]
+
+            if section == "요구 아이템":
+                api_counts = {}
+                db_counts = {}
+                for owner_id, _ in api_values.values():
+                    if owner_id in common_ids:
+                        api_counts[owner_id] = api_counts.get(owner_id, 0) + 1
+                for owner_id, _ in db_values.values():
+                    if owner_id in common_ids:
+                        db_counts[owner_id] = db_counts.get(owner_id, 0) + 1
+
+                for trader_id in sorted(common_ids):
+                    api_count = api_counts.get(trader_id, 0)
+                    db_count = db_counts.get(trader_id, 0)
+                    if api_count != db_count:
+                        add_change(
+                            trader_id,
+                            f"요구 아이템 개수 변경 (DB {db_count}건 → API {api_count}건)",
+                        )
+                continue
+
             api_keys = {
                 key for key, value in api_values.items() if value[0] in common_ids
             }
