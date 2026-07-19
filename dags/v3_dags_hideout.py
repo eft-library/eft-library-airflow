@@ -1,9 +1,13 @@
 import json
 import pendulum
 import os
+from decimal import Decimal
+from html import escape
 
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator, PythonOperator
 from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
@@ -18,7 +22,6 @@ from custom_module.v3.hideout_task_func import (
     v3_hideout_skill_require_process,
     v3_hideout_trader_require_process,
     v3_hideout_station_require_process,
-    v3_hideout_item_require_process,
     v3_hideout_item_require_process,
     v3_hideout_craft_process,
     v3_hideout_bonus_process,
@@ -48,6 +51,246 @@ with DAG(
             json.dump(item_list_en["data"]["hideoutStations"], f)
 
         return {"en": en_path}
+
+    def compare_hideout(postgres_conn_id):
+        context = get_current_context()
+        item_paths = context["ti"].xcom_pull(task_ids="fetch_hideout")
+        with open(item_paths["en"], "r") as f:
+            api_stations = json.load(f)
+
+        api_master = {}
+        api_sections = {
+            "레벨": {},
+            "스킬 요구조건": {},
+            "상인 요구조건": {},
+            "선행 시설": {},
+            "필요 아이템": {},
+            "제작": {},
+            "제작 재료": {},
+            "보너스": {},
+        }
+
+        def put_rows(target, rows, owner_by_parent=None, parent_index=1, values=None):
+            for row in rows:
+                owner_id = (
+                    owner_by_parent.get(row[parent_index])
+                    if owner_by_parent is not None
+                    else row[1]
+                )
+                if owner_id:
+                    target[row[0]] = (
+                        owner_id,
+                        tuple(row[index] for index in (values or range(1, len(row)))),
+                    )
+
+        for station in api_stations:
+            master_row = v3_hideout_master_process(station, None, None)
+            api_master[master_row[0]] = master_row
+
+            level_rows = v3_hideout_level_process(station)
+            level_owner = {row[0]: row[1] for row in level_rows}
+            put_rows(api_sections["레벨"], level_rows)
+            put_rows(
+                api_sections["스킬 요구조건"],
+                v3_hideout_skill_require_process(station, None, None),
+                level_owner,
+                values=(1, 2, 3),
+            )
+            put_rows(
+                api_sections["상인 요구조건"],
+                v3_hideout_trader_require_process(station),
+                level_owner,
+            )
+            put_rows(
+                api_sections["선행 시설"],
+                v3_hideout_station_require_process(station),
+                level_owner,
+            )
+            put_rows(
+                api_sections["필요 아이템"],
+                v3_hideout_item_require_process(station),
+                level_owner,
+            )
+            craft_rows, require_rows = v3_hideout_craft_process(station)
+            put_rows(api_sections["제작"], craft_rows, level_owner)
+            craft_owner = {
+                row[0]: level_owner.get(row[1]) for row in craft_rows
+            }
+            put_rows(api_sections["제작 재료"], require_rows, craft_owner)
+            put_rows(
+                api_sections["보너스"],
+                v3_hideout_bonus_process(station, None, None),
+                level_owner,
+                values=(1, 2, 3, 6, 9),
+            )
+
+        db_sections = {name: {} for name in api_sections}
+        postgres_hook = PostgresHook(postgres_conn_id)
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "select id, normalized_name, name_en, name_ko, name_ja from hideout_master"
+                )
+                db_master = {row[0]: row for row in cursor.fetchall()}
+
+                section_queries = {
+                    "레벨": """
+                        select hl.id, hl.master_id,
+                               hl.master_id, hl.hideout_level, hl.construction_time
+                        from hideout_levels hl
+                    """,
+                    "스킬 요구조건": """
+                        select r.id, hl.master_id,
+                               r.hideout_level_id, r.require_level, r.name_en
+                        from hideout_skill_require r
+                        join hideout_levels hl on hl.id = r.hideout_level_id
+                    """,
+                    "상인 요구조건": """
+                        select r.id, hl.master_id,
+                               r.hideout_level_id, r.trader_id, r.trader_level
+                        from hideout_trader_require r
+                        join hideout_levels hl on hl.id = r.hideout_level_id
+                    """,
+                    "선행 시설": """
+                        select r.id, hl.master_id,
+                               r.hideout_level_id, r.require_master_id, r.station_level
+                        from hideout_station_require r
+                        join hideout_levels hl on hl.id = r.hideout_level_id
+                    """,
+                    "필요 아이템": """
+                        select r.id, hl.master_id,
+                               r.hideout_level_id, r.item_id, r.quantity, r.in_raid
+                        from hideout_item_require r
+                        join hideout_levels hl on hl.id = r.hideout_level_id
+                    """,
+                    "제작": """
+                        select c.id, hl.master_id,
+                               c.hideout_level_id, c.reward_item_id, c.duration, c.reward_quantity
+                        from hideout_crafts c
+                        join hideout_levels hl on hl.id = c.hideout_level_id
+                    """,
+                    "제작 재료": """
+                        select r.id, hl.master_id,
+                               r.craft_id, r.item_id, r.quantity
+                        from hideout_craft_require_items r
+                        join hideout_crafts c on c.id = r.craft_id
+                        join hideout_levels hl on hl.id = c.hideout_level_id
+                    """,
+                    "보너스": """
+                        select b.id, hl.master_id,
+                               b.hideout_level_id, b.bonus_type, b.name_en,
+                               b.skill_name_en, b.bonus_value
+                        from hideout_bonus b
+                        join hideout_levels hl on hl.id = b.hideout_level_id
+                    """,
+                }
+                for section, query in section_queries.items():
+                    cursor.execute(query)
+                    db_sections[section] = {
+                        row[0]: (row[1], tuple(row[2:]))
+                        for row in cursor.fetchall()
+                    }
+
+        api_ids = set(api_master)
+        db_ids = set(db_master)
+        changes_by_station = {}
+
+        def station_name(station_id):
+            api_row = api_master.get(station_id)
+            db_row = db_master.get(station_id)
+            return (api_row and api_row[2]) or (db_row and db_row[2]) or station_id
+
+        def add_change(station_id, message):
+            changes_by_station.setdefault(
+                station_id,
+                {"id": station_id, "name": station_name(station_id), "changes": []},
+            )["changes"].append(message)
+
+        for station_id in sorted(api_ids - db_ids):
+            add_change(station_id, "은신처 시설 추가")
+        for station_id in sorted(db_ids - api_ids):
+            add_change(station_id, "은신처 시설 삭제")
+
+        master_fields = {1: "정규화 이름", 2: "영문 이름"}
+        for station_id in sorted(api_ids & db_ids):
+            fields = [
+                label
+                for index, label in master_fields.items()
+                if api_master[station_id][index] != db_master[station_id][index]
+            ]
+            if fields:
+                add_change(station_id, f"기본 정보 변경 ({', '.join(fields)})")
+
+        def normalize(value):
+            if isinstance(value, Decimal):
+                return value.normalize()
+            if isinstance(value, float):
+                return Decimal(str(value)).normalize()
+            if isinstance(value, (tuple, list)):
+                return tuple(normalize(item) for item in value)
+            return value
+
+        common_ids = api_ids & db_ids
+        for section, api_values in api_sections.items():
+            db_values = db_sections[section]
+            api_keys = {
+                key for key, value in api_values.items() if value[0] in common_ids
+            }
+            db_keys = {
+                key for key, value in db_values.items() if value[0] in common_ids
+            }
+            counts = {}
+            for key in api_keys - db_keys:
+                owner_id = api_values[key][0]
+                counts.setdefault(owner_id, [0, 0, 0])[0] += 1
+            for key in db_keys - api_keys:
+                owner_id = db_values[key][0]
+                counts.setdefault(owner_id, [0, 0, 0])[1] += 1
+            for key in api_keys & db_keys:
+                if normalize(api_values[key][1]) != normalize(db_values[key][1]):
+                    owner_id = api_values[key][0]
+                    counts.setdefault(owner_id, [0, 0, 0])[2] += 1
+
+            for station_id, (added, deleted, changed) in sorted(counts.items()):
+                details = []
+                if added:
+                    details.append(f"추가 {added}건")
+                if deleted:
+                    details.append(f"삭제 {deleted}건")
+                if changed:
+                    details.append(f"변경 {changed}건")
+                add_change(station_id, f"{section} ({', '.join(details)})")
+
+        changes = [
+            changes_by_station[station_id]
+            for station_id in sorted(changes_by_station)
+        ]
+        html_items = []
+        for change in changes:
+            details = "".join(
+                f"<li>{escape(message)}</li>" for message in change["changes"]
+            )
+            html_items.append(
+                f'<li><strong>{escape(str(change["name"]))}</strong> '
+                f'({escape(str(change["id"]))})<ul>{details}</ul></li>'
+            )
+
+        return {
+            "change_count": sum(len(change["changes"]) for change in changes),
+            "station_count": len(changes),
+            "changes": changes,
+            "html_content": (
+                f"<h2>Hideout API 데이터 변경 내역 ({len(changes)}개 시설)</h2>"
+                f"<ul>{''.join(html_items)}</ul>"
+            ),
+        }
+
+    def choose_email_branch():
+        context = get_current_context()
+        diff = context["ti"].xcom_pull(task_ids="compare_hideout") or {}
+        if diff.get("change_count", 0) > 0:
+            return "send_change_email"
+        return "no_hideout_changes"
 
     def upsert_hideout(postgres_conn_id):
         context = get_current_context()
@@ -389,6 +632,12 @@ with DAG(
         python_callable=fetch_hideout,
     )
 
+    compare_hideout_task = PythonOperator(
+        task_id="compare_hideout",
+        python_callable=compare_hideout,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
     upsert_hideout_task = PythonOperator(
         task_id="upsert_hideout",
         python_callable=upsert_hideout,
@@ -401,4 +650,23 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
-    fetch_hideout_task >> upsert_hideout_task >> remove_json_files_task
+    choose_email_branch_task = BranchPythonOperator(
+        task_id="choose_email_branch",
+        python_callable=choose_email_branch,
+    )
+
+    send_change_email_task = EmailOperator(
+        task_id="send_change_email",
+        to=["poeynus@gmail.com"],
+        subject="[EFT Library] Hideout API 데이터 변경 감지",
+        html_content="{{ ti.xcom_pull(task_ids='compare_hideout')['html_content'] }}",
+        conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
+    )
+
+    no_hideout_changes_task = EmptyOperator(task_id="no_hideout_changes")
+
+    fetch_hideout_task >> compare_hideout_task >> upsert_hideout_task
+    upsert_hideout_task >> remove_json_files_task
+    upsert_hideout_task >> choose_email_branch_task
+    choose_email_branch_task >> [send_change_email_task, no_hideout_changes_task]
