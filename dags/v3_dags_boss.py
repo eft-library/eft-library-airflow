@@ -1,9 +1,13 @@
 import json
 import pendulum
 import os
+from decimal import Decimal, InvalidOperation
+from html import escape
 
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.smtp.operators.smtp import EmailOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator, PythonOperator
 from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
@@ -52,6 +56,155 @@ with DAG(
             json.dump(spawn_data["data"]["maps"], f)
 
         return {"spawn": spawn_path}
+
+    def compare_boss(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
+        boss_paths = ti.xcom_pull(task_ids="fetch_boss")
+        spawn_paths = ti.xcom_pull(task_ids="fetch_spawn")
+
+        with open(boss_paths["en"], "r") as f:
+            api_bosses = json.load(f)
+        with open(spawn_paths["spawn"], "r") as f:
+            api_maps = json.load(f)
+
+        api_boss_by_id = {}
+        api_items = {}
+        for boss in api_bosses:
+            boss_row = v3_boss_process(boss, None, None)
+            api_boss_by_id[boss_row[0]] = boss_row
+            for boss_id, item_id, quantity in v3_boss_item_process(boss):
+                api_items[(boss_id, item_id)] = quantity
+
+        api_spawns = {}
+        for map_item in api_maps:
+            for boss_id, map_id, spawn_chance in v3_boss_spawn_process(map_item):
+                key = (boss_id, map_id)
+                api_spawns[key] = max(api_spawns.get(key, spawn_chance), spawn_chance)
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    select id, name_en, name_ko, name_ja, image, normalized_name,
+                           health_total, head_hp, thorax_hp, stomach_hp,
+                           left_arm_hp, right_arm_hp, left_leg_hp, right_leg_hp
+                    from bosses
+                    """
+                )
+                db_boss_by_id = {row[0]: row for row in cursor.fetchall()}
+
+                cursor.execute("select boss_id, item_id, quantity from boss_item")
+                db_items = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+
+                cursor.execute(
+                    "select boss_id, map_id, spawn_chance from boss_spawn"
+                )
+                db_spawns = {(row[0], row[1]): row[2] for row in cursor.fetchall()}
+
+        api_ids = set(api_boss_by_id)
+        db_ids = set(db_boss_by_id)
+        changes_by_boss = {}
+
+        def boss_name(boss_id):
+            api_row = api_boss_by_id.get(boss_id)
+            db_row = db_boss_by_id.get(boss_id)
+            return (api_row and api_row[1]) or (db_row and db_row[1]) or boss_id
+
+        def add_change(boss_id, message):
+            changes_by_boss.setdefault(
+                boss_id,
+                {"id": boss_id, "name": boss_name(boss_id), "changes": []},
+            )["changes"].append(message)
+
+        for boss_id in sorted(api_ids - db_ids):
+            add_change(boss_id, "보스 추가")
+        for boss_id in sorted(db_ids - api_ids):
+            add_change(boss_id, "보스 삭제")
+
+        field_labels = {
+            1: "영문 이름",
+            4: "이미지",
+            5: "정규화 이름",
+            6: "전체 체력",
+            7: "머리 체력",
+            8: "흉부 체력",
+            9: "복부 체력",
+            10: "왼팔 체력",
+            11: "오른팔 체력",
+            12: "왼쪽 다리 체력",
+            13: "오른쪽 다리 체력",
+        }
+        for boss_id in sorted(api_ids & db_ids):
+            fields = [
+                label
+                for index, label in field_labels.items()
+                if api_boss_by_id[boss_id][index] != db_boss_by_id[boss_id][index]
+            ]
+            if fields:
+                add_change(boss_id, f"기본 정보 변경 ({', '.join(fields)})")
+
+        def add_section_changes(section_name, api_values, db_values):
+            common_boss_ids = api_ids & db_ids
+            api_keys = {key for key in api_values if key[0] in common_boss_ids}
+            db_keys = {key for key in db_values if key[0] in common_boss_ids}
+
+            counts = {}
+            for boss_id, _ in api_keys - db_keys:
+                counts.setdefault(boss_id, [0, 0, 0])[0] += 1
+            for boss_id, _ in db_keys - api_keys:
+                counts.setdefault(boss_id, [0, 0, 0])[1] += 1
+            for key in api_keys & db_keys:
+                try:
+                    values_changed = Decimal(str(api_values[key])) != Decimal(
+                        str(db_values[key])
+                    )
+                except (InvalidOperation, TypeError, ValueError):
+                    values_changed = api_values[key] != db_values[key]
+                if values_changed:
+                    counts.setdefault(key[0], [0, 0, 0])[2] += 1
+
+            for boss_id, (added, deleted, changed) in sorted(counts.items()):
+                details = []
+                if added:
+                    details.append(f"추가 {added}건")
+                if deleted:
+                    details.append(f"삭제 {deleted}건")
+                if changed:
+                    details.append(f"변경 {changed}건")
+                add_change(boss_id, f"{section_name} ({', '.join(details)})")
+
+        add_section_changes("소지 아이템", api_items, db_items)
+        add_section_changes("출현 정보", api_spawns, db_spawns)
+
+        changes = [changes_by_boss[boss_id] for boss_id in sorted(changes_by_boss)]
+        html_items = []
+        for change in changes:
+            details = "".join(
+                f"<li>{escape(message)}</li>" for message in change["changes"]
+            )
+            html_items.append(
+                f'<li><strong>{escape(str(change["name"]))}</strong> '
+                f'({escape(str(change["id"]))})<ul>{details}</ul></li>'
+            )
+
+        return {
+            "change_count": sum(len(change["changes"]) for change in changes),
+            "boss_count": len(changes),
+            "changes": changes,
+            "html_content": (
+                f"<h2>Boss API 데이터 변경 내역 ({len(changes)}명)</h2>"
+                f"<ul>{''.join(html_items)}</ul>"
+            ),
+        }
+
+    def choose_email_branch():
+        context = get_current_context()
+        diff = context["ti"].xcom_pull(task_ids="compare_boss") or {}
+        if diff.get("change_count", 0) > 0:
+            return "send_change_email"
+        return "no_boss_changes"
 
     def upsert_boss(postgres_conn_id):
         context = get_current_context()
@@ -203,6 +356,12 @@ with DAG(
         python_callable=fetch_boss,
     )
 
+    compare_boss_task = PythonOperator(
+        task_id="compare_boss",
+        python_callable=compare_boss,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
     upsert_boss_task = PythonOperator(
         task_id="upsert_boss",
         python_callable=upsert_boss,
@@ -226,10 +385,29 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
+    choose_email_branch_task = BranchPythonOperator(
+        task_id="choose_email_branch",
+        python_callable=choose_email_branch,
+    )
+
+    send_change_email_task = EmailOperator(
+        task_id="send_change_email",
+        to=["poeynus@gmail.com"],
+        subject="[EFT Library] Boss API 데이터 변경 감지",
+        html_content="{{ ti.xcom_pull(task_ids='compare_boss')['html_content'] }}",
+        conn_id="smtp_gmail",
+        from_email="poeynus@gmail.com",
+    )
+
+    no_boss_changes_task = EmptyOperator(task_id="no_boss_changes")
+
     (
         fetch_boss_task
-        >> upsert_boss_task
         >> fetch_spawn_task
+        >> compare_boss_task
+        >> upsert_boss_task
         >> upsert_boss_spawn_task
-        >> remove_json_files_task
     )
+    upsert_boss_spawn_task >> remove_json_files_task
+    upsert_boss_spawn_task >> choose_email_branch_task
+    choose_email_branch_task >> [send_change_email_task, no_boss_changes_task]
