@@ -24,6 +24,24 @@ default_args = {
 
 en_path = "/opt/airflow/tmp/v3_map_en_list.json"
 
+MANUAL_MAP_IDS = {
+    "CUSTOMS_GA_FIRST_FLOOR_DORMITORY",
+    "CUSTOMS_GA_SECOND_FLOOR_DORMITORY",
+    "CUSTOMS_GA_THIRD_FLOOR_DORMITORY",
+    "CUSTOMS_INTELROOM_FIRST_FLOOR",
+    "CUSTOMS_INTELROOM_SECOND_FLOOR",
+    "CUSTOMS_NA_FIRST_FLOOR_DORMITORY",
+    "CUSTOMS_NA_SECOND_FLOOR_DORMITORY",
+    "FACTORY_SECOND_FLOOR",
+    "FACTORY_THIRD_FLOOR",
+    "FACTORY_UNDERGROUND",
+    "GROUND_ZERO_UNDERGROUND",
+    "RESERVE_UNDERGROUND",
+    "SHORELINE_RESORT",
+    "THE_LAB_SECOND_FLOOR",
+    "THE_LAB_UNDERGROUND",
+}
+
 with DAG(
     dag_id="v3_dags_map",
     default_args=default_args,
@@ -88,7 +106,7 @@ with DAG(
                 "id": map_id,
                 "name": db_by_id[map_id]["name_en"] or map_id,
             }
-            for map_id in sorted(db_ids - api_ids)
+            for map_id in sorted(db_ids - api_ids - MANUAL_MAP_IDS)
         ]
 
         field_labels = {

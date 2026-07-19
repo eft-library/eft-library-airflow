@@ -339,6 +339,14 @@ with DAG(
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    """
+                    truncate table
+                        boss_spawn
+                    restart identity cascade;
+                    """
+                )
+
                 execute_values(
                     cursor,
                     sql,
