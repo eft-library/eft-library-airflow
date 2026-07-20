@@ -69,12 +69,9 @@ with DAG(
             api_maps = json.load(f)
 
         api_boss_by_id = {}
-        api_items = {}
         for boss in api_bosses:
             boss_row = v3_boss_process(boss, None, None)
             api_boss_by_id[boss_row[0]] = boss_row
-            for boss_id, item_id, quantity in v3_boss_item_process(boss):
-                api_items[(boss_id, item_id)] = quantity
 
         api_spawns = {}
         for map_item in api_maps:
@@ -98,12 +95,6 @@ with DAG(
                     for row in cursor.fetchall()
                 }
 
-                cursor.execute("select boss_id, item_id, quantity from boss_item")
-                db_items = {
-                    (str(row[0]), str(row[1])): row[2]
-                    for row in cursor.fetchall()
-                }
-
                 cursor.execute(
                     "select boss_id, map_id, spawn_chance from boss_spawn"
                 )
@@ -112,8 +103,6 @@ with DAG(
                     for row in cursor.fetchall()
                 }
 
-                cursor.execute("select id, name_en from items")
-                item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
                 cursor.execute("select id, name_en from maps")
                 map_names = {str(row[0]): row[1] for row in cursor.fetchall()}
 
@@ -163,10 +152,8 @@ with DAG(
                 add_change(boss_id, f"기본 정보 변경 ({', '.join(fields)})")
 
         def add_section_changes(section_name, api_values, db_values):
-            names = item_names if section_name == "소지 아이템" else map_names
-
             def target_label(target_id):
-                name = names.get(str(target_id))
+                name = map_names.get(str(target_id))
                 return f"{name} ({target_id})" if name else str(target_id)
 
             common_boss_ids = api_ids & db_ids
@@ -221,7 +208,6 @@ with DAG(
                         f"↳ {section_name} 외 {len(detail_rows) - 20}건",
                     )
 
-        add_section_changes("소지 아이템", api_items, db_items)
         add_section_changes("출현 정보", api_spawns, db_spawns)
 
         changes = [changes_by_boss[boss_id] for boss_id in sorted(changes_by_boss)]
