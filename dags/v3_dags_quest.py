@@ -41,6 +41,10 @@ en_path = "/opt/airflow/tmp/v3_quest_en_list.json"
 ko_path = "/opt/airflow/tmp/v3_quest_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_quest_ja_list.json"
 
+MANUAL_QUEST_OBJECTIVE_ITEMS = {
+    ("64f732240e186112c4455d84", "64ccc246ff54fb38131acf29", "item"),
+}
+
 
 with DAG(
     dag_id="v3_dags_quest",
@@ -370,7 +374,10 @@ with DAG(
                     f"추가: {format_key(section, key)}"
                     f"{f' ({values})' if values else ''}"
                 )
-            for key in sorted(db_keys - api_keys):
+            deleted_keys = db_keys - api_keys
+            if section == "목표 아이템":
+                deleted_keys -= MANUAL_QUEST_OBJECTIVE_ITEMS
+            for key in sorted(deleted_keys):
                 owner_id = db_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[1] += 1
                 values = format_values(section, db_values[key][1])
