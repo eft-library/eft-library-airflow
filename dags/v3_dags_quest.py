@@ -703,11 +703,11 @@ with DAG(
                         page_size=500,
                     )
 
-                # 번역 컬럼이 없는 하위 테이블만 비운다. quest_objectives는 수동 번역 보존을 위해 upsert/delete로 관리한다.
+                # quest_objective_items는 수동 데이터를 보존하기 위해 upsert로 관리한다.
+                # quest_objectives는 수동 번역 보존을 위해 upsert/delete로 관리한다.
                 cursor.execute(
                     """
                     truncate table
-                        quest_objective_items,
                         quest_objective_required_keys,
                         quest_objective_maps,
                         quest_relations,
