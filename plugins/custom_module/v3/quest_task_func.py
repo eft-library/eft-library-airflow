@@ -252,7 +252,7 @@ def v3_quest_finish_rewards_process(item_en, item_ko, item_ja):
     finish_rewards_ja = item_ja.get("finishRewards") or {}
     skill_rows = []
     standing_rows = []
-    offer_rows = []
+    offer_map = {}
 
     for idx, reward in enumerate(finish_rewards.get("skillLevelReward") or []):
         skill_name_en = reward.get("name")
@@ -288,9 +288,15 @@ def v3_quest_finish_rewards_process(item_en, item_ko, item_ja):
         item_id = (reward.get("item") or {}).get("id")
         level = reward.get("level")
         if offer_id:
-            offer_rows.append((quest_id, offer_id, trader_id, item_id, level))
+            offer_map[(quest_id, offer_id, item_id)] = (
+                quest_id,
+                offer_id,
+                trader_id,
+                item_id,
+                level,
+            )
 
-    return skill_rows, standing_rows, offer_rows
+    return skill_rows, standing_rows, list(offer_map.values())
 
 
 def v3_quest_finish_reward_items_process(item_en):

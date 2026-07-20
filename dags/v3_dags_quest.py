@@ -127,7 +127,12 @@ with DAG(
             for row in standing_rows:
                 store("완료 보상 - 상인 평판", (row[0], row[1]), row[0], (row[2],))
             for row in offer_rows:
-                store("완료 보상 - 거래 잠금 해제", (row[0], row[1]), row[0], row[2:])
+                store(
+                    "완료 보상 - 거래 잠금 해제",
+                    (row[0], row[1], row[3]),
+                    row[0],
+                    (row[2], row[4]),
+                )
             for row in v3_quest_finish_reward_items_process(item):
                 store("완료 보상 - 아이템", (row[0], row[1]), row[0], (row[2],))
             for row in v3_quest_finish_reward_craft_unlocks_process(item):
@@ -224,10 +229,16 @@ with DAG(
                     for row in cursor.fetchall():
                         quest_id = str(row[0])
                         child_id = str(row[1])
-                        db_sections[section][(quest_id, child_id)] = (
-                            quest_id,
-                            tuple(row[2:]),
-                        )
+                        if section == "완료 보상 - 거래 잠금 해제":
+                            item_id = str(row[3])
+                            db_sections[section][
+                                (quest_id, child_id, item_id)
+                            ] = (quest_id, (row[2], row[4]))
+                        else:
+                            db_sections[section][(quest_id, child_id)] = (
+                                quest_id,
+                                tuple(row[2:]),
+                            )
 
                 cursor.execute("select id, name_en from items")
                 item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
@@ -307,7 +318,6 @@ with DAG(
             "완료 보상 - 상인 평판": ("평판",),
             "완료 보상 - 거래 잠금 해제": (
                 "상인 ID",
-                "아이템 ID",
                 "레벨",
             ),
             "완료 보상 - 아이템": ("수량",),
@@ -351,6 +361,8 @@ with DAG(
                 return f"선행 {named_id(key[1], quest_names)}"
             if section == "완료 보상 - 상인 평판":
                 return named_id(key[1], trader_names)
+            if section == "완료 보상 - 거래 잠금 해제":
+                return f"오퍼 {key[1]}, {named_id(key[2], item_names)}"
             if section == "완료 보상 - 아이템":
                 return named_id(key[1], item_names)
             return str(key)
