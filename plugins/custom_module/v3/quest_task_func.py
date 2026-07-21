@@ -250,8 +250,8 @@ def v3_quest_finish_rewards_process(item_en, item_ko, item_ja):
     finish_rewards = item_en.get("finishRewards") or {}
     finish_rewards_ko = item_ko.get("finishRewards") or {}
     finish_rewards_ja = item_ja.get("finishRewards") or {}
-    skill_rows = []
-    standing_rows = []
+    skill_map = {}
+    standing_map = {}
     offer_map = {}
 
     for idx, reward in enumerate(finish_rewards.get("skillLevelReward") or []):
@@ -272,15 +272,19 @@ def v3_quest_finish_rewards_process(item_en, item_ko, item_ja):
         except Exception:
             pass
         if skill_name_en:
-            skill_rows.append(
-                (quest_id, skill_name_en, skill_name_ko, skill_name_ja, level)
+            skill_map[(quest_id, skill_name_en, level)] = (
+                quest_id,
+                skill_name_en,
+                skill_name_ko,
+                skill_name_ja,
+                level,
             )
 
     for reward in finish_rewards.get("traderStanding") or []:
         trader_id = (reward.get("trader") or {}).get("id")
         standing = reward.get("standing")
         if trader_id:
-            standing_rows.append((quest_id, trader_id, standing))
+            standing_map[(quest_id, trader_id)] = (quest_id, trader_id, standing)
 
     for reward in finish_rewards.get("offerUnlock") or []:
         offer_id = reward.get("id")
@@ -296,7 +300,7 @@ def v3_quest_finish_rewards_process(item_en, item_ko, item_ja):
                 level,
             )
 
-    return skill_rows, standing_rows, list(offer_map.values())
+    return list(skill_map.values()), list(standing_map.values()), list(offer_map.values())
 
 
 def v3_quest_finish_reward_items_process(item_en):
@@ -326,19 +330,17 @@ def v3_quest_finish_reward_craft_unlocks_process(item_en):
     quest_id = item_en.get("id")
     finish_rewards = item_en.get("finishRewards") or {}
 
-    rows = []
+    row_map = {}
 
     for craft in finish_rewards.get("craftUnlock") or []:
         craft_id = craft.get("id")
         station_level = craft.get("level")
 
         if craft_id:
-            rows.append(
-                (
-                    quest_id,
-                    craft_id,
-                    station_level,
-                )
+            row_map[(quest_id, craft_id)] = (
+                quest_id,
+                craft_id,
+                station_level,
             )
 
-    return rows
+    return list(row_map.values())
