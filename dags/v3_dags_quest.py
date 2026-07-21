@@ -41,8 +41,8 @@ en_path = "/opt/airflow/tmp/v3_quest_en_list.json"
 ko_path = "/opt/airflow/tmp/v3_quest_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_quest_ja_list.json"
 
-MANUAL_QUEST_OBJECTIVE_ITEMS = {
-    ("64f732240e186112c4455d84", "64ccc246ff54fb38131acf29", "item"),
+MANUAL_QUEST_OBJECTIVE_REQUIRED_KEYS = {
+    ("64f732240e186112c4455d84", "64ccc246ff54fb38131acf29"),
 }
 
 
@@ -387,8 +387,8 @@ with DAG(
                     f"{f' ({values})' if values else ''}"
                 )
             deleted_keys = db_keys - api_keys
-            if section == "목표 아이템":
-                deleted_keys -= MANUAL_QUEST_OBJECTIVE_ITEMS
+            if section == "목표 필요 열쇠":
+                deleted_keys -= MANUAL_QUEST_OBJECTIVE_REQUIRED_KEYS
             for key in sorted(deleted_keys):
                 owner_id = db_values[key][0]
                 counts.setdefault(owner_id, [0, 0, 0])[1] += 1
@@ -722,12 +722,12 @@ with DAG(
                         page_size=500,
                     )
 
-                # quest_objective_items는 수동 데이터를 보존하기 위해 upsert로 관리한다.
+                # quest_objective_required_keys는 수동 데이터를 보존하기 위해 upsert로 관리한다.
                 # quest_objectives는 수동 번역 보존을 위해 upsert/delete로 관리한다.
                 cursor.execute(
                     """
                     truncate table
-                        quest_objective_required_keys,
+                        quest_objective_items,
                         quest_objective_maps,
                         quest_relations,
                         quest_finish_reward_skills,
