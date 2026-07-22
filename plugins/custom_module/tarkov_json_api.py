@@ -407,9 +407,42 @@ def get_live_map_static_maps(lang="en"):
     data = get_json_data("maps", lang)
     maps = data["maps"]
     stationary_weapons = data.get("stationaryWeapons", {})
+    item_data = get_json_data("items", lang)
+    key_items = {
+        item_id: {
+            "id": item_id,
+            "name": item.get("name"),
+            "normalizedName": item.get("normalizedName"),
+            "image": item.get("gridImageLink"),
+            "isKeycard": "keycard" in (item.get("normalizedName") or "").lower(),
+        }
+        for item_id, item in item_data.get("items", {}).items()
+        if (item.get("properties") or {}).get("propertiesType")
+        == "ItemPropertiesKey"
+    }
     result = []
     for raw_map in maps.values():
         map_data = copy.deepcopy(raw_map)
+        map_data["locks"] = [
+            {
+                **lock,
+                "keyItem": copy.deepcopy(key_items.get(lock.get("key"))),
+            }
+            for lock in map_data.get("locks") or []
+            if lock.get("key") in key_items
+        ]
+        map_data["lootLoose"] = [
+            {
+                **loot,
+                "keyItems": [
+                    copy.deepcopy(key_items[item_id])
+                    for item_id in loot.get("items") or []
+                    if item_id in key_items
+                ],
+            }
+            for loot in map_data.get("lootLoose") or []
+            if any(item_id in key_items for item_id in loot.get("items") or [])
+        ]
         map_data["stationaryWeapons"] = [
             {
                 **weapon,

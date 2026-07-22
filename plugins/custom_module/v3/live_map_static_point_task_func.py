@@ -78,12 +78,13 @@ def build_static_point_id(map_id, category, source_key):
     return f"{map_id}:{category}:{digest}"
 
 
-def build_metadata(source_type, raw):
+def build_metadata(source_type, raw, **values):
     return Json(
         {
             "source": "tarkov.dev",
             "source_type": source_type,
             "raw": raw,
+            **values,
         }
     )
 
@@ -99,6 +100,10 @@ def build_static_point_row(
     position,
     metadata,
     sort_order,
+    image=None,
+    name_en=None,
+    name_ko=None,
+    name_ja=None,
 ):
     floor_id = match_floor(floors, floor_zones, position)
     return (
@@ -106,12 +111,13 @@ def build_static_point_row(
         map_id,
         floor_id,
         category,
-        name,
-        name,
-        name,
+        name_en or name,
+        name_ko or name,
+        name_ja or name,
         None,
         None,
         None,
+        image,
         position.get("x"),
         position.get("z"),
         metadata,
@@ -124,7 +130,9 @@ def build_live_map_static_point_rows(
     local_maps,
     floors_by_map_id,
     floor_zones_by_map_id,
+    items_by_id=None,
 ):
+    items_by_id = items_by_id or {}
     rows = []
     skipped_maps = []
 
@@ -175,6 +183,98 @@ def build_live_map_static_point_rows(
                 )
             )
             sort_order += 1
+
+        for lock in api_map.get("locks") or []:
+            api_key_item = lock.get("keyItem") or {}
+            key_item_id = api_key_item.get("id") or lock.get("key")
+            db_key_item = items_by_id.get(key_item_id) or {}
+            key_item = {
+                "id": key_item_id,
+                "normalized_name": db_key_item.get("normalized_name")
+                or api_key_item.get("normalizedName"),
+                "name_en": db_key_item.get("name_en")
+                or api_key_item.get("name"),
+                "name_ko": db_key_item.get("name_ko"),
+                "name_ja": db_key_item.get("name_ja"),
+                "image": db_key_item.get("image") or api_key_item.get("image"),
+            }
+            position = lock.get("position") or {}
+            lock_type = lock.get("lockType")
+            category = (
+                "locked_door" if lock_type == "door" else "locked_container"
+            )
+            rows.append(
+                build_static_point_row(
+                    map_id=map_id,
+                    floors=floors,
+                    floor_zones=floor_zones,
+                    category=category,
+                    source_key=f"lock:{lock.get('id')}",
+                    name=key_item.get("name_en") or "Locked location",
+                    name_en=key_item.get("name_en"),
+                    name_ko=key_item.get("name_ko"),
+                    name_ja=key_item.get("name_ja"),
+                    position=position,
+                    image=key_item.get("image"),
+                    metadata=build_metadata(
+                        "lock",
+                        lock,
+                        lock_id=lock.get("id"),
+                        lock_type=lock_type,
+                        key_item_id=key_item_id,
+                        key_item=key_item,
+                        needs_power=bool(lock.get("needsPower")),
+                    ),
+                    sort_order=sort_order,
+                )
+            )
+            sort_order += 1
+
+        for loot in api_map.get("lootLoose") or []:
+            position = loot.get("position") or {}
+            key_items = loot.get("keyItems") or []
+            item_groups = (
+                (
+                    "key_spawn",
+                    [item for item in key_items if not item.get("isKeycard")],
+                ),
+                (
+                    "keycard_spawn",
+                    [item for item in key_items if item.get("isKeycard")],
+                ),
+            )
+            for category, items in item_groups:
+                if not items:
+                    continue
+                item_ids = sorted({item.get("id") for item in items if item.get("id")})
+                if len(items) == 1:
+                    name = items[0].get("name")
+                    image = items[0].get("image")
+                else:
+                    name = "Keycard spawn" if category == "keycard_spawn" else "Key spawn"
+                    image = None
+                rows.append(
+                    build_static_point_row(
+                        map_id=map_id,
+                        floors=floors,
+                        floor_zones=floor_zones,
+                        category=category,
+                        source_key=f"{category}:{position}",
+                        name=name,
+                        position=position,
+                        image=image,
+                        metadata=build_metadata(
+                            "loose_loot",
+                            {"position": position, "keyItems": items},
+                            spawn_type=(
+                                "keycard" if category == "keycard_spawn" else "key"
+                            ),
+                            item_ids=item_ids,
+                        ),
+                        sort_order=sort_order,
+                    )
+                )
+                sort_order += 1
 
         for transit in api_map.get("transits") or []:
             target_map = transit.get("map") or {}

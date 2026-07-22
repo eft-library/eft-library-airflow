@@ -130,11 +130,35 @@ with DAG(
                         }
                     )
 
+                cursor.execute(
+                    """
+                    select id,
+                           normalized_name,
+                           name_en,
+                           name_ko,
+                           name_ja,
+                           image
+                    from items;
+                    """
+                )
+                items_by_id = {
+                    row[0]: {
+                        "id": row[0],
+                        "normalized_name": row[1],
+                        "name_en": row[2],
+                        "name_ko": row[3],
+                        "name_ja": row[4],
+                        "image": row[5],
+                    }
+                    for row in cursor.fetchall()
+                }
+
                 rows = build_live_map_static_point_rows(
                     api_maps,
                     local_maps,
                     floors_by_map_id,
                     floor_zones_by_map_id,
+                    items_by_id,
                 )
 
                 if not rows:
@@ -152,6 +176,7 @@ with DAG(
                         description_en,
                         description_ko,
                         description_ja,
+                        image,
                         x,
                         z,
                         metadata,
