@@ -10,9 +10,8 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_quest_items
 from custom_module.v3.quest_item_task_func import (
-    generate_quest_item_graphql,
     v3_quest_item_process,
 )
 from custom_module.v3.item_task_func import assign_unique_normalized_names
@@ -35,10 +34,10 @@ with DAG(
 ) as dag:
 
     def fetch_quest_item():
-        item_list_en = get_graphql(generate_quest_item_graphql("en"))
+        item_list_en = get_quest_items("en")
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["questItems"], f)
+            json.dump(item_list_en, f)
 
         return {"en": en_path}
 

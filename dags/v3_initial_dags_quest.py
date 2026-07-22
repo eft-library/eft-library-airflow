@@ -11,9 +11,8 @@ from airflow.sdk import get_current_context
 from airflow.task.trigger_rule import TriggerRule
 from psycopg2.extras import execute_values
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_tasks
 from custom_module.v3.quest_task_func import (
-    generate_quest_graphql,
     v3_quest_process,
     v3_quest_objectives_process,
     v3_quest_objective_items_process,
@@ -46,18 +45,18 @@ with DAG(
 ) as dag:
 
     def fetch_quest():
-        item_list_en = get_graphql(generate_quest_graphql("en"))
-        item_list_ko = get_graphql(generate_quest_graphql("ko"))
-        item_list_ja = get_graphql(generate_quest_graphql("ja"))
+        item_list_en = get_tasks("en")
+        item_list_ko = get_tasks("ko")
+        item_list_ja = get_tasks("ja")
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["tasks"], f)
+            json.dump(item_list_en, f)
 
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["tasks"], f)
+            json.dump(item_list_ko, f)
 
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["tasks"], f)
+            json.dump(item_list_ja, f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 

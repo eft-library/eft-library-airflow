@@ -10,9 +10,8 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_items
 from custom_module.v3.item_task_func import (
-    generate_item_graphql,
     v3_item_row_process,
     assign_unique_normalized_names,
     v3_item_penalties_row,
@@ -48,16 +47,16 @@ with DAG(
 ) as dag:
 
     def fetch_item():
-        item_list_en = get_graphql(generate_item_graphql("en"))
-        item_list_ko = get_graphql(generate_item_graphql("ko"))
-        item_list_ja = get_graphql(generate_item_graphql("ja"))
+        item_list_en = get_items("en")
+        item_list_ko = get_items("ko")
+        item_list_ja = get_items("ja")
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["items"], f)
+            json.dump(item_list_en, f)
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["items"], f)
+            json.dump(item_list_ko, f)
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["items"], f)
+            json.dump(item_list_ja, f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 

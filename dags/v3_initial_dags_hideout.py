@@ -10,9 +10,8 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_hideout
 from custom_module.v3.hideout_task_func import (
-    generate_hideout_graphql,
     v3_hideout_master_process,
     v3_hideout_level_process,
     v3_hideout_skill_require_process,
@@ -44,16 +43,16 @@ with DAG(
 ) as dag:
 
     def fetch_hideout():
-        item_list_en = get_graphql(generate_hideout_graphql("en"))
-        item_list_ko = get_graphql(generate_hideout_graphql("ko"))
-        item_list_ja = get_graphql(generate_hideout_graphql("ja"))
+        item_list_en = get_hideout("en")
+        item_list_ko = get_hideout("ko")
+        item_list_ja = get_hideout("ja")
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["hideoutStations"], f)
+            json.dump(item_list_en, f)
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["hideoutStations"], f)
+            json.dump(item_list_ko, f)
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["hideoutStations"], f)
+            json.dump(item_list_ja, f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 

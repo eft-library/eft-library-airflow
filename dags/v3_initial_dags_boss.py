@@ -10,10 +10,8 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_bosses, get_boss_spawn_maps
 from custom_module.v3.boss_task_func import (
-    generate_boss_graphql,
-    generate_boss_spawn_graphql,
     v3_boss_process,
     v3_boss_item_process,
     v3_boss_spawn_process,
@@ -40,24 +38,24 @@ with DAG(
 ) as dag:
 
     def fetch_boss():
-        item_list_en = get_graphql(generate_boss_graphql("en"))
-        item_list_ko = get_graphql(generate_boss_graphql("ko"))
-        item_list_ja = get_graphql(generate_boss_graphql("ja"))
+        item_list_en = get_bosses("en")
+        item_list_ko = get_bosses("ko")
+        item_list_ja = get_bosses("ja")
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["bosses"], f)
+            json.dump(item_list_en, f)
         with open(ko_path, "w") as f:
-            json.dump(item_list_ko["data"]["bosses"], f)
+            json.dump(item_list_ko, f)
         with open(ja_path, "w") as f:
-            json.dump(item_list_ja["data"]["bosses"], f)
+            json.dump(item_list_ja, f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 
     def fetch_spawn():
-        spawn_data = get_graphql(generate_boss_spawn_graphql())
+        spawn_data = get_boss_spawn_maps()
 
         with open(spawn_path, "w") as f:
-            json.dump(spawn_data["data"]["maps"], f)
+            json.dump(spawn_data, f)
 
         return {"spawn": spawn_path}
 

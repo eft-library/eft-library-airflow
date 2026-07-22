@@ -12,10 +12,8 @@ from airflow.task.trigger_rule import TriggerRule
 from psycopg2.extras import execute_values
 
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_item_prices
 from custom_module.v3.item_price_task_func import (
-    generate_pvp_item_price_graphql,
-    generate_pve_item_price_graphql,
     v3_item_price_row,
     v3_item_trader_price_rows,
     v3_item_price_history_rows,
@@ -42,14 +40,14 @@ with DAG(
 ) as dag:
 
     def fetch_item_price():
-        pvp_list_en = get_graphql(generate_pvp_item_price_graphql("en"))
-        pve_list_en = get_graphql(generate_pve_item_price_graphql("en"))
+        pvp_list_en = get_item_prices("regular")
+        pve_list_en = get_item_prices("pve")
 
         with open(pvp_en_path, "w") as f:
-            json.dump(pvp_list_en["data"]["items"], f)
+            json.dump(pvp_list_en, f)
 
         with open(pve_en_path, "w") as f:
-            json.dump(pve_list_en["data"]["items"], f)
+            json.dump(pve_list_en, f)
 
         return {"pvp_en": pvp_en_path, "pve_en": pve_en_path}
 
@@ -194,10 +192,6 @@ with DAG(
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "delete from item_price_history where price_time >= now() - interval '14 days'"
-                )
-
                 if history_rows:
                     execute_values(cursor, history_sql, history_rows, page_size=1000)
 

@@ -10,10 +10,9 @@ from airflow.task.trigger_rule import TriggerRule
 from contextlib import closing
 from psycopg2.extras import execute_values
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_live_map_tasks
 from custom_module.v3.live_map_point_task_func import (
     build_live_map_point_rows,
-    generate_live_map_point_graphql,
     normalize_map_name,
 )
 
@@ -37,16 +36,16 @@ with DAG(
 ) as dag:
 
     def fetch_live_map_point():
-        tasks_en = get_graphql(generate_live_map_point_graphql("en"))
-        tasks_ko = get_graphql(generate_live_map_point_graphql("ko"))
-        tasks_ja = get_graphql(generate_live_map_point_graphql("ja"))
+        tasks_en = get_live_map_tasks("en")
+        tasks_ko = get_live_map_tasks("ko")
+        tasks_ja = get_live_map_tasks("ja")
 
         with open(en_path, "w") as f:
-            json.dump(tasks_en["data"]["tasks"], f)
+            json.dump(tasks_en, f)
         with open(ko_path, "w") as f:
-            json.dump(tasks_ko["data"]["tasks"], f)
+            json.dump(tasks_ko, f)
         with open(ja_path, "w") as f:
-            json.dump(tasks_ja["data"]["tasks"], f)
+            json.dump(tasks_ja, f)
 
         return {"en": en_path, "ko": ko_path, "ja": ja_path}
 

@@ -1,5 +1,6 @@
 import copy
 import json
+import time
 from urllib.request import Request, urlopen
 
 
@@ -38,6 +39,89 @@ def get_json_data(endpoint, lang="en", game_mode="regular"):
 
 def get_maps(lang="en"):
     return list(get_json_data("maps", lang)["maps"].values())
+
+
+def _category_data(item, categories):
+    category_ids = item.get("categories") or []
+    category = categories.get(category_ids[0], {}) if category_ids else {}
+    parent = categories.get(category.get("parent"), {})
+    return {
+        "name": category.get("name"),
+        "parent": {"name": parent.get("name")},
+    }
+
+
+def _item_properties(properties):
+    properties = copy.deepcopy(properties) if isinstance(properties, dict) else {}
+    properties["allowedAmmo"] = [
+        {"id": item_id} for item_id in properties.get("allowedAmmo") or []
+    ]
+    if isinstance(properties.get("defaultAmmo"), str):
+        properties["defaultAmmo"] = {"id": properties["defaultAmmo"]}
+    if isinstance(properties.get("material"), str):
+        properties["material"] = {"name": properties["material"]}
+    fire_mode_names = {
+        "single": "Single fire",
+        "fullauto": "Full auto",
+        "burst": "Burst fire",
+        "doubleaction": "Double action",
+        "doubletap": "Double tap",
+        "semiauto": "Semi-automatic",
+    }
+    properties["fireModes"] = [
+        fire_mode_names.get(str(mode).replace("_", "").lower(), mode)
+        for mode in properties.get("fireModes") or []
+    ]
+    return properties
+
+
+def get_items(lang="en", game_mode="regular"):
+    data = get_json_data("items", lang, game_mode)
+    categories = data.get("itemCategories", {})
+    items = []
+    for raw_item in data.get("items", {}).values():
+        item = copy.deepcopy(raw_item)
+        item["category"] = _category_data(item, categories)
+        item["properties"] = _item_properties(item.get("properties"))
+        items.append(item)
+    return items
+
+
+def get_item_prices(game_mode="regular"):
+    data = get_json_data("items", "en", game_mode)
+    traders = get_json_data("traders", "en", game_mode)
+    trader_names = {
+        trader_id: trader.get("name") for trader_id, trader in traders.items()
+    }
+    items = []
+    price_timestamp = (int(time.time()) // 3600) * 3600 * 1000
+    for raw_item in data.get("items", {}).values():
+        item = copy.deepcopy(raw_item)
+        item["sellFor"] = [
+            {
+                "priceRUB": price.get("priceRUB"),
+                "vendor": {"name": trader_names.get(price.get("trader"))},
+            }
+            for price in item.get("sellToTrader") or []
+        ]
+        if item.get("lastLowPrice") is not None:
+            item["sellFor"].append(
+                {
+                    "priceRUB": item["lastLowPrice"],
+                    "vendor": {"name": "Flea Market"},
+                }
+            )
+        item["historicalPrices"] = (
+            [{"price": item["lastLowPrice"], "timestamp": price_timestamp}]
+            if item.get("lastLowPrice") is not None
+            else []
+        )
+        items.append(item)
+    return items
+
+
+def get_quest_items(lang="en", game_mode="regular"):
+    return list(get_json_data("tasks", lang, game_mode)["questItems"].values())
 
 
 def get_bosses(lang="en"):
@@ -294,3 +378,63 @@ def get_tasks(lang="en"):
         )
         tasks.append(task)
     return tasks
+
+
+def get_live_map_tasks(lang="en"):
+    maps = get_json_data("maps", lang)["maps"]
+    tasks = get_tasks(lang)
+    for task in tasks:
+        for objective in task.get("objectives") or []:
+            for zone in objective.get("zones") or []:
+                map_id = zone.get("map")
+                zone["map"] = _map_reference(maps.get(map_id), map_id)
+            for location in objective.get("possibleLocations") or []:
+                map_id = location.get("map")
+                location["map"] = _map_reference(maps.get(map_id), map_id)
+    return tasks
+
+
+def _map_reference(map_data, map_id=None):
+    map_data = map_data or {}
+    return {
+        "id": map_data.get("id", map_id),
+        "name": map_data.get("name"),
+        "normalizedName": map_data.get("normalizedName"),
+    }
+
+
+def get_live_map_static_maps(lang="en"):
+    data = get_json_data("maps", lang)
+    maps = data["maps"]
+    stationary_weapons = data.get("stationaryWeapons", {})
+    result = []
+    for raw_map in maps.values():
+        map_data = copy.deepcopy(raw_map)
+        map_data["stationaryWeapons"] = [
+            {
+                **weapon,
+                "stationaryWeapon": {
+                    "id": weapon.get("stationaryWeapon"),
+                    "name": (
+                        stationary_weapons.get(weapon.get("stationaryWeapon"), {})
+                    ).get("name"),
+                },
+            }
+            for weapon in map_data.get("stationaryWeapons") or []
+        ]
+        converted_transits = []
+        for transit in map_data.get("transits") or []:
+            target_id = transit.get("map")
+            target = maps.get(target_id, {})
+            converted_transits.append(
+                {
+                    **transit,
+                    "map": {
+                        **_map_reference(target, target_id),
+                        "switches": copy.deepcopy(target.get("switches") or []),
+                    },
+                }
+            )
+        map_data["transits"] = converted_transits
+        result.append(map_data)
+    return result

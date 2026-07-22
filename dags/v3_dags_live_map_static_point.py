@@ -10,10 +10,9 @@ from airflow.task.trigger_rule import TriggerRule
 from contextlib import closing
 from psycopg2.extras import execute_values
 
-from custom_module.graphql_func import get_graphql
+from custom_module.tarkov_json_api import get_live_map_static_maps
 from custom_module.v3.live_map_static_point_task_func import (
     build_live_map_static_point_rows,
-    generate_live_map_static_point_graphql,
     normalize_map_name,
 )
 
@@ -35,10 +34,10 @@ with DAG(
 ) as dag:
 
     def fetch_live_map_static_point():
-        response = get_graphql(generate_live_map_static_point_graphql())
+        response = get_live_map_static_maps("en")
 
         with open(live_map_static_point_path, "w") as f:
-            json.dump(response["data"]["maps"], f)
+            json.dump(response, f)
 
         return {"live_map_static_point": live_map_static_point_path}
 
