@@ -13,8 +13,8 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.graphql_func import get_graphql
-from custom_module.v3.map_task_func import generate_map_graphql, v3_map_process
+from custom_module.tarkov_json_api import get_maps
+from custom_module.v3.map_task_func import v3_map_process
 
 default_args = {
     "owner": "airflow",
@@ -52,10 +52,10 @@ with DAG(
 ) as dag:
 
     def fetch_map():
-        item_list_en = get_graphql(generate_map_graphql("en"))
+        item_list_en = get_maps("en")
 
         with open(en_path, "w") as f:
-            json.dump(item_list_en["data"]["maps"], f)
+            json.dump(item_list_en, f)
 
         return {"en": en_path}
 
