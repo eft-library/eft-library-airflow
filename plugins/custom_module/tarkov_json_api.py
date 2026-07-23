@@ -16,12 +16,17 @@ def _request_json(path):
         return json.load(response)
 
 
-def _translate(value, translations):
+TRANSLATABLE_FIELDS = {"name", "shortName", "description"}
+
+
+def _translate(value, translations, field=None):
     if isinstance(value, dict):
-        return {key: _translate(item, translations) for key, item in value.items()}
+        return {
+            key: _translate(item, translations, key) for key, item in value.items()
+        }
     if isinstance(value, list):
-        return [_translate(item, translations) for item in value]
-    if isinstance(value, str):
+        return [_translate(item, translations, field) for item in value]
+    if isinstance(value, str) and field in TRANSLATABLE_FIELDS:
         return translations.get(value, value)
     return value
 
