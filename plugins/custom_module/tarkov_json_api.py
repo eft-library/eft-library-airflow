@@ -125,7 +125,7 @@ def get_quest_items(lang="en", game_mode="regular"):
 
 
 def get_bosses(lang="en"):
-    mobs = get_json_data("maps", lang)["mobs"].values()
+    mobs = get_json_data("maps", lang)["mobs"]
     body_part_names = {
         "head": "head",
         "chest": "thorax",
@@ -136,8 +136,11 @@ def get_bosses(lang="en"):
         "rightleg": "right leg",
     }
     bosses = []
-    for mob in mobs:
+    for mob_id, mob in mobs.items():
         boss = copy.deepcopy(mob)
+        # Mob role IDs (for example bossTagilla) are also localization keys.
+        # Translation must change the display name, never the relational ID.
+        boss["id"] = mob_id
         boss["health"] = [
             {
                 "bodyPart": body_part_names.get(
