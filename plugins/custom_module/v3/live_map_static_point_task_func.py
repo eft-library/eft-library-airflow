@@ -78,6 +78,24 @@ def build_static_point_id(map_id, category, source_key):
     return f"{map_id}:{category}:{digest}"
 
 
+def boss_spawn_category(boss_id):
+    if boss_id in {
+        "blackDivision",
+        "bossBullyBlackDiv",
+        "pmcBotBlackDiv",
+    }:
+        return "black_div_spawn"
+    if boss_id == "sectantPriest":
+        return "cultist_spawn"
+    if boss_id == "bossKnight":
+        return "goons_spawn"
+    if boss_id == "ExUsec":
+        return "rogue_spawn"
+    if boss_id in {"PmcBot", "Sentry", "vsRF", "vsRFSniper"}:
+        return "raider_spawn"
+    return "boss_spawn"
+
+
 def build_metadata(source_type, raw, **values):
     return Json(
         {
@@ -340,3 +358,181 @@ def build_live_map_static_point_rows(
         print(f"Skipped maps without local match: {skipped_maps}")
 
     return rows
+
+
+def _boss_info(boss_id, bosses_by_id):
+    return bosses_by_id.get(boss_id) or {
+        "id": boss_id,
+        "normalized_name": None,
+        "name_en": boss_id,
+        "name_ko": None,
+        "name_ja": None,
+        "image": None,
+    }
+
+
+def _escort_info(escort, bosses_by_id):
+    return {
+        **_boss_info(escort.get("mob"), bosses_by_id),
+        "amount": escort.get("amount") or [],
+    }
+
+
+def build_boss_spawn_metadata_updates(
+    api_maps,
+    existing_points,
+    bosses_by_id,
+):
+    candidates_by_map_category = {}
+    definitions_by_map_category = {}
+    definitions_by_category = {}
+    for api_map in api_maps:
+        map_id = api_map.get("id")
+        for spawn in api_map.get("bosses") or []:
+            boss_id = spawn.get("mob")
+            category = boss_spawn_category(boss_id)
+            boss = _boss_info(boss_id, bosses_by_id)
+            escorts = [
+                _escort_info(escort, bosses_by_id)
+                for escort in spawn.get("escorts") or []
+            ]
+            definition = {
+                "boss": boss,
+                "escorts": escorts,
+                "spawn_chance": spawn.get("spawnChance"),
+            }
+            definitions_by_map_category.setdefault(
+                (map_id, category), []
+            ).append(definition)
+            definitions_by_category.setdefault(category, []).append(definition)
+            for location in spawn.get("spawnLocations") or []:
+                spawn_key = location.get("spawnKey") or location.get("name")
+                for position in location.get("positions") or []:
+                    if position.get("x") is None or position.get("z") is None:
+                        continue
+                    candidates_by_map_category.setdefault(
+                        (map_id, category), []
+                    ).append(
+                        {
+                            "boss": boss,
+                            "escorts": escorts,
+                            "spawn_chance": spawn.get("spawnChance"),
+                            "location_chance": location.get("chance"),
+                            "spawn_key": spawn_key,
+                            "location_name": location.get("name"),
+                            "position": position,
+                        }
+                    )
+
+    updates = []
+    for point in existing_points:
+        candidates = candidates_by_map_category.get(
+            (point.get("map_id"), point.get("category")), []
+        )
+        point_name = normalize_map_name(point.get("name_en"))
+        if not candidates or point.get("x") is None or point.get("z") is None:
+            definitions = definitions_by_map_category.get(
+                (point.get("map_id"), point.get("category")), []
+            )
+            if not definitions:
+                definitions = definitions_by_category.get(
+                    point.get("category"), []
+                )
+            named_definitions = [
+                definition
+                for definition in definitions
+                if definition["boss"].get("normalized_name")
+                and definition["boss"]["normalized_name"] in point_name
+            ]
+            match_pool = named_definitions or definitions
+            if not match_pool:
+                continue
+            primary = match_pool[0]
+            related_bosses = {}
+            for definition in match_pool:
+                boss_id = definition["boss"].get("id")
+                related_bosses[boss_id] = {
+                    **definition["boss"],
+                    "spawn_chance": (
+                        definition["spawn_chance"]
+                        if definitions_by_map_category.get(
+                            (point.get("map_id"), point.get("category"))
+                        )
+                        else None
+                    ),
+                    "escorts": definition["escorts"],
+                }
+            metadata = dict(point.get("metadata") or {})
+            metadata.update(
+                {
+                    "source": "tarkov.dev",
+                    "source_type": "boss_spawn",
+                    "boss": primary["boss"],
+                    "bosses": list(related_bosses.values()),
+                    "escorts": primary["escorts"],
+                    "spawn_chance": (
+                        primary["spawn_chance"]
+                        if definitions_by_map_category.get(
+                            (point.get("map_id"), point.get("category"))
+                        )
+                        else None
+                    ),
+                    "location_chance": None,
+                    "matched_location": None,
+                }
+            )
+            updates.append((point["id"], Json(metadata)))
+            continue
+
+        named_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate["boss"].get("normalized_name")
+            and candidate["boss"]["normalized_name"] in point_name
+        ]
+        match_pool = named_candidates or candidates
+
+        def distance_squared(candidate):
+            position = candidate["position"]
+            return (
+                float(position["x"]) - float(point["x"])
+            ) ** 2 + (
+                float(position["z"]) - float(point["z"])
+            ) ** 2
+
+        nearest = min(match_pool, key=distance_squared)
+        related_candidates = [
+            candidate
+            for candidate in match_pool
+            if candidate["spawn_key"] == nearest["spawn_key"]
+        ]
+        related_bosses = {}
+        for candidate in related_candidates:
+            boss_id = candidate["boss"].get("id")
+            related_bosses[boss_id] = {
+                **candidate["boss"],
+                "spawn_chance": candidate["spawn_chance"],
+                "escorts": candidate["escorts"],
+            }
+
+        metadata = dict(point.get("metadata") or {})
+        metadata.update(
+            {
+                "source": "tarkov.dev",
+                "source_type": "boss_spawn",
+                "boss": nearest["boss"],
+                "bosses": list(related_bosses.values()),
+                "escorts": nearest["escorts"],
+                "spawn_chance": nearest["spawn_chance"],
+                "location_chance": nearest["location_chance"],
+                "matched_location": {
+                    "spawn_key": nearest["spawn_key"],
+                    "name": nearest["location_name"],
+                    "position": nearest["position"],
+                    "distance": distance_squared(nearest) ** 0.5,
+                },
+            }
+        )
+        updates.append((point["id"], Json(metadata)))
+
+    return updates

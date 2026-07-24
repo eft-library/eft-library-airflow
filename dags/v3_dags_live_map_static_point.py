@@ -12,6 +12,7 @@ from psycopg2.extras import execute_values
 
 from custom_module.tarkov_json_api import get_live_map_static_maps
 from custom_module.v3.live_map_static_point_task_func import (
+    build_boss_spawn_metadata_updates,
     build_live_map_static_point_rows,
     normalize_map_name,
 )
@@ -153,6 +154,62 @@ with DAG(
                     for row in cursor.fetchall()
                 }
 
+                cursor.execute(
+                    """
+                    select id,
+                           normalized_name,
+                           name_en,
+                           name_ko,
+                           name_ja,
+                           image
+                    from bosses;
+                    """
+                )
+                bosses_by_id = {
+                    row[0]: {
+                        "id": row[0],
+                        "normalized_name": row[1],
+                        "name_en": row[2],
+                        "name_ko": row[3],
+                        "name_ja": row[4],
+                        "image": row[5],
+                    }
+                    for row in cursor.fetchall()
+                }
+
+                cursor.execute(
+                    """
+                    select id,
+                           map_id,
+                           category,
+                           name_en,
+                           x,
+                           z,
+                           metadata
+                    from live_map_static_points
+                    where category in (
+                        'boss_spawn',
+                        'black_div_spawn',
+                        'cultist_spawn',
+                        'goons_spawn',
+                        'raider_spawn',
+                        'rogue_spawn'
+                    );
+                    """
+                )
+                existing_boss_spawn_points = [
+                    {
+                        "id": row[0],
+                        "map_id": row[1],
+                        "category": row[2],
+                        "name_en": row[3],
+                        "x": row[4],
+                        "z": row[5],
+                        "metadata": row[6],
+                    }
+                    for row in cursor.fetchall()
+                ]
+
                 rows = build_live_map_static_point_rows(
                     api_maps,
                     local_maps,
@@ -160,9 +217,6 @@ with DAG(
                     floor_zones_by_map_id,
                     items_by_id,
                 )
-
-                if not rows:
-                    return
 
                 sql = """
                     INSERT INTO live_map_static_points (
@@ -186,12 +240,34 @@ with DAG(
                     ON CONFLICT (id) DO NOTHING
                 """
 
-                execute_values(
-                    cursor,
-                    sql,
-                    rows,
-                    page_size=500,
+                if rows:
+                    execute_values(
+                        cursor,
+                        sql,
+                        rows,
+                        page_size=500,
+                    )
+
+                boss_metadata_rows = build_boss_spawn_metadata_updates(
+                    api_maps,
+                    existing_boss_spawn_points,
+                    bosses_by_id,
                 )
+                if boss_metadata_rows:
+                    execute_values(
+                        cursor,
+                        """
+                        update live_map_static_points as point
+                        set metadata = data.metadata,
+                            update_time = now()
+                        from (values %s) as data(id, metadata)
+                        where point.id = data.id
+                          and point.metadata is distinct from data.metadata
+                        """,
+                        boss_metadata_rows,
+                        template="(%s, %s::jsonb)",
+                        page_size=500,
+                    )
 
             conn.commit()
 
