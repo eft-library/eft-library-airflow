@@ -209,6 +209,10 @@ with DAG(
                     }
                     for row in cursor.fetchall()
                 ]
+                print(
+                    "[live-map-static-point] existing boss spawn points: "
+                    f"{len(existing_boss_spawn_points)}"
+                )
 
                 rows = build_live_map_static_point_rows(
                     api_maps,
@@ -253,6 +257,14 @@ with DAG(
                     existing_boss_spawn_points,
                     bosses_by_id,
                 )
+                print(
+                    "[live-map-static-point] boss metadata rows: "
+                    f"{len(boss_metadata_rows)}"
+                )
+                if existing_boss_spawn_points and not boss_metadata_rows:
+                    raise ValueError(
+                        "Boss spawn points exist, but no metadata rows were matched."
+                    )
                 if boss_metadata_rows:
                     execute_values(
                         cursor,
@@ -268,6 +280,26 @@ with DAG(
                         template="(%s, %s::jsonb)",
                         page_size=500,
                     )
+                    metadata_ids = [row[0] for row in boss_metadata_rows]
+                    cursor.execute(
+                        """
+                        select count(*)
+                        from live_map_static_points
+                        where id = any(%s)
+                          and metadata is not null;
+                        """,
+                        (metadata_ids,),
+                    )
+                    applied_count = cursor.fetchone()[0]
+                    print(
+                        "[live-map-static-point] boss metadata present in DB: "
+                        f"{applied_count}/{len(metadata_ids)}"
+                    )
+                    if applied_count != len(metadata_ids):
+                        raise ValueError(
+                            "Boss spawn metadata DB verification failed: "
+                            f"{applied_count}/{len(metadata_ids)}"
+                        )
 
             conn.commit()
 
