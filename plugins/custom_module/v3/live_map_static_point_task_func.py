@@ -140,6 +140,7 @@ def build_static_point_row(
         position.get("z"),
         metadata,
         sort_order,
+        False,
     )
 
 

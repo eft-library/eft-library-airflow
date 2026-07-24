@@ -29,7 +29,7 @@ with DAG(
     dag_id="v3_dags_live_map_static_point",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 5, 22, tz="Asia/Seoul"),
-    schedule=None,
+    schedule="20 0 * * *",
     tags=["postgresql", "tarkov-dev-api", "live-map"],
     catchup=False,
 ) as dag:
@@ -238,7 +238,8 @@ with DAG(
                         x,
                         z,
                         metadata,
-                        sort_order
+                        sort_order,
+                        is_use
                     )
                     VALUES %s
                     ON CONFLICT (id) DO NOTHING
