@@ -689,50 +689,8 @@ with DAG(
                     for quest_id, name_en, name_ko, name_ja, skill_level in skill_reward_rows
                 ]
 
-                cursor.execute(
-                    """
-                    create temporary table incoming_quests (
-                        quest_id text
-                    ) on commit drop
-                    """
-                )
-                execute_values(
-                    cursor,
-                    """
-                    insert into incoming_quests (
-                        quest_id
-                    ) values %s
-                    """,
-                    [(quest_id,) for quest_id, *_ in quest_rows],
-                    page_size=500,
-                )
-
-                cursor.execute(
-                    """
-                    create temporary table incoming_quest_objectives (
-                        objective_id text,
-                        quest_id text
-                    ) on commit drop
-                    """
-                )
-                if objective_rows:
-                    execute_values(
-                        cursor,
-                        """
-                        insert into incoming_quest_objectives (
-                            objective_id,
-                            quest_id
-                        ) values %s
-                        """,
-                        [
-                            (objective_id, quest_id)
-                            for objective_id, quest_id, *_ in objective_rows
-                        ],
-                        page_size=500,
-                    )
-
                 # quest_objective_required_keys는 수동 데이터를 보존하기 위해 upsert로 관리한다.
-                # quest_objectives는 수동 번역 보존을 위해 upsert/delete로 관리한다.
+                # quest_objectives는 수동 데이터를 보존하기 위해 upsert로만 관리한다.
                 cursor.execute(
                     """
                     truncate table
@@ -746,19 +704,6 @@ with DAG(
                         quest_finish_reward_craft_unlocks
                     restart identity cascade;
                 """
-                )
-
-                cursor.execute(
-                    """
-                    delete from quest_objectives qo
-                    where qo.quest_id::text in (select quest_id from incoming_quests)
-                    and not exists (
-                        select 1
-                        from incoming_quest_objectives incoming
-                        where incoming.objective_id = qo.objective_id::text
-                        and incoming.quest_id = qo.quest_id::text
-                    )
-                    """
                 )
 
                 # quests upsert
