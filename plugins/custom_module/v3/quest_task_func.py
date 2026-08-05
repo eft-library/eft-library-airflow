@@ -115,9 +115,19 @@ def generate_quest_name_graphql(lang: str) -> str:
 """
 
 
-def v3_quest_objectives_process(item_en):
+def v3_quest_objectives_process(item_en, item_ko=None, item_ja=None):
     quest_id = item_en.get("id")
     objectives = item_en.get("objectives") or []
+    objectives_ko = {
+        obj.get("id"): obj
+        for obj in (item_ko or {}).get("objectives") or []
+        if obj.get("id")
+    }
+    objectives_ja = {
+        obj.get("id"): obj
+        for obj in (item_ja or {}).get("objectives") or []
+        if obj.get("id")
+    }
     rows = []
     seen = set()
     for obj in objectives:
@@ -135,6 +145,8 @@ def v3_quest_objectives_process(item_en):
                 quest_id,
                 obj.get("type"),
                 obj.get("description"),
+                objectives_ko.get(objective_id, {}).get("description"),
+                objectives_ja.get(objective_id, {}).get("description"),
                 obj.get("count"),
                 obj.get("foundInRaid"),
                 sort_order,

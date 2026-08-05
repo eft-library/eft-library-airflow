@@ -104,7 +104,9 @@ with DAG(
             api_quests[quest_id] = v3_quest_process(
                 item, ko_by_id.get(quest_id), ja_by_id.get(quest_id)
             )
-            objective_rows = v3_quest_objectives_process(item)
+            objective_rows = v3_quest_objectives_process(
+                item, ko_by_id.get(quest_id), ja_by_id.get(quest_id)
+            )
             objective_owner = {row[0]: row[1] for row in objective_rows}
             for row in objective_rows:
                 store("목표", (row[0], row[1]), row[1], row[2:])
@@ -161,6 +163,7 @@ with DAG(
                 cursor.execute(
                     """
                     select objective_id, quest_id, type, description_en,
+                           description_ko, description_ja,
                            count, found_in_raid, sort_order
                     from quest_objectives
                     """
@@ -490,7 +493,9 @@ with DAG(
             item_ja = item_ja_dict.get(item_id)
 
             quest_rows.append(v3_quest_process(item_en, item_ko, item_ja))
-            objective_rows.extend(v3_quest_objectives_process(item_en))
+            objective_rows.extend(
+                v3_quest_objectives_process(item_en, item_ko, item_ja)
+            )
             objective_item_rows.extend(v3_quest_objective_items_process(item_en))
             objective_required_key_rows.extend(
                 v3_quest_objective_required_keys_process(item_en)
@@ -548,18 +553,24 @@ with DAG(
                 quest_id,
                 type,
                 description_en,
+                description_ko,
+                description_ja,
                 count,
                 found_in_raid,
-                sort_order
+                sort_order,
+                is_use
             )
             VALUES %s
             ON CONFLICT (objective_id, quest_id) DO UPDATE
             SET
                 type = EXCLUDED.type,
                 description_en = EXCLUDED.description_en,
+                description_ko = EXCLUDED.description_ko,
+                description_ja = EXCLUDED.description_ja,
                 count = EXCLUDED.count,
                 found_in_raid = EXCLUDED.found_in_raid,
-                sort_order = EXCLUDED.sort_order
+                sort_order = EXCLUDED.sort_order,
+                update_time = now()
         """
 
         objective_item_sql = """
@@ -755,7 +766,12 @@ with DAG(
 
                 # child insert
                 if objective_rows:
-                    execute_values(cursor, objective_sql, objective_rows, page_size=500)
+                    execute_values(
+                        cursor,
+                        objective_sql,
+                        [(*row, False) for row in objective_rows],
+                        page_size=500,
+                    )
 
                 if objective_item_rows:
                     execute_values(
