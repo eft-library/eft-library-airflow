@@ -66,7 +66,8 @@ def _fetch_targets(postgres_conn_id):
                 """
                 select normalized_name
                 from quests
-                where normalized_name is not null
+                where is_use is true
+                  and normalized_name is not null
                 order by sort_order, name_en, normalized_name;
                 """
             )

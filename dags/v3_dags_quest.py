@@ -688,12 +688,11 @@ with DAG(
                     for quest_id, name_en, name_ko, name_ja, skill_level in skill_reward_rows
                 ]
 
-                # quest_objective_required_keys는 수동 데이터를 보존하기 위해 upsert로 관리한다.
+                # 목표 아이템과 필요 열쇠는 수동 데이터를 보존하기 위해 upsert로 관리한다.
                 # quest_objectives는 수동 데이터를 보존하기 위해 upsert로만 관리한다.
                 cursor.execute(
                     """
                     truncate table
-                        quest_objective_items,
                         quest_objective_maps,
                         quest_relations,
                         quest_finish_reward_skills,
@@ -839,6 +838,7 @@ with DAG(
                         0,
                         0
                     from quests q
+                    where q.is_use is true
                     on conflict (id) do nothing
                     """
                 )

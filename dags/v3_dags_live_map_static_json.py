@@ -115,7 +115,8 @@ def _fetch_targets(postgres_conn_id):
                 """
                 select q.normalized_name
                 from quests q
-                where q.normalized_name is not null
+                where q.is_use is true
+                  and q.normalized_name is not null
                   and exists (
                       select 1
                       from live_map_points lmp
