@@ -240,6 +240,7 @@ def v3_quest_process(item_en, item_ko, item_ja):
         kappa_required,
         min_player_level,
         wiki_url,
+        False,
     )
 
 

@@ -528,7 +528,8 @@ with DAG(
                 delay_min,
                 kappa_required,
                 min_player_level,
-                wiki_url
+                wiki_url,
+                is_use
             )
             VALUES %s
             ON CONFLICT (id) DO UPDATE
