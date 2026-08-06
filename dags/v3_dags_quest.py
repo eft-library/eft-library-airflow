@@ -566,8 +566,6 @@ with DAG(
             SET
                 type = EXCLUDED.type,
                 description_en = EXCLUDED.description_en,
-                description_ko = EXCLUDED.description_ko,
-                description_ja = EXCLUDED.description_ja,
                 count = EXCLUDED.count,
                 found_in_raid = EXCLUDED.found_in_raid,
                 sort_order = EXCLUDED.sort_order,
