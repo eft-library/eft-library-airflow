@@ -63,6 +63,10 @@ DATA_DUMP_TABLES = [
     "live_map_event_points",
     "quests",
     "quest_objectives",
+    "kord_breach_modifier",
+    "kord_breach_modifier_conflict",
+    "user_kord_breach_preset",
+    "user_kord_breach_preset_modifier",
 ]
 
 
