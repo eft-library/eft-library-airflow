@@ -273,10 +273,11 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
 
-                # 목표 아이템과 필요 열쇠는 수동 데이터를 보존하기 위해 upsert로 관리한다.
                 cursor.execute(
                     """
                     truncate table
+                        quest_objective_items,
+                        quest_objective_required_keys,
                         quest_objective_maps,
                         quest_relations,
                         quest_finish_reward_skills,
