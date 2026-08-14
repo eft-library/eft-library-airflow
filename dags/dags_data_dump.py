@@ -1,9 +1,15 @@
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
-from airflow.providers.standard.operators.python import BranchPythonOperator
+from airflow.providers.standard.operators.python import (
+    BranchPythonOperator,
+    PythonOperator,
+)
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 import datetime
+import hashlib
+import os
 import pendulum
 from custom_module.data_dump_func import (
     dump_script,
@@ -24,6 +30,46 @@ def choose_branch(**kwargs):
 today = get_today()
 backup_file_path = f"/opt/airflow/latest_data/{today}_backup.sql"
 compressed_file_path = f"{backup_file_path}.gz"
+minio_bucket_name = "eftlibrary"
+minio_object_key = f"data-dump/{today}_backup.sql.gz"
+
+
+def upload_backup_to_minio():
+    local_size = os.path.getsize(compressed_file_path)
+    sha256 = hashlib.sha256()
+    with open(compressed_file_path, "rb") as backup_file:
+        for chunk in iter(lambda: backup_file.read(1024 * 1024), b""):
+            sha256.update(chunk)
+
+    hook = S3Hook(aws_conn_id="minio_s3")
+    if not hook.check_for_bucket(minio_bucket_name):
+        raise ValueError(f"MinIO bucket does not exist: {minio_bucket_name}")
+
+    hook.load_file(
+        filename=compressed_file_path,
+        key=minio_object_key,
+        bucket_name=minio_bucket_name,
+        replace=True,
+    )
+
+    uploaded = hook.get_conn().head_object(
+        Bucket=minio_bucket_name,
+        Key=minio_object_key,
+    )
+    uploaded_size = uploaded["ContentLength"]
+    if uploaded_size != local_size:
+        raise ValueError(
+            "MinIO upload size mismatch: "
+            f"local={local_size}, uploaded={uploaded_size}"
+        )
+
+    return {
+        "bucket": minio_bucket_name,
+        "key": minio_object_key,
+        "size_bytes": uploaded_size,
+        "size_mb": round(uploaded_size / 1024 / 1024, 2),
+        "sha256": sha256.hexdigest(),
+    }
 
 with DAG(
     dag_id="dags_data_dump",
@@ -50,6 +96,11 @@ with DAG(
         bash_command=compress_backup_script(backup_file_path),
     )
 
+    upload_backup = PythonOperator(
+        task_id="upload_backup_to_minio",
+        python_callable=upload_backup_to_minio,
+    )
+
     success_task = BashOperator(
         task_id="success_task",
         bash_command=remove_old_file_script(),
@@ -59,8 +110,15 @@ with DAG(
         task_id="send_email",
         to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
         subject=f"✅ {today} PostgreSQL 데이터 Dump 완료",
-        html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
-        files=[compressed_file_path],
+        html_content="""
+            <p>PostgreSQL 데이터 Dump가 생성되어 MinIO에 업로드되었습니다.</p>
+            <ul>
+                <li>Bucket: {{ ti.xcom_pull(task_ids='upload_backup_to_minio')['bucket'] }}</li>
+                <li>Object: {{ ti.xcom_pull(task_ids='upload_backup_to_minio')['key'] }}</li>
+                <li>Size: {{ ti.xcom_pull(task_ids='upload_backup_to_minio')['size_mb'] }} MB</li>
+                <li>SHA-256: {{ ti.xcom_pull(task_ids='upload_backup_to_minio')['sha256'] }}</li>
+            </ul>
+        """,
         conn_id="smtp_gmail",
         from_email="poeynus@gmail.com",
     )
@@ -69,5 +127,5 @@ with DAG(
 
     # DAG 흐름 정의
     data_dump_task >> branch_task
-    branch_task >> compress_backup >> success_task >> send_email
+    branch_task >> compress_backup >> upload_backup >> success_task >> send_email
     branch_task >> failure_task
