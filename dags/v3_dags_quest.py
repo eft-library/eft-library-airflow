@@ -109,7 +109,12 @@ with DAG(
             )
             objective_owner = {row[0]: row[1] for row in objective_rows}
             for row in objective_rows:
-                store("목표", (row[0], row[1]), row[1], row[2:])
+                store(
+                    "목표",
+                    (row[0], row[1]),
+                    row[1],
+                    (row[2], row[3], row[6], row[7], row[8]),
+                )
             for row in v3_quest_objective_items_process(item):
                 store("목표 아이템", tuple(row), objective_owner.get(row[0]), ())
             for row in v3_quest_objective_required_keys_process(item):
@@ -175,7 +180,7 @@ with DAG(
                     objective_owner[objective_id] = quest_id
                     db_sections["목표"][(objective_id, quest_id)] = (
                         quest_id,
-                        tuple(row[2:]),
+                        (row[2], row[3], row[6], row[7], row[8]),
                     )
 
                 child_queries = {
