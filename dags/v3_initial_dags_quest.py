@@ -165,6 +165,7 @@ with DAG(
                 description_ja,
                 count,
                 found_in_raid,
+                optional,
                 sort_order,
                 is_use
             )
@@ -177,6 +178,7 @@ with DAG(
                 description_ja = EXCLUDED.description_ja,
                 count = EXCLUDED.count,
                 found_in_raid = EXCLUDED.found_in_raid,
+                optional = EXCLUDED.optional,
                 sort_order = EXCLUDED.sort_order,
                 update_time = now()
         """

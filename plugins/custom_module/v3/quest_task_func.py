@@ -23,6 +23,7 @@ def generate_quest_graphql(lang: str) -> str:
       id
       type
       description
+      optional
       ... on TaskObjectiveMark {{
         id
         markerItem {{
@@ -149,6 +150,7 @@ def v3_quest_objectives_process(item_en, item_ko=None, item_ja=None):
                 objectives_ja.get(objective_id, {}).get("description"),
                 obj.get("count"),
                 obj.get("foundInRaid"),
+                obj.get("optional", False),
                 sort_order,
             )
         )

@@ -113,7 +113,7 @@ with DAG(
                     "목표",
                     (row[0], row[1]),
                     row[1],
-                    (row[2], row[3], row[6], row[7], row[8]),
+                    (row[2], row[3], row[6], row[7], row[8], row[9]),
                 )
             for row in v3_quest_objective_items_process(item):
                 store("목표 아이템", tuple(row), objective_owner.get(row[0]), ())
@@ -169,7 +169,7 @@ with DAG(
                     """
                     select objective_id, quest_id, type, description_en,
                            description_ko, description_ja,
-                           count, found_in_raid, sort_order
+                           count, found_in_raid, optional, sort_order
                     from quest_objectives
                     """
                 )
@@ -180,7 +180,7 @@ with DAG(
                     objective_owner[objective_id] = quest_id
                     db_sections["목표"][(objective_id, quest_id)] = (
                         quest_id,
-                        (row[2], row[3], row[6], row[7], row[8]),
+                        (row[2], row[3], row[6], row[7], row[8], row[9]),
                     )
 
                 child_queries = {
@@ -563,6 +563,7 @@ with DAG(
                 description_ja,
                 count,
                 found_in_raid,
+                optional,
                 sort_order,
                 is_use
             )
@@ -573,6 +574,7 @@ with DAG(
                 description_en = EXCLUDED.description_en,
                 count = EXCLUDED.count,
                 found_in_raid = EXCLUDED.found_in_raid,
+                optional = EXCLUDED.optional,
                 sort_order = EXCLUDED.sort_order,
                 update_time = now()
         """
