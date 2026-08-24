@@ -1,7 +1,6 @@
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import BranchPythonOperator
-from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 import datetime
 import pendulum
@@ -55,19 +54,9 @@ with DAG(
         bash_command=remove_old_file_script(),
     )
 
-    send_email = EmailOperator(
-        task_id="send_email",
-        to=["poeynus@gmail.com", "moonjipsa@gmail.com"],
-        subject=f"✅ {today} PostgreSQL 데이터 Dump 완료",
-        html_content=f"<p>{today} 백업 파일이 성공적으로 생성되어 첨부되었습니다.</p>",
-        files=[compressed_file_path],
-        conn_id="smtp_gmail",
-        from_email="poeynus@gmail.com",
-    )
-
     failure_task = EmptyOperator(task_id="failure_task")
 
     # DAG 흐름 정의
     data_dump_task >> branch_task
-    branch_task >> compress_backup >> success_task >> send_email
+    branch_task >> compress_backup >> success_task
     branch_task >> failure_task
