@@ -16,7 +16,12 @@ def _request_json(path):
         return json.load(response)
 
 
-TRANSLATABLE_FIELDS = {"name", "shortName", "description"}
+TRANSLATABLE_FIELDS = {
+    "name",
+    "shortName",
+    "description",
+    "customizationTypeName",
+}
 
 
 def _translate(value, translations, field=None):
@@ -40,6 +45,19 @@ def get_json_data(endpoint, lang="en", game_mode="regular"):
         )
         data = _translate(data, translations)
     return data
+
+
+def get_prestige_data(languages=("en", "ko", "ja")):
+    """Return raw and localized prestige data without refetching the tasks payload."""
+    raw_prestige = _request_json("regular/tasks")["data"].get("prestige") or []
+    result = {"raw": copy.deepcopy(raw_prestige)}
+    for lang in languages:
+        translations = _request_json(f"regular/tasks_{lang}").get("data", {})
+        result[lang] = _translate(
+            copy.deepcopy(raw_prestige),
+            translations,
+        )
+    return result
 
 
 def get_maps(lang="en"):
