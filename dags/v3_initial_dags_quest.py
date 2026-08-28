@@ -22,6 +22,7 @@ from custom_module.v3.quest_task_func import (
     v3_quest_finish_reward_items_process,
     v3_quest_finish_reward_craft_unlocks_process,
     v3_quest_objective_required_keys_process,
+    v3_quest_reward_customizations_process,
 )
 
 default_args = {
@@ -33,6 +34,7 @@ default_args = {
 en_path = "/opt/airflow/tmp/v3_initial_quest_en_list.json"
 ko_path = "/opt/airflow/tmp/v3_initial_quest_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_initial_quest_ja_list.json"
+raw_path = "/opt/airflow/tmp/v3_initial_quest_raw_list.json"
 
 
 with DAG(
@@ -45,9 +47,13 @@ with DAG(
 ) as dag:
 
     def fetch_quest():
+        item_list_raw = get_tasks(None)
         item_list_en = get_tasks("en")
         item_list_ko = get_tasks("ko")
         item_list_ja = get_tasks("ja")
+
+        with open(raw_path, "w") as f:
+            json.dump(item_list_raw, f)
 
         with open(en_path, "w") as f:
             json.dump(item_list_en, f)
@@ -58,13 +64,15 @@ with DAG(
         with open(ja_path, "w") as f:
             json.dump(item_list_ja, f)
 
-        return {"en": en_path, "ko": ko_path, "ja": ja_path}
+        return {"raw": raw_path, "en": en_path, "ko": ko_path, "ja": ja_path}
 
     def upsert_quest(postgres_conn_id):
         context = get_current_context()
         ti = context["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_quest")
 
+        with open(item_paths["raw"], "r") as f:
+            item_raw_list = json.load(f)
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
         with open(item_paths["ko"], "r") as f:
@@ -72,6 +80,7 @@ with DAG(
         with open(item_paths["ja"], "r") as f:
             item_ja_list = json.load(f)
 
+        item_raw_dict = {item["id"]: item for item in item_raw_list}
         item_en_dict = {item["id"]: item for item in item_en_list}
         item_ko_dict = {item["id"]: item for item in item_ko_list}
         item_ja_dict = {item["id"]: item for item in item_ja_list}
@@ -93,9 +102,13 @@ with DAG(
         offer_reward_rows = []
         finish_reward_item_rows = []
         finish_reward_craft_unlock_rows = []
+        customization_rows = []
+        customization_item_rows = []
+        quest_reward_customization_rows = []
 
         for item_id in item_ids:
             item_en = item_en_dict[item_id]
+            item_raw = item_raw_dict.get(item_id, item_en)
             item_ko = item_ko_dict[item_id]
             item_ja = item_ja_dict[item_id]
 
@@ -121,6 +134,25 @@ with DAG(
             finish_reward_craft_unlock_rows.extend(
                 v3_quest_finish_reward_craft_unlocks_process(item_en)
             )
+            customizations, customization_items, reward_customizations = (
+                v3_quest_reward_customizations_process(
+                    item_raw, item_en, item_ko, item_ja
+                )
+            )
+            customization_rows.extend(customizations)
+            customization_item_rows.extend(customization_items)
+            quest_reward_customization_rows.extend(reward_customizations)
+
+        customization_rows = list({row[0]: row for row in customization_rows}.values())
+        customization_item_rows = list(
+            {(row[0], row[1]): row for row in customization_item_rows}.values()
+        )
+        quest_reward_customization_rows = list(
+            {
+                (row[0], row[1], row[2]): row
+                for row in quest_reward_customization_rows
+            }.values()
+        )
 
         quest_sql = """
             INSERT INTO quests (
@@ -270,6 +302,44 @@ with DAG(
             VALUES %s
         """
 
+        customization_sql = """
+            INSERT INTO customizations (
+                id, name_key, name_en, name_ko, name_ja, image_link,
+                customization_type, customization_type_name_key,
+                customization_type_name_en, customization_type_name_ko,
+                customization_type_name_ja
+            ) VALUES %s
+            ON CONFLICT (id) DO UPDATE SET
+                name_key = EXCLUDED.name_key,
+                name_en = EXCLUDED.name_en,
+                name_ko = EXCLUDED.name_ko,
+                name_ja = EXCLUDED.name_ja,
+                image_link = EXCLUDED.image_link,
+                customization_type = EXCLUDED.customization_type,
+                customization_type_name_key = EXCLUDED.customization_type_name_key,
+                customization_type_name_en = EXCLUDED.customization_type_name_en,
+                customization_type_name_ko = EXCLUDED.customization_type_name_ko,
+                customization_type_name_ja = EXCLUDED.customization_type_name_ja,
+                update_time = now()
+        """
+
+        customization_item_sql = """
+            INSERT INTO customization_items (
+                customization_id, item_id, sort_order
+            ) VALUES %s
+            ON CONFLICT (customization_id, item_id) DO UPDATE SET
+                sort_order = EXCLUDED.sort_order
+        """
+
+        quest_reward_customization_sql = """
+            INSERT INTO quest_reward_customizations (
+                quest_id, customization_id, reward_type, sort_order
+            ) VALUES %s
+            ON CONFLICT (quest_id, customization_id, reward_type) DO UPDATE SET
+                sort_order = EXCLUDED.sort_order,
+                update_time = now()
+        """
+
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
@@ -293,6 +363,27 @@ with DAG(
 
                 # quests upsert
                 execute_values(cursor, quest_sql, quest_rows, page_size=500)
+
+                if customization_rows:
+                    execute_values(
+                        cursor, customization_sql, customization_rows, page_size=500
+                    )
+
+                if customization_item_rows:
+                    execute_values(
+                        cursor,
+                        customization_item_sql,
+                        customization_item_rows,
+                        page_size=500,
+                    )
+
+                if quest_reward_customization_rows:
+                    execute_values(
+                        cursor,
+                        quest_reward_customization_sql,
+                        quest_reward_customization_rows,
+                        page_size=500,
+                    )
 
                 # child insert
                 if objective_rows:
@@ -358,7 +449,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path, ko_path, ja_path]
+        files = [raw_path, en_path, ko_path, ja_path]
 
         for path in files:
             try:

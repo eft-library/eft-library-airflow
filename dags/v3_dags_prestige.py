@@ -55,6 +55,7 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
     reward_skill_rows = []
     customization_rows = []
     customization_item_rows = []
+    prestige_customization_rows = []
     transfer_setting_rows = []
     transfer_filter_rows = []
 
@@ -182,7 +183,6 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
             customization_rows.append(
                 (
                     customization_id,
-                    prestige_id,
                     name_key,
                     customization_value("en", "name", name_key),
                     customization_value("ko", "name", name_key),
@@ -199,7 +199,6 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
                     customization_value(
                         "ja", "customizationTypeName", type_name_key
                     ),
-                    sort_order,
                 )
             )
             for item_sort_order, item_id in enumerate(
@@ -208,6 +207,9 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
                 customization_item_rows.append(
                     (customization_id, item_id, item_sort_order)
                 )
+            prestige_customization_rows.append(
+                (prestige_id, customization_id, sort_order)
+            )
 
         localized_transfer_settings = {
             lang: localized_level[lang].get("transferSettings") or []
@@ -274,9 +276,12 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
         "prestige_condition_maps": _deduplicate(condition_map_rows, (0, 1)),
         "prestige_reward_items": _deduplicate(reward_item_rows, (0, 1)),
         "prestige_reward_skills": _deduplicate(reward_skill_rows, (0, 1)),
-        "prestige_reward_customizations": _deduplicate(customization_rows, (0,)),
-        "prestige_reward_customization_items": _deduplicate(
+        "customizations": _deduplicate(customization_rows, (0,)),
+        "customization_items": _deduplicate(
             customization_item_rows, (0, 1)
+        ),
+        "prestige_reward_customizations": _deduplicate(
+            prestige_customization_rows, (0, 1)
         ),
         "prestige_transfer_settings": _deduplicate(transfer_setting_rows, (0,)),
         "prestige_transfer_filter_values": _deduplicate(
@@ -362,14 +367,13 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
                 skill_level = excluded.skill_level,
                 sort_order = excluded.sort_order
         """,
-        "prestige_reward_customizations": """
-            insert into prestige_reward_customizations (
-                customization_id, prestige_id, name_key, name_en, name_ko,
+        "customizations": """
+            insert into customizations (
+                id, name_key, name_en, name_ko,
                 name_ja, image_link, customization_type,
                 customization_type_name_key, customization_type_name_en,
-                customization_type_name_ko, customization_type_name_ja, sort_order
-            ) values %s on conflict (customization_id) do update set
-                prestige_id = excluded.prestige_id,
+                customization_type_name_ko, customization_type_name_ja
+            ) values %s on conflict (id) do update set
                 name_key = excluded.name_key,
                 name_en = excluded.name_en,
                 name_ko = excluded.name_ko,
@@ -380,13 +384,18 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
                 customization_type_name_en = excluded.customization_type_name_en,
                 customization_type_name_ko = excluded.customization_type_name_ko,
                 customization_type_name_ja = excluded.customization_type_name_ja,
-                sort_order = excluded.sort_order,
                 update_time = now()
         """,
-        "prestige_reward_customization_items": """
-            insert into prestige_reward_customization_items (
+        "customization_items": """
+            insert into customization_items (
                 customization_id, item_id, sort_order
             ) values %s on conflict (customization_id, item_id) do update set
+                sort_order = excluded.sort_order
+        """,
+        "prestige_reward_customizations": """
+            insert into prestige_reward_customizations (
+                prestige_id, customization_id, sort_order
+            ) values %s on conflict (prestige_id, customization_id) do update set
                 sort_order = excluded.sort_order
         """,
         "prestige_transfer_settings": """
@@ -436,7 +445,7 @@ with DAG(
     dag_id="v3_dags_prestige",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 8, 1, tz="Asia/Seoul"),
-    schedule="10 0 * * *",
+    schedule="8 0 * * *",
     tags=["postgresql", "tarkov-dev-api", "prestige"],
     catchup=False,
 ) as dag:

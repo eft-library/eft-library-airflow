@@ -359,3 +359,78 @@ def v3_quest_finish_reward_craft_unlocks_process(item_en):
             )
 
     return list(row_map.values())
+
+
+def _localized_customization_value(raw_value, localized_value):
+    if localized_value in (None, "") or localized_value == raw_value:
+        return None
+    return localized_value
+
+
+def v3_quest_reward_customizations_process(
+    item_raw, item_en=None, item_ko=None, item_ja=None
+):
+    """Build shared customization rows, item links, and quest reward links."""
+    item_en = item_en or {}
+    item_ko = item_ko or {}
+    item_ja = item_ja or {}
+    quest_id = item_raw.get("id")
+    customization_rows = []
+    customization_item_rows = []
+    reward_rows = []
+    reward_fields = {
+        "start": "startRewards",
+        "finish": "finishRewards",
+        "failure": "failureOutcome",
+    }
+
+    for reward_type, reward_field in reward_fields.items():
+        raw_rewards = item_raw.get(reward_field) or {}
+        localized_by_language = {}
+        for lang, item in (("en", item_en), ("ko", item_ko), ("ja", item_ja)):
+            rewards = item.get(reward_field) or {}
+            localized_by_language[lang] = {
+                row.get("id"): row
+                for row in rewards.get("customization") or []
+                if row.get("id")
+            }
+
+        for sort_order, customization in enumerate(
+            raw_rewards.get("customization") or [], start=1
+        ):
+            customization_id = customization.get("id")
+            if not customization_id:
+                continue
+            name_key = customization.get("name")
+            type_name_key = customization.get("customizationTypeName")
+
+            def localized_value(lang, field, raw_value):
+                value = localized_by_language[lang].get(customization_id, {}).get(field)
+                return _localized_customization_value(raw_value, value)
+
+            customization_rows.append(
+                (
+                    customization_id,
+                    name_key,
+                    localized_value("en", "name", name_key),
+                    localized_value("ko", "name", name_key),
+                    localized_value("ja", "name", name_key),
+                    customization.get("imageLink"),
+                    customization.get("customizationType"),
+                    type_name_key,
+                    localized_value("en", "customizationTypeName", type_name_key),
+                    localized_value("ko", "customizationTypeName", type_name_key),
+                    localized_value("ja", "customizationTypeName", type_name_key),
+                )
+            )
+            for item_sort_order, item_id in enumerate(
+                customization.get("items") or [], start=1
+            ):
+                customization_item_rows.append(
+                    (customization_id, item_id, item_sort_order)
+                )
+            reward_rows.append(
+                (quest_id, customization_id, reward_type, sort_order)
+            )
+
+    return customization_rows, customization_item_rows, reward_rows
