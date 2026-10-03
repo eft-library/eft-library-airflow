@@ -1,4 +1,5 @@
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import BranchPythonOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
@@ -25,6 +26,7 @@ backup_file_path = f"/opt/airflow/latest_data/{today}_backup.sql"
 compressed_file_path = f"{backup_file_path}.gz"
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="dags_data_dump",
     schedule="0 0 * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="Asia/Seoul"),
@@ -60,3 +62,5 @@ with DAG(
     data_dump_task >> branch_task
     branch_task >> compress_backup >> success_task
     branch_task >> failure_task
+
+add_failure_watcher(dag)

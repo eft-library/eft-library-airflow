@@ -2,6 +2,7 @@ from contextlib import closing
 
 import pendulum
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.python import PythonOperator
 from psycopg2.extras import Json, execute_values
@@ -442,6 +443,7 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
 
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_prestige",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 8, 1, tz="Asia/Seoul"),
@@ -454,3 +456,5 @@ with DAG(
         python_callable=sync_prestige,
         op_kwargs={"postgres_conn_id": POSTGRES_CONN_ID},
     )
+
+add_failure_watcher(dag)

@@ -6,8 +6,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 import pendulum
-import requests
 from airflow import DAG
+from custom_module.static_api_client import get_api_response
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.python import PythonOperator
 
@@ -30,8 +31,7 @@ def _safe_filename(value):
 
 def _fetch_json(path):
     url = f"{API_BASE_URL}{path}"
-    response = requests.get(url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
+    response = get_api_response(url, REQUEST_TIMEOUT)
     payload = response.json()
 
     if payload.get("status") != 200:
@@ -140,6 +140,7 @@ def generate_hideout_static_json(postgres_conn_id):
 
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_hideout_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
@@ -152,3 +153,5 @@ with DAG(
         python_callable=generate_hideout_static_json,
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
+
+add_failure_watcher(dag)

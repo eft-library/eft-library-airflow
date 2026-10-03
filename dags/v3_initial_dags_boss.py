@@ -3,6 +3,7 @@ import pendulum
 import os
 
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -29,6 +30,7 @@ ja_path = "/opt/airflow/tmp/v3_initial_boss_ja_list.json"
 spawn_path = "/opt/airflow/tmp/v3_initial_boss_spawn_list.json"
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_initial_dags_boss",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
@@ -249,3 +251,5 @@ with DAG(
         >> upsert_boss_spawn_task
         >> remove_json_files_task
     )
+
+add_failure_watcher(dag)

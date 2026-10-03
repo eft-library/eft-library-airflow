@@ -4,6 +4,7 @@ import os
 from html import escape
 
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import BranchPythonOperator, PythonOperator
@@ -43,6 +44,7 @@ MANUAL_MAP_IDS = {
 }
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_map",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
@@ -283,3 +285,5 @@ with DAG(
     upsert_map_task >> remove_json_files_task
     upsert_map_task >> choose_email_branch_task
     choose_email_branch_task >> [send_change_email_task, no_map_changes_task]
+
+add_failure_watcher(dag)

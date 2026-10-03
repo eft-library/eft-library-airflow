@@ -3,6 +3,7 @@ import os
 
 import pendulum
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import get_current_context
@@ -26,6 +27,7 @@ default_args = {
 live_map_static_point_path = "/opt/airflow/tmp/v3_live_map_static_points.json"
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_live_map_static_point",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 5, 22, tz="Asia/Seoul"),
@@ -341,3 +343,5 @@ with DAG(
         >> upsert_live_map_static_point_task
         >> remove_json_files_task
     )
+
+add_failure_watcher(dag)

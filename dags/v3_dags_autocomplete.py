@@ -2,6 +2,7 @@ from contextlib import closing
 
 import pendulum
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.python import PythonOperator
 
@@ -92,6 +93,7 @@ ON CONFLICT (url)
 
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_autocomplete",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
@@ -115,3 +117,5 @@ with DAG(
     )
 
     update_autocomplete_task
+
+add_failure_watcher(dag)

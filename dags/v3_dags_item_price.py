@@ -5,6 +5,7 @@ import pendulum
 from contextlib import closing
 
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.sdk import get_current_context
@@ -31,6 +32,7 @@ pve_en_path = "/opt/airflow/tmp/v3_item_price_pve_en_list.json"
 
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_item_price",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
@@ -243,3 +245,5 @@ with DAG(
         >> upsert_item_price_history_task
         >> remove_json_files_task
     )
+
+add_failure_watcher(dag)

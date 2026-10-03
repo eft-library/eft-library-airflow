@@ -10,6 +10,7 @@ from urllib.parse import quote
 
 import pendulum
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.standard.operators.python import PythonOperator
 
@@ -414,6 +415,7 @@ def generate_price_static_json(postgres_conn_id):
 
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_price_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
@@ -426,3 +428,5 @@ with DAG(
         python_callable=generate_price_static_json,
         op_kwargs={"postgres_conn_id": "platform_db"},
     )
+
+add_failure_watcher(dag)

@@ -21,6 +21,14 @@
 - LLM에 사용할 Rag에 적재하는 Vector Data는 기존의 모든 Task가 끝난 후 실행 됩니다.
 
 
+## DAG 실패 알림
+
+- 모든 DAG는 재시도 종료 후 실행이 최종 실패하면 `smtp_gmail` 연결로 `poeynus@gmail.com`, `moonjipsa@gmail.com`에 메일을 보냅니다.
+- 메일에는 DAG ID, Run ID, 시작·종료 시간과 실패 사유가 포함됩니다. 기존 서비스 이상 및 데이터 변경 메일은 유지됩니다.
+- 공통 구현은 `plugins/custom_module/dag_failure_alert.py`입니다. `watch_dag_failure` 태스크가 모든 기존 태스크의 실패를 감시하여 정리 작업(`all_done`)이 성공해도 실패 상태가 유지됩니다.
+- 새 DAG에도 `on_failure_callback=send_dag_failure_email`을 지정하고, 모든 태스크 정의 후 `add_failure_watcher(dag)`를 호출해야 합니다.
+- Airflow UI/CLI에서 수동으로 실패 상태를 지정하는 경우에는 콜백이 실행되지 않습니다. 콜백 메일 전송 오류는 DAG processor 로그에서 확인합니다.
+
 ## 패키지 정보
 
 - Python 3.13

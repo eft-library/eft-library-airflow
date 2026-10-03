@@ -6,6 +6,7 @@ from html import escape
 from uuid import UUID
 
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.smtp.operators.smtp import EmailOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import BranchPythonOperator, PythonOperator
@@ -36,6 +37,7 @@ default_args = {
 en_path = "/opt/airflow/tmp/v3_hideout_en_list.json"
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_dags_hideout",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
@@ -748,3 +750,5 @@ with DAG(
     upsert_hideout_task >> remove_json_files_task
     upsert_hideout_task >> choose_email_branch_task
     choose_email_branch_task >> [send_change_email_task, no_hideout_changes_task]
+
+add_failure_watcher(dag)

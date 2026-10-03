@@ -1,4 +1,5 @@
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import BranchPythonOperator
 from airflow.providers.standard.operators.python import PythonOperator
@@ -44,6 +45,7 @@ default_args = {
 }
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="dags_health_check",
     default_args=default_args,
     schedule="*/5 * * * *",
@@ -175,3 +177,5 @@ with DAG(
     )
     check_log_result >> prepare_email_body >> send_email
     check_log_result >> success_action
+
+add_failure_watcher(dag)

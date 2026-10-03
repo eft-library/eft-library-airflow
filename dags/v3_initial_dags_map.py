@@ -3,6 +3,7 @@ import pendulum
 import os
 
 from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -24,6 +25,7 @@ ko_path = "/opt/airflow/tmp/v3_initial_map_ko_list.json"
 ja_path = "/opt/airflow/tmp/v3_initial_map_ja_list.json"
 
 with DAG(
+    on_failure_callback=send_dag_failure_email,
     dag_id="v3_initial_dags_map",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
@@ -140,3 +142,5 @@ with DAG(
     )
 
     fetch_map_task >> upsert_map_task >> remove_json_files_task
+
+add_failure_watcher(dag)

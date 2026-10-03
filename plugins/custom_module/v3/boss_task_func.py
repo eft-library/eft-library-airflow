@@ -37,6 +37,13 @@ def generate_boss_spawn_graphql() -> str:
 """
 
 
+BLACK_DIV_SLUGS = {
+    "blackDivision": "black-div-1",
+    "bossBullyBlackDiv": "black-div-2",
+    "pmcBotBlackDiv": "black-div-3",
+}
+
+
 def v3_boss_process(item_en, item_ko, item_ja):
     item_ko = item_ko or {}
     item_ja = item_ja or {}
@@ -45,6 +52,8 @@ def v3_boss_process(item_en, item_ko, item_ja):
     name_ko = item_ko.get("name")
     name_ja = item_ja.get("name")
     normalized_name = item_en.get("normalizedName")
+    if normalized_name == "black-div":
+        normalized_name = BLACK_DIV_SLUGS.get(boss_id, normalized_name)
     image = item_en.get("imagePortraitLink")
 
     health_list = item_en.get("health", [])
