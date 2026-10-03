@@ -183,5 +183,5 @@ logs/
 webserver_config.py
 airflow-webserver.pid
 
-
+/logs
 # End of https://www.toptal.com/developers/gitignore/api/python

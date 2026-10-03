@@ -4,7 +4,9 @@ import time
 
 import requests
 
-REQUEST_INTERVAL_SECONDS = 1.1
+# Up to 600 requests/minute per worker, leaving room below the API's
+# default 1,000 requests/minute per-IP limit for other traffic.
+REQUEST_INTERVAL_SECONDS = 0.1
 RATE_LIMIT_WAIT_SECONDS = 65
 MAX_RATE_LIMIT_RETRIES = 3
 _last_request_at = None
