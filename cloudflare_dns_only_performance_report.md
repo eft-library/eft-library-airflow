@@ -81,16 +81,16 @@ FastAPI 소스 `main.py`는 `uvicorn.access` 로그를 끄고, `util/middleware.
 
 Airflow `dags_health_check`는 5분마다 `https://back.eftlibrary.com/health`와 `https://eftlibrary.com/health`를 `requests.get(timeout=10)`으로 호출한다. 측정값을 `response_time(service_name, response_ms, checked_time)`에 넣는다. **`response_ms`라는 열 이름과 달리 실제 저장값은 `time.time()` 차이인 초 단위**다. 대시보드 API는 평균에 1,000을 곱해 밀리초로 반환한다. 이 값은 Airflow에서 본 외부 HTTPS 헬스체크의 전체 소요시간이며 FastAPI/Next.js 내부 처리시간이나 일반 업무 API 평균이 아니다. 요청 중 예외가 나면 `NULL`이 들어가고 API 평균 계산에서 제외된다. 코드상 비정상 HTTP status만으로는 측정값이 제외되지 않는다.
 
-전환일 9월 27일을 통째로 제외한 동일 길이 5일 구간을 비교했다. 기간 경계는 대시보드 API가 `checked_time AT TIME ZONE 'Asia/Seoul'`에 적용하는 값이다. 아래 수치는 API가 반환한 **반올림된 평균**이므로 원본 분포·표본 수는 알 수 없다.
+전환일 9월 27일을 통째로 제외한 동일 길이 5일 구간을 비교했다. 기간 경계는 대시보드 API가 `checked_time AT TIME ZONE 'Asia/Seoul'`에 적용하는 값이다. 아래 수치는 API가 반환한 **반올림된 평균**이므로 원본 분포·표본 수는 알 수 없다. 표의 기간은 실제 측정 시각이 아니라 DB에 저장된 `checked_time` 필터 구간이다.
 
-| 서비스 / 외부 헬스체크 | 전환 전: 09-22 00:00~09-27 00:00 KST | 전환 후: 09-28 00:00~10-03 00:00 KST | 평균 감소 |
+| 서비스 / 외부 헬스체크 | 전환 전: 저장 시각 09-22 00:00~09-27 00:00 | 전환 후: 저장 시각 09-28 00:00~10-03 00:00 | 평균 감소 |
 |---|---:|---:|---:|
 | FastAPI `back.eftlibrary.com/health` | 1,020ms | 43ms | 95.8% |
 | Next.js `eftlibrary.com/health` | 3,339ms | 300ms | 91.0% |
 
 조회는 각각 `/api/dashboard/v3/analysis?start_date=2026-09-22T00%3A00%3A00&end_date=2026-09-27T00%3A00%3A00`와 `/api/dashboard/v3/analysis?start_date=2026-09-28T00%3A00%3A00&end_date=2026-10-03T00%3A00%3A00`에서 수행했다. 직접 DB에 접속하지 않았으며 API는 `COUNT`, 최소/최대, P50/P95/P99 또는 개별 측정값을 제공하지 않는다. 따라서 이 항목들은 **확인 불가**다.
 
-전환 시점과 대시보드의 시각을 그대로 맞출 수 있는지도 확인이 필요하다. 9월 27일 **20~22시로 필터링한 기록이 이미 FastAPI 평균 44ms, Next.js 298ms**였는데, 사용자 제공 변경 시각은 같은 날 22시다. 이 불일치는 측정값의 `checked_time`이 Airflow의 `datetime.now()`(시간대 없는 값)로 저장되는 방식과 DB 세션 시간대, 또는 다른 설정 변경 때문일 수 있다. **원인은 확인되지 않았다.** 이 때문에 전환일을 비교에서 제외했으며, 분 단위 변경 시각의 증거로 `response_time`을 사용하지 않는다.
+**시각 해석 주의:** Airflow 코드는 `checked_time`에 시간대 없는 `datetime.now()`를 넣었다. 10월 4일 **08:50 KST**의 `measure_response_time` 태스크가 성공했는데 DB에 보이는 마지막 행은 **10월 3일 23:50 KST**였다. 정확히 9시간 차이여서 컨테이너와 DB의 시간대 해석이 어긋난 것으로 판단된다. 9월 27일 **20~22시로 필터링한 기록이 이미 FastAPI 평균 44ms, Next.js 298ms**인 것도 이 시각 오차와 부합한다. DB 세션 시간대 자체는 직접 확인하지 못했다. 따라서 과거 `checked_time`을 정확한 실제 측정 시각으로 사용하지 않으며, 전환일을 비교에서 제외했다. 적재 방식과 기존 기록은 변경하지 않았다.
 
 ## 6. Nginx Proxy Manager 분석
 
