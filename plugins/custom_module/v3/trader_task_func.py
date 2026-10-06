@@ -4,33 +4,6 @@ import re
 from decimal import Decimal, InvalidOperation
 
 
-def generate_trader_graphql(lang: str) -> str:
-    return f"""
-{{
-  traders(lang: {lang}) {{
-    id
-    name
-    imageLink
-    barters {{
-      level
-      requiredItems {{
-        item {{
-          id
-        }}
-        quantity
-      }}
-      rewardItems {{
-        item {{
-          id
-        }}
-        quantity
-      }}
-    }}
-  }}
-}}
-"""
-
-
 def v3_trader_process(item_en, item_ko, item_ja):
     item_ko = item_ko or {}
     item_ja = item_ja or {}

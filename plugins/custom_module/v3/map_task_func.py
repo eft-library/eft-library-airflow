@@ -1,15 +1,3 @@
-def generate_map_graphql(lang: str):
-    return f"""
-{{
-  maps(lang: {lang}) {{
-    id
-    name
-    normalizedName
-  }}
-}}
-"""
-
-
 def v3_map_process(item_en, item_ko, item_ja):
     item_ko = item_ko or {}
     item_ja = item_ja or {}

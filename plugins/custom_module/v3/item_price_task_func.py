@@ -4,58 +4,6 @@ from datetime import datetime
 FLEA_MARKET_VENDOR_NAME = "Flea Market"
 
 
-def generate_pvp_item_price_graphql(lang: str) -> str:
-    return f"""
-{{
-  items(lang: {lang}) {{
-    id
-    category {{
-      name
-      parent {{
-        name
-      }}
-    }}
-    sellFor {{
-      priceRUB
-      vendor {{
-        name
-      }}
-    }}
-    historicalPrices {{
-      price
-      timestamp
-    }}
-  }}
-}}
-"""
-
-
-def generate_pve_item_price_graphql(lang: str) -> str:
-    return f"""
-{{
-  items(lang: {lang}, gameMode: pve) {{
-    id
-    category {{
-      name
-      parent {{
-        name
-      }}
-    }}
-    sellFor {{
-      priceRUB
-      vendor {{
-        name
-      }}
-    }}
-    historicalPrices {{
-      price
-      timestamp
-    }}
-  }}
-}}
-"""
-
-
 def v3_item_price_row(item_en, game_mode, trader_name_map):
     if not item_en:
         return None

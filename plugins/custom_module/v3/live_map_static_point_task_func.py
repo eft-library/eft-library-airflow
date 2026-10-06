@@ -6,63 +6,6 @@ from psycopg2.extras import Json
 from custom_module.v3.live_map_point_task_func import match_floor
 
 
-def generate_live_map_static_point_graphql():
-    return """
-{
-  maps(gameMode: regular) {
-    name
-    btrStops {
-      name
-      x
-      y
-      z
-    }
-    stationaryWeapons {
-      position {
-        x
-        y
-        z
-      }
-      stationaryWeapon {
-        name
-        id
-      }
-    }
-    transits {
-      position {
-        y
-        x
-        z
-      }
-      map {
-        id
-        name
-        switches {
-          id
-          name
-          position {
-            x
-            y
-            z
-          }
-        }
-      }
-    }
-    extracts {
-      position {
-        x
-        y
-        z
-      }
-      id
-      name
-      faction
-    }
-  }
-}
-"""
-
-
 def normalize_map_name(value):
     if not value:
         return ""

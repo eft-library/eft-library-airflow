@@ -13,12 +13,11 @@
 
 ## 주요 사항
 
-- Tarkov Dev **API는 GraphQL 형식**이며, **Airflow에서 JSON 데이터를 요청**하여 가져온 후 **DB에 적재**합니다.
+- Airflow는 **Tarkov Dev JSON API(`https://json.tarkov.dev`)에서 데이터를 가져온 후 DB에 적재**합니다. 공통 클라이언트는 `plugins/custom_module/tarkov_json_api.py`입니다.
 - DB Connection 정보는 **Airflow UI의 Config**를 사용합니다.
 - 수작업을 최소화하기 위해, Tarkov Dev에서 데이터를 가져온 후 **필요한 부분만 수정**하는 방식을 채택했습니다.
 - 데이터는 모두 영어이므로, **한글이나 일본어가 없는 경우 코드 내에서 변환**합니다. 예: 회복 아이템의 버프 및 디버프 정의
 - DB 데이터 덤프는 매일 00:20에 실행되며, 아이템 시세와 같은 데이터가 많은 테이블은 제외 후 진행합니다.
-- LLM에 사용할 Rag에 적재하는 Vector Data는 기존의 모든 Task가 끝난 후 실행 됩니다.
 
 
 ## DAG 실패 알림
@@ -49,14 +48,12 @@
   - **search update** : 메인 페이지 검색 기능 데이터 갱신
   - **health check** : 서비스 Health Check
   - **issue posts update** : 커뮤니티 인기글 데이터 갱신
-  - **rag data update** : LLM에 사용할 Vector 데이터 갱신
-  - **rag search update** : RAG 데이터 기준, 채팅창 자동완성 데이터 갱신
 
 ## 흐름
 
 현재 Dag는 2가지 흐름으로 되어 있습니다.
 
-대부분의 DAG는 **GraphQL API를 통해 일본어, 한국어, 영어 데이터를 각각 요청한 뒤**, 이를 개별 JSON 파일로 저장합니다.
+데이터 수집 DAG는 **JSON API에서 원본 데이터와 필요한 언어(일본어, 한국어, 영어)의 번역 데이터를 가져와 결합한 뒤**, 이를 JSON 파일로 저장합니다.
 
 이후 각 태스크에서 해당 파일들을 읽어 들여 언어별 데이터를 하나의 딕셔너리로 통합한 후, 이를 DB에 적재하는 방식으로 동작합니다.
 
@@ -73,5 +70,4 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 여기에서 확인해 주세요!
 
 [velog 바로가기](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)
-
 

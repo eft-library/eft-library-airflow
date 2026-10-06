@@ -1,18 +1,3 @@
-def generate_quest_item_graphql(lang: str) -> str:
-    return f"""
-{{
-  questItems(lang: {lang}) {{
-    id
-    name
-    normalizedName
-    width
-    height
-    gridImageLink
-  }}
-}}
-"""
-
-
 def v3_quest_item_process(item_en, item_ko, item_ja):
     item_ko = item_ko or {}
     item_ja = item_ja or {}
