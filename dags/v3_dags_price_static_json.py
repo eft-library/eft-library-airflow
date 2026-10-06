@@ -70,6 +70,7 @@ def _to_float(value):
 def _serialize_price(row):
     return {
         "game_mode": row["game_mode"],
+        "season_id": row["season_id"],
         "highest_trader_price": _to_float(row["highest_trader_price"]),
         "highest_trader_id": row["highest_trader_id"],
         "flea_market_price": _to_float(row["flea_market_price"]),
@@ -82,6 +83,7 @@ def _serialize_price(row):
 def _serialize_history(row):
     return {
         "game_mode": row["game_mode"],
+        "season_id": row["season_id"],
         "price": row["price"],
         "price_time": row["price_time"],
     }
@@ -91,6 +93,7 @@ def _serialize_trader_price(row):
     return {
         "id": row["id"],
         "game_mode": row["game_mode"],
+        "season_id": row["season_id"],
         "trader_id": row["trader_id"],
         "price": _to_float(row["price"]),
         "trader": (
@@ -114,7 +117,7 @@ def _build_price_trend(history_by_type):
             _to_float(history["price"])
             for history in history_by_type.get(game_mode, [])[-8:]
         ]
-        for game_mode in ("pvp", "pve")
+        for game_mode in ("pvp", "pve", "pvp-season")
     }
 
 
@@ -143,14 +146,14 @@ def _build_price_tiers(rows):
     ]
 
 
-def _rank_payload(rank_rows, categories=None):
+def _rank_payload(rank_rows, categories=None, selected_season_id=None):
     filtered = [
         row
         for row in rank_rows
         if categories is None or row["category"] in categories
     ]
-    result = {}
-    for game_mode in ("pvp", "pve"):
+    result = {"selected_season_id": selected_season_id}
+    for game_mode in ("pvp", "pve", "pvp-season"):
         mode_rows = [
             row for row in filtered if row["game_mode"] == game_mode
         ]
@@ -163,7 +166,11 @@ def _load_price_data(postgres_conn_id):
     postgres_hook = PostgresHook(postgres_conn_id)
 
     with closing(postgres_hook.get_conn()) as conn:
+        conn.set_session(isolation_level="REPEATABLE READ", readonly=True)
         with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT id FROM price_seasons WHERE is_current")
+            current = cursor.fetchone()
+            selected_season_id = current[0] if current else None
             cursor.execute(
                 """
                 select i.id,
@@ -182,6 +189,7 @@ def _load_price_data(postgres_conn_id):
                       select 1
                       from item_prices ip
                       where ip.item_id = i.id
+                        and (ip.season_id is null or ip.season_id = (select id from price_seasons where is_current))
                   )
                 order by i.name_en, i.normalized_name;
                 """
@@ -192,6 +200,7 @@ def _load_price_data(postgres_conn_id):
                 """
                 select item_id,
                        game_mode,
+                       season_id,
                        highest_trader_price,
                        highest_trader_id,
                        flea_market_price,
@@ -199,6 +208,7 @@ def _load_price_data(postgres_conn_id):
                        has_flea,
                        update_time
                 from item_prices
+                where season_id is null or season_id = (select id from price_seasons where is_current)
                 order by item_id, game_mode;
                 """
             )
@@ -208,12 +218,15 @@ def _load_price_data(postgres_conn_id):
                 """
                 select iph.item_id,
                        iph.game_mode,
+                       iph.season_id,
                        iph.price,
                        iph.price_time
                 from item_price_history iph
                 join item_prices ip
                   on ip.item_id = iph.item_id
                  and ip.game_mode = iph.game_mode
+                 and ip.season_key = iph.season_key
+                where iph.season_id is null or iph.season_id = (select id from price_seasons where is_current)
                 order by iph.item_id, iph.game_mode, iph.price_time;
                 """
             )
@@ -224,6 +237,7 @@ def _load_price_data(postgres_conn_id):
                 select itp.id,
                        itp.item_id,
                        itp.game_mode,
+                       itp.season_id,
                        itp.trader_id,
                        itp.price,
                        t.normalized_name as trader_normalized_name,
@@ -233,6 +247,7 @@ def _load_price_data(postgres_conn_id):
                        t.image as trader_image
                 from item_trader_prices itp
                          left join traders t on itp.trader_id = t.id
+                where itp.season_id is null or itp.season_id = (select id from price_seasons where is_current)
                 order by itp.item_id, itp.game_mode, itp.price desc;
                 """
             )
@@ -243,18 +258,18 @@ def _load_price_data(postgres_conn_id):
         f"items={len(items)}, prices={len(prices)}, "
         f"histories={len(histories)}, trader_prices={len(trader_prices)}"
     )
-    return items, prices, histories, trader_prices
+    return items, prices, histories, trader_prices, selected_season_id
 
 
 def generate_price_static_json(postgres_conn_id):
     started_at = time.monotonic()
     root = OUTPUT_DIR / "static" / "price" / "v3"
     generated_at = pendulum.now("UTC").to_iso8601_string()
-    items, prices, histories, trader_prices = _load_price_data(postgres_conn_id)
+    items, prices, histories, trader_prices, selected_season_id = _load_price_data(postgres_conn_id)
 
     prices_by_item = defaultdict(dict)
-    histories_by_item = defaultdict(lambda: {"pvp": [], "pve": []})
-    trader_prices_by_item = defaultdict(lambda: {"pvp": [], "pve": []})
+    histories_by_item = defaultdict(lambda: {"pvp": [], "pve": [], "pvp-season": []})
+    trader_prices_by_item = defaultdict(lambda: {"pvp": [], "pve": [], "pvp-season": []})
 
     for price in prices:
         prices_by_item[price["item_id"]][price["game_mode"]] = _serialize_price(price)
@@ -287,9 +302,11 @@ def generate_price_static_json(postgres_conn_id):
             "parent_category": item["parent_category"],
             "width": item["width"],
             "height": item["height"],
+            "selected_season_id": selected_season_id,
             "prices": {
                 "pvp": prices_by_item[item["id"]].get("pvp"),
                 "pve": prices_by_item[item["id"]].get("pve"),
+                "pvp-season": prices_by_item[item["id"]].get("pvp-season"),
             },
             "history_by_type": histories_by_item[item["id"]],
             "trader_prices": trader_prices_by_item[item["id"]],
@@ -307,6 +324,7 @@ def generate_price_static_json(postgres_conn_id):
                 "parent_category": item["parent_category"],
                 "width": item["width"],
                 "height": item["height"],
+                "selected_season_id": selected_season_id,
                 "prices": detail["prices"],
                 "trend_by_type": _build_price_trend(detail["history_by_type"]),
             }
@@ -366,7 +384,7 @@ def generate_price_static_json(postgres_conn_id):
     )
     _write_json_atomic(
         root / "rank" / "all.json",
-        {"status": 200, "msg": "OK", "data": _rank_payload(rank_rows)},
+        {"status": 200, "msg": "OK", "data": _rank_payload(rank_rows, selected_season_id=selected_season_id)},
     )
 
     for category in categories:
@@ -376,7 +394,7 @@ def generate_price_static_json(postgres_conn_id):
             {
                 "status": 200,
                 "msg": "OK",
-                "data": _rank_payload(rank_rows, {category}),
+                "data": _rank_payload(rank_rows, {category}, selected_season_id),
             },
         )
         files["rank_categories"].append(
@@ -390,6 +408,7 @@ def generate_price_static_json(postgres_conn_id):
         "status": 200,
         "msg": "OK",
         "generated_at": generated_at,
+        "selected_season_id": selected_season_id,
         "api_base_url": API_BASE_URL,
         "data": {
             "files": {
@@ -419,9 +438,10 @@ with DAG(
     dag_id="v3_dags_price_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
-    schedule="35 * * * *",
+    schedule=None,
     tags=["price", "static-json", "next-public"],
     catchup=False,
+    max_active_runs=1,
 ) as dag:
     generate_price_static_json_task = PythonOperator(
         task_id="generate_price_static_json",

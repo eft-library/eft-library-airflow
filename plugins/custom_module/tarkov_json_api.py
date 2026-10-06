@@ -1,6 +1,8 @@
 import copy
 import json
 import time
+import math
+from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 
 
@@ -112,6 +114,7 @@ def get_items(lang="en", game_mode="regular"):
 
 def get_item_prices(game_mode="regular"):
     data = get_json_data("items", "en", game_mode)
+    validate_price_items(data)
     traders = get_json_data("traders", "en", game_mode)
     trader_names = {
         trader_id: trader.get("name") for trader_id, trader in traders.items()
@@ -496,4 +499,46 @@ def get_live_map_static_maps(lang="en"):
             )
         map_data["transits"] = converted_transits
         result.append(map_data)
+    return result
+
+
+def validate_price_items(data):
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, dict) or not items:
+        raise ValueError("Price items response must contain a non-empty items object")
+    seen = set()
+    for item in items.values():
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip():
+            raise ValueError("Price item is missing an ID")
+        if item["id"] in seen:
+            raise ValueError("Duplicate price item ID")
+        seen.add(item["id"])
+        offers = item.get("sellToTrader", [])
+        if not isinstance(offers, list):
+            raise ValueError("Invalid trader price list")
+        prices = [item.get("lastLowPrice")]
+        for offer in offers:
+            if not isinstance(offer, dict) or not offer.get("trader"):
+                raise ValueError("Invalid trader price")
+            prices.append(offer.get("priceRUB"))
+        for price in prices:
+            if price is not None and (isinstance(price, bool) or not isinstance(price, (int, float)) or not math.isfinite(price) or price < 0):
+                raise ValueError("Invalid item price")
+
+
+def get_price_season():
+    data = get_json_data("season", "en", "pvp-season")
+    if not isinstance(data, dict) or not isinstance(data.get("id"), str) or not data["id"].strip():
+        raise ValueError("Season response is missing an ID")
+    result = {"id": data["id"], "name": data.get("name")}
+    for source, target in (("start", "starts_at"), ("end", "ends_at")):
+        value = data.get(source)
+        if value is None:
+            result[target] = None
+        elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            result[target] = datetime.fromtimestamp(value / 1000, timezone.utc).isoformat()
+        else:
+            raise ValueError(f"Invalid season {source} timestamp")
+    if result["starts_at"] and result["ends_at"] and result["ends_at"] <= result["starts_at"]:
+        raise ValueError("Season end must be after start")
     return result

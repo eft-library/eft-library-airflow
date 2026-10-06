@@ -71,3 +71,20 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
 
 [velog 바로가기](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)
 
+
+
+### V3 시즌 가격 수집
+
+- `v3_dags_item_price`는 PVP/PVE와 `pvp-season`을 수집합니다. 시즌 API와 아이템
+  응답 검증이 끝난 뒤 시즌 메타데이터, 현재 가격, 상인 가격, 히스토리를 한
+  트랜잭션으로 저장합니다. 이전 시즌 가격과 시즌 히스토리는 보존합니다.
+- PVP/PVE의 `season_id`는 NULL이며, 기존 14일 히스토리 보관 정책을 유지합니다.
+- 커밋 성공 후 `v3_dags_price_static_json`을 트리거합니다. 정적 JSON DAG의 독립
+  시간 스케줄은 제거했으며 수동 실행도 가능합니다. 정적 JSON은 현재 시즌만
+  포함하고 `pvp-season` 키와 `selected_season_id`를 제공합니다. 지난 시즌 조회는
+  백엔드 API의 `season_id`/`seasonId`를 사용합니다.
+- 배포 시 기존 가격 수집 DAG를 중지하고 백엔드의
+  `sql/migrations/20261007_price_seasons.sql`을 먼저 적용한 뒤 새 DAG를 배포해야
+  합니다. 새 충돌 키는 마이그레이션 이전 DB와 호환되지 않습니다. 시험 적재와
+  API 조회를 확인한 다음 DAG를 재개하고 정적 JSON을 재생성합니다.
+- 로컬 회귀 검사: `python3 -m unittest discover -s tests -v`

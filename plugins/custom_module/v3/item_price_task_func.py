@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 FLEA_MARKET_VENDOR_NAME = "Flea Market"
 
 
-def v3_item_price_row(item_en, game_mode, trader_name_map):
+def v3_item_price_row(item_en, game_mode, trader_name_map, season_id=None):
     if not item_en:
         return None
 
@@ -46,6 +46,7 @@ def v3_item_price_row(item_en, game_mode, trader_name_map):
     return (
         item_id,
         game_mode,
+        season_id,
         highest_trader_price,
         highest_trader_id,
         flea_market_price,
@@ -54,7 +55,7 @@ def v3_item_price_row(item_en, game_mode, trader_name_map):
     )
 
 
-def v3_item_trader_price_rows(item_en, game_mode, trader_name_map):
+def v3_item_trader_price_rows(item_en, game_mode, trader_name_map, season_id=None):
     if not item_en:
         return []
 
@@ -79,13 +80,14 @@ def v3_item_trader_price_rows(item_en, game_mode, trader_name_map):
             )
             continue
 
-        row_id = f"{game_mode}:{item_id}:{trader_id}"
-        rows.append((row_id, item_id, game_mode, trader_id, price))
+        scope = f"{game_mode}:{season_id}" if season_id is not None else game_mode
+        row_id = f"{scope}:{item_id}:{trader_id}"
+        rows.append((row_id, item_id, game_mode, season_id, trader_id, price))
 
     return rows
 
 
-def v3_item_price_history_rows(item_en, game_mode):
+def v3_item_price_history_rows(item_en, game_mode, season_id=None):
     if not item_en:
         return []
 
@@ -103,10 +105,10 @@ def v3_item_price_history_rows(item_en, game_mode):
             continue
 
         try:
-            price_time = datetime.utcfromtimestamp(int(timestamp) / 1000)
+            price_time = datetime.fromtimestamp(int(timestamp) / 1000, timezone.utc)
         except (TypeError, ValueError):
             continue
 
-        rows.append((item_id, price, game_mode, price_time))
+        rows.append((item_id, price, game_mode, season_id, price_time))
 
     return rows
