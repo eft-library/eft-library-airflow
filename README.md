@@ -88,3 +88,12 @@ DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Tas
   합니다. 새 충돌 키는 마이그레이션 이전 DB와 호환되지 않습니다. 시험 적재와
   API 조회를 확인한 다음 DAG를 재개하고 정적 JSON을 재생성합니다.
 - 로컬 회귀 검사: `python3 -m unittest discover -s tests -v`
+
+### DB dump 대상
+
+- `plugins/custom_module/data_dump_func.py`의 `DATA_DUMP_TABLES`에서 백업 대상을 명시적으로 관리합니다.
+- 게임 기준 데이터(아이템·퀘스트 보상·상인·은신처·배틀패스·BTR 경로), 시즌 메타데이터와 현재 가격, 사용자 저장 데이터, 운영 공지 및 내 위치 찾기 배포/맵 별칭을 포함합니다.
+- 파티 방·멤버·마커와 채팅 사용자 식별자·차단·제재·초대 수신 설정을 함께 보존합니다. 채팅 사용자 식별자는 차단·제재·수신 설정의 FK 부모이므로 포함합니다.
+- 로그/이력 및 일시 데이터는 제외합니다: `item_price_history`, `user_footprint`, `health_check`, `response_time`, `user_location_request`, `where_am_i_path_reports`, `where_am_i_raid_state_events`, `where_am_i_version_checks`, `where_am_i_api_failures`, `live_map_chat_messages`, `live_map_chat_connections`, `live_map_party_invitations`. `live_map_chat_reports`도 제외된 메시지를 참조하므로 함께 제외합니다.
+- 기존 커뮤니티 신고·제재·조회·알림 데이터는 유지합니다. 이는 전체 DB 백업이 아닌 선택 테이블 백업이며, 제외한 데이터는 복구되지 않습니다.
+- `consumable_cures`는 백엔드 V3 모델에서 이름을 확인했습니다. 현재 `platform_db.sql`에는 해당 CREATE TABLE의 이름이 누락되어 있습니다.
