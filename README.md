@@ -1,99 +1,139 @@
-- [타르코프 도서관의 운영 방식](#타르코프-도서관의-운영-방식)
-  * [주요 사항](#주요-사항)
-  * [패키지 정보](#패키지-정보)
-  * [구조](#구조)
-  * [흐름](#흐름)
-  * [개발 History](#개발-History)
+# 타르코프 도서관 · Airflow
 
-# 타르코프 도서관의 운영 방식
+**갱신일: 26.10.20**
 
-타르코프 도서관은 [Tarkov Dev](https://tarkov.dev/api/) 에서 Airflow를 사용하여 주기적으로 데이터를 가져와 업데이트 합니다.
+[타르코프 도서관](https://eftlibrary.com)에서 사용하는 게임 데이터를 주기적으로 갱신하는 프로젝트입니다.
 
-<img width="1314" height="1275" alt="arch_v4" src="https://github.com/user-attachments/assets/0392b55e-14b0-45d8-9aa6-4b83a9cd640f" />
+아이템 가격, 퀘스트, 지도, 보스 정보는 게임 업데이트에 따라 달라집니다. 이 저장소는 외부 API에서 데이터를 가져와 서비스에 맞게 정리하고, 데이터베이스에 저장하는 일을 맡습니다. 화면에서 사용할 JSON 파일을 만들고, DB를 백업하며, 서비스 상태를 확인하는 작업도 함께 관리합니다.
 
-## 주요 사항
+작업을 정해진 시간에 실행하고 실행 결과를 확인하기 위해 **Apache Airflow**를 사용합니다.
 
-- Airflow는 **Tarkov Dev JSON API(`https://json.tarkov.dev`)에서 데이터를 가져온 후 DB에 적재**합니다. 공통 클라이언트는 `plugins/custom_module/tarkov_json_api.py`입니다.
-- DB Connection 정보는 **Airflow UI의 Config**를 사용합니다.
-- 수작업을 최소화하기 위해, Tarkov Dev에서 데이터를 가져온 후 **필요한 부분만 수정**하는 방식을 채택했습니다.
-- 데이터는 모두 영어이므로, **한글이나 일본어가 없는 경우 코드 내에서 변환**합니다. 예: 회복 아이템의 버프 및 디버프 정의
-- DB 데이터 덤프는 매일 00:20에 실행되며, 아이템 시세와 같은 데이터가 많은 테이블은 제외 후 진행합니다.
+## 전체 서비스에서 맡은 역할
 
+아래 그림은 타르코프 도서관의 전체 구성입니다. 이 저장소는 그중 데이터 수집과 정기 작업을 담당하는 Airflow에 해당합니다.
 
-## DAG 실패 알림
+<img width="1141" height="955" alt="타르코프 도서관 전체 서비스 구성도" src="https://github.com/user-attachments/assets/e7ed7864-3732-4825-b836-5b6cf2f5ed55" />
 
-- 모든 DAG는 재시도 종료 후 실행이 최종 실패하면 `smtp_gmail` 연결로 `poeynus@gmail.com`, `moonjipsa@gmail.com`에 메일을 보냅니다.
-- 메일에는 DAG ID, Run ID, 시작·종료 시간과 실패 사유가 포함됩니다. 기존 서비스 이상 및 데이터 변경 메일은 유지됩니다.
-- 공통 구현은 `plugins/custom_module/dag_failure_alert.py`입니다. `watch_dag_failure` 태스크가 모든 기존 태스크의 실패를 감시하여 정리 작업(`all_done`)이 성공해도 실패 상태가 유지됩니다.
-- 새 DAG에도 `on_failure_callback=send_dag_failure_email`을 지정하고, 모든 태스크 정의 후 `add_failure_watcher(dag)`를 호출해야 합니다.
-- Airflow UI/CLI에서 수동으로 실패 상태를 지정하는 경우에는 콜백이 실행되지 않습니다. 콜백 메일 전송 오류는 DAG processor 로그에서 확인합니다.
+주요 데이터 출처는 Tarkov Dev의 JSON API(`https://json.tarkov.dev`)입니다. 수집한 데이터를 바탕으로 서비스에서 필요한 설명이나 번역을 보완합니다.
 
-## 패키지 정보
+## 데이터가 화면에 전달되기까지
 
-- Python 3.13
-- Airflow 3.1.5
+크게 두 단계로 나누어 볼 수 있습니다.
 
-## 구조
+```mermaid
+flowchart LR
+    A[Tarkov Dev JSON API] --> B[데이터 수집·정리]
+    B --> C[(PostgreSQL)]
+    C --> D[백엔드 API 또는 DB 조회]
+    D --> E[화면용 JSON 생성]
+    E --> F[웹사이트에서 사용]
+```
 
-- **dags**
-  - **data dump** : DB Dump
-  - **boss upsert** : 보스 정보 갱신
-  - **hideout upsert** : 은신처 정보 갱신
-  - **item upsert** : 아이템 정보 갱신
-  - **quest item upsert** : 퀘스트 관련 아이템 정보 갱신
-  - **item price upsert** : 아이템 현재 시세 정보 및 history 갱신 및 적재
-  - **item price delete** : 아이템 시세 history 2주 지난 데이터는 삭제 처리
-  - **quest upsert** : 퀘스트 갱신
-  - **trader upsert** : NPC 상인 정보 갱신
-  - **search update** : 메인 페이지 검색 기능 데이터 갱신
-  - **health check** : 서비스 Health Check
-  - **issue posts update** : 커뮤니티 인기글 데이터 갱신
+### 1. 데이터를 가져와 DB에 저장합니다
 
-## 흐름
+아이템 정보를 예로 들면 다음 순서로 진행됩니다.
 
-현재 Dag는 2가지 흐름으로 되어 있습니다.
+1. 외부 API에서 아이템 목록을 가져옵니다.
+2. 받은 내용을 임시 JSON 파일로 저장합니다.
+3. 아이템의 기본 정보, 탄약 성능, 회복 효과 등을 테이블에 맞게 나눕니다.
+4. DB에 새 데이터를 추가하거나 기존 데이터를 갱신합니다.
+5. 사용한 임시 파일을 정리합니다.
 
-데이터 수집 DAG는 **JSON API에서 원본 데이터와 필요한 언어(일본어, 한국어, 영어)의 번역 데이터를 가져와 결합한 뒤**, 이를 JSON 파일로 저장합니다.
+코드에서 자주 보이는 **upsert**는 “이미 있으면 수정하고, 없으면 추가한다”는 뜻입니다. 언어별 데이터가 필요한 작업은 영어·한국어·일본어 응답을 함께 활용하며, 일부 설명은 코드에서 보완합니다.
 
-이후 각 태스크에서 해당 파일들을 읽어 들여 언어별 데이터를 하나의 딕셔너리로 통합한 후, 이를 DB에 적재하는 방식으로 동작합니다.
+### 2. 화면에서 사용할 JSON 파일을 만듭니다
 
-<img width="902" height="888" alt="스크린샷 2026-01-29 오전 7 37 01" src="https://github.com/user-attachments/assets/5dbb6317-85c5-426f-8c36-8ff83255abbe" />
+수집한 데이터를 저장하는 것과 웹사이트에 전달할 파일을 만드는 것은 별도 작업입니다.
 
-DB 덤프와 같은 일부 DAG는 **BranchOperator를 사용하여 실행할 Task를 동적으로 선택**하는 방식을 사용합니다.
+`*_static_json.py` 파일은 백엔드 API나 DB에서 데이터를 읽어 화면에 필요한 형태의 JSON 파일을 만듭니다. 생성한 파일은 웹사이트에서 사용할 수 있도록 `/opt/airflow/next-public` 아래에 저장합니다.
 
-<img width="1277" height="337" alt="스크린샷 2026-01-29 오전 7 37 21" src="https://github.com/user-attachments/assets/815b1833-981d-4fd8-b829-292a81222f42" />
+예를 들어 아이템 가격은 **가격 수집과 DB 저장이 성공한 뒤** 가격 JSON 생성 작업을 이어서 실행합니다. 다른 JSON 생성 작업은 각 파일에 정의된 일정에 따라 실행됩니다.
 
-**첫번째 방식이 대부분 Dag의 흐름**이며, 두번째는 DB Data를 Dump와 System Health Check에서 사용하고 있습니다.
+## 정의 되어 있는 작업들
 
-## 개발 History
+| 작업                 | 담당 파일                                                       | 하는 일                                              |
+| -------------------- | --------------------------------------------------------------- | ---------------------------------------------------- |
+| 게임 정보 갱신       | `v3_dags_item.py`, `v3_dags_quest.py`, `v3_dags_map.py` 등      | 아이템·퀘스트·지도·보스·은신처·상인 정보 갱신        |
+| 아이템 가격 갱신     | `v3_dags_item_price.py`                                         | PVP·PVE·시즌 가격 저장 및 오래된 일반 가격 이력 정리 |
+| 지도 위치 정보 갱신  | `v3_dags_live_map_point.py`, `v3_dags_live_map_static_point.py` | 퀘스트 관련 위치와 고정 지점 정보 갱신               |
+| 프레스티지 정보 갱신 | `v3_dags_prestige.py`                                           | 조건·보상 등 프레스티지 정보 갱신                    |
+| 검색 자동완성 갱신   | `v3_dags_autocomplete.py`                                       | 검색에 사용하는 자동완성 데이터 갱신                 |
+| 화면용 JSON 생성     | `v3_dags_*_static_json.py`                                      | 아이템·지도·홈·검색 등 화면별 JSON 생성              |
+| DB 백업              | `dags_data_dump.py`                                             | 선택한 테이블을 SQL 파일로 백업하고 압축             |
+| 서비스 상태 확인     | `dags_health_check.py`                                          | 서비스 상태와 응답 시간을 확인하고 기록              |
 
-여기에서 확인해 주세요!
+각 파일은 [dags](dags) 폴더에서 확인할 수 있습니다. `v3_initial_dags_*.py`는 초기 적재용이며 자동 실행 일정 없이 수동으로 실행합니다. 정기 갱신용 DAG와 구분해서 사용합니다.
 
-[velog 바로가기](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)
+## 디렉토리 구조
 
+```text
+.
+├── dags/                       # 실행 일정과 작업 순서
+├── plugins/
+│   ├── custom_module/
+│   │   ├── tarkov_json_api.py   # 외부 게임 데이터 API 호출
+│   │   ├── static_api_client.py # 화면용 JSON 생성 시 API 요청 간격·재시도 처리
+│   │   ├── data_dump_func.py    # 백업 대상 목록과 셸 명령 생성
+│   │   ├── dag_failure_alert.py # DAG 실패 감시와 메일 알림
+│   │   └── v3/                 # API 응답을 DB 저장 형태로 정리하는 함수
+│   └── script/                 # 서비스 상태 확인용 셸 스크립트
+├── tests/                      # 회귀 테스트
+└── airflow.md                  # 과거 Airflow 설치 기록
+```
 
+## 실행 환경과 설정
 
-### V3 시즌 가격 수집
+운영 환경은 **Python 3.13, Airflow 3.1.5, PostgreSQL**을 사용합니다.
 
-- `v3_dags_item_price`는 PVP/PVE와 `pvp-season`을 수집합니다. 시즌 API와 아이템
-  응답 검증이 끝난 뒤 시즌 메타데이터, 현재 가격, 상인 가격, 히스토리를 한
-  트랜잭션으로 저장합니다. 이전 시즌 가격과 시즌 히스토리는 보존합니다.
-- PVP/PVE의 `season_id`는 NULL이며, 기존 14일 히스토리 보관 정책을 유지합니다.
-- 커밋 성공 후 `v3_dags_price_static_json`을 트리거합니다. 정적 JSON DAG의 독립
-  시간 스케줄은 제거했으며 수동 실행도 가능합니다. 정적 JSON은 현재 시즌만
-  포함하고 `pvp-season` 키와 `selected_season_id`를 제공합니다. 지난 시즌 조회는
-  백엔드 API의 `season_id`/`seasonId`를 사용합니다.
-- 배포 시 기존 가격 수집 DAG를 중지하고 백엔드의
-  `sql/migrations/20261007_price_seasons.sql`을 먼저 적용한 뒤 새 DAG를 배포해야
-  합니다. 새 충돌 키는 마이그레이션 이전 DB와 호환되지 않습니다. 시험 적재와
-  API 조회를 확인한 다음 DAG를 재개하고 정적 JSON을 재생성합니다.
-- 로컬 회귀 검사: `python3 -m unittest discover -s tests -v`
+이 저장소는 운영 중인 Airflow에 DAG와 공통 모듈을 배치하는 구조입니다. 로컬에서 실행하려면 Airflow와 관련 provider 패키지, DB 연결, 파일 저장 경로를 별도로 준비해야 합니다.
 
-### DB dump 대상
+| 설정                             | 용도                                                   |
+| -------------------------------- | ------------------------------------------------------ |
+| Airflow Connection `platform_db` | 데이터 수집·조회 작업에서 사용하는 PostgreSQL 연결     |
+| Airflow Connection `smtp_gmail`  | 실패·서비스 이상·데이터 변경 알림에 사용하는 메일 연결 |
+| `/opt/airflow/tmp`               | 수집한 응답을 잠시 보관하는 경로                       |
+| `/opt/airflow/next-public`       | 화면용 JSON 출력 경로                                  |
+| `/opt/airflow/latest_data`       | DB 백업과 서비스 상태 확인 로그 저장 경로              |
 
-- `plugins/custom_module/data_dump_func.py`의 `DATA_DUMP_TABLES`에서 백업 대상을 명시적으로 관리합니다.
-- 게임 기준 데이터(아이템·퀘스트 보상·상인·은신처·배틀패스·BTR 경로), 시즌 메타데이터와 현재 가격, 사용자 저장 데이터, 운영 공지 및 내 위치 찾기 배포/맵 별칭을 포함합니다.
-- 파티 방·멤버·마커와 채팅 사용자 식별자·차단·제재·초대 수신 설정을 함께 보존합니다. 채팅 사용자 식별자는 차단·제재·수신 설정의 FK 부모이므로 포함합니다.
-- 로그/이력 및 일시 데이터는 제외합니다: `item_price_history`, `user_footprint`, `health_check`, `response_time`, `user_location_request`, `where_am_i_path_reports`, `where_am_i_raid_state_events`, `where_am_i_version_checks`, `where_am_i_api_failures`, `live_map_chat_messages`, `live_map_chat_connections`, `live_map_party_invitations`. `live_map_chat_reports`도 제외된 메시지를 참조하므로 함께 제외합니다.
-- 기존 커뮤니티 신고·제재·조회·알림 데이터는 유지합니다. 이는 전체 DB 백업이 아닌 선택 테이블 백업이며, 제외한 데이터는 복구되지 않습니다.
-- `consumable_cures`는 백엔드 V3 모델에서 이름을 확인했습니다. 현재 `platform_db.sql`에는 해당 CREATE TABLE의 이름이 누락되어 있습니다.
+DB 백업은 별도로 `pg_dump` 명령을 사용하므로 [백업 모듈](plugins/custom_module/data_dump_func.py)의 접속 대상과 실행 계정의 PostgreSQL 인증 설정도 확인해야 합니다. 저장 경로에는 작업을 실행하는 계정의 쓰기 권한이 필요합니다.
+
+## 운영할 때 알아두면 좋은 내용
+
+### 시즌 가격은 따로 보관합니다
+
+가격 수집은 PVP, PVE, `pvp-season` 세 가지를 다룹니다. 시즌 정보와 가격을 검증한 뒤 한 트랜잭션으로 저장합니다. 트랜잭션은 여러 DB 변경을 하나로 묶어, 중간에 실패하면 일부만 반영되지 않도록 하는 방식입니다.
+
+일반 PVP·PVE 가격 이력은 14일이 지난 데이터를 정리하고, 이전 시즌의 가격과 시즌 이력은 보존합니다. 화면용 가격 JSON에는 현재 시즌을 담고, 지난 시즌 가격은 백엔드 API로 조회합니다.
+
+시즌 가격 수집을 처음 적용하는 DB에는 백엔드의 `sql/migrations/20261007_price_seasons.sql`을 먼저 적용해야 합니다. DB 구조를 준비한 뒤 가격 수집을 실행하고, 저장 결과와 JSON 생성을 확인합니다.
+
+### 백업은 필요한 테이블을 선택합니다
+
+백업 대상은 [data_dump_func.py](plugins/custom_module/data_dump_func.py)의 `DATA_DUMP_TABLES`에서 관리합니다.
+
+- **포함:** 게임 기준 데이터, 배틀패스·BTR 경로, 현재 가격과 시즌 정보, 사용자 저장 데이터, 운영 공지, 내 위치 찾기 배포 정보·맵 별칭, 파티 방·멤버·마커, 채팅 차단·제재·초대 수신 설정
+- **제외:** 가격 이력, 접속·요청·분석 로그, 채팅 메시지와 메시지 신고, 접속 기록, 파티 초대 이력
+- **기존 유지:** 커뮤니티 신고·제재·조회·알림 데이터
+
+채팅 사용자 식별자는 차단·제재·수신 설정에서 참조하므로 함께 백업합니다. 메시지 신고는 제외된 채팅 메시지를 참조하므로 함께 제외합니다.
+
+백업이 성공하면 SQL 파일을 gzip으로 압축하고, 저장 폴더에서 `find -mtime +2` 조건에 해당하는 오래된 파일을 삭제합니다. **전체 DB 백업은 아니므로 제외한 데이터는 이 백업으로 복구할 수 없습니다.**
+
+### 작업이 실패하면 메일로 알립니다
+
+DAG 실행이 최종 실패하면 `smtp_gmail` 연결을 통해 운영자에게 메일을 보냅니다. 메일에는 DAG 이름, 실행 ID, 시작·종료 시간과 실패 사유가 담깁니다.
+
+Airflow UI에서는 해당 실행의 실패한 Task 로그부터 확인하면 됩니다. 임시 파일 정리가 성공했더라도 앞선 작업의 실패가 가려지지 않도록 `watch_dag_failure` Task가 감시합니다.
+
+새 DAG를 추가할 때는 다음 두 설정을 함께 적용합니다.
+
+1. DAG에 `on_failure_callback=send_dag_failure_email`을 지정합니다.
+2. 모든 Task를 정의한 뒤 `add_failure_watcher(dag)`를 호출합니다.
+
+구현은 [dag_failure_alert.py](plugins/custom_module/dag_failure_alert.py)에 있습니다. UI나 CLI에서 수동으로 실패 상태를 지정하면 콜백은 실행되지 않으며, 메일 전송 자체의 오류는 DAG processor 로그에서 확인합니다.
+
+## 개발 기록
+
+구현 과정과 시행착오는 [Airflow 개발 기록](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)에 정리하고 있습니다.
+
+여기서 확인해주세용 !!!
