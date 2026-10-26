@@ -1,3 +1,5 @@
+from custom_module.queries import quest_item as sql_queries
+
 import json
 import pendulum
 import os
@@ -67,28 +69,14 @@ with DAG(
         if not rows:
             return
 
-        sql = """
-                insert into items (
-                    id, parent_category, category, name_en, name_ko, name_ja, normalized_name, weight, width, height, image
-                ) values %s
-                on conflict (id) do update set
-                    parent_category=excluded.parent_category,
-                    category=excluded.category,
-                    name_en=excluded.name_en,
-                    normalized_name=excluded.normalized_name,
-                    weight=excluded.weight,
-                    width=excluded.width,
-                    height=excluded.height,
-                    image=excluded.image,
-                    update_time=now()
-        """
+        sql = sql_queries.INSERT_ITEMS
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    "select id, normalized_name from items where normalized_name is not null"
+                    sql_queries.SELECT_ITEMS
                 )
                 existing_normalized_names_by_id = dict(cursor.fetchall())
                 rows = assign_unique_normalized_names(

@@ -17,7 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def dag_function(path, name, namespace):
     tree = ast.parse((ROOT / path).read_text())
     node = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == name)
-    exec(compile(ast.Module(body=[node], type_ignores=[]), path, 'exec'), namespace)
+    query_imports = [
+        statement for statement in tree.body
+        if isinstance(statement, ast.ImportFrom)
+        and statement.module == 'custom_module.queries'
+    ]
+    exec(compile(ast.Module(body=[*query_imports, node], type_ignores=[]), path, 'exec'), namespace)
     return namespace[name]
 
 

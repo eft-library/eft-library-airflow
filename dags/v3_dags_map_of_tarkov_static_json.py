@@ -1,3 +1,5 @@
+from custom_module.queries import map_of_tarkov as sql_queries
+
 import json
 import os
 import time
@@ -63,13 +65,7 @@ def _fetch_targets(postgres_conn_id):
     with closing(postgres_hook.get_conn()) as conn:
         with closing(conn.cursor()) as cursor:
             cursor.execute(
-                """
-                select normalized_name
-                from maps
-                where is_use is true
-                  and normalized_name is not null
-                order by sort_order, name_en, normalized_name;
-                """
+                sql_queries.SELECT_MAPS
             )
             maps = [row[0] for row in cursor.fetchall()]
 

@@ -1,3 +1,5 @@
+from custom_module.queries import map as sql_queries
+
 import json
 import pendulum
 import os
@@ -81,10 +83,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id, name_en, normalized_name
-                    from maps
-                    """
+                    sql_queries.SELECT_MAPS
                 )
                 db_by_id = {
                     str(row[0]): {
@@ -200,20 +199,7 @@ with DAG(
         if not rows:
             return
 
-        sql = """
-            INSERT INTO maps (
-                id,
-                normalized_name,
-                name_en,
-                name_ko,
-                name_ja
-            )
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                normalized_name = EXCLUDED.normalized_name,
-                name_en = EXCLUDED.name_en
-        """
+        sql = sql_queries.INSERT_MAPS
 
         postgres_hook = PostgresHook(postgres_conn_id)
 

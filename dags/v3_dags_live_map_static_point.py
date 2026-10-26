@@ -1,3 +1,5 @@
+from custom_module.queries import live_map_static_point as sql_queries
+
 import json
 import os
 
@@ -57,13 +59,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id,
-                           normalized_name,
-                           name_en
-                    from maps
-                    where is_use is true;
-                    """
+                    sql_queries.SELECT_MAPS
                 )
                 local_maps = {}
                 for row in cursor.fetchall():
@@ -76,16 +72,7 @@ with DAG(
                     local_maps[normalize_map_name(row[2])] = map_info
 
                 cursor.execute(
-                    """
-                    select id,
-                           map_id,
-                           floor_no,
-                           min_y,
-                           max_y,
-                           sort_order
-                    from live_map_floors
-                    order by map_id, sort_order, floor_no;
-                    """
+                    sql_queries.SELECT_LIVE_MAP_FLOORS
                 )
                 floors_by_map_id = {}
                 for row in cursor.fetchall():
@@ -101,20 +88,7 @@ with DAG(
                     )
 
                 cursor.execute(
-                    """
-                    select id,
-                           floor_id,
-                           map_id,
-                           area_x_min,
-                           area_x_max,
-                           area_z_min,
-                           area_z_max,
-                           override_min_y,
-                           override_max_y,
-                           sort_order
-                    from live_map_floor_zones
-                    order by map_id, sort_order nulls last, id;
-                    """
+                    sql_queries.SELECT_LIVE_MAP_FLOOR_ZONES
                 )
                 floor_zones_by_map_id = {}
                 for row in cursor.fetchall():
@@ -134,15 +108,7 @@ with DAG(
                     )
 
                 cursor.execute(
-                    """
-                    select id,
-                           normalized_name,
-                           name_en,
-                           name_ko,
-                           name_ja,
-                           image
-                    from items;
-                    """
+                    sql_queries.SELECT_ITEMS
                 )
                 items_by_id = {
                     row[0]: {
@@ -157,15 +123,7 @@ with DAG(
                 }
 
                 cursor.execute(
-                    """
-                    select id,
-                           normalized_name,
-                           name_en,
-                           name_ko,
-                           name_ja,
-                           image
-                    from bosses;
-                    """
+                    sql_queries.SELECT_BOSSES
                 )
                 bosses_by_id = {
                     row[0]: {
@@ -180,24 +138,7 @@ with DAG(
                 }
 
                 cursor.execute(
-                    """
-                    select id,
-                           map_id,
-                           category,
-                           name_en,
-                           x,
-                           z,
-                           metadata
-                    from live_map_static_points
-                    where category in (
-                        'boss_spawn',
-                        'black_div_spawn',
-                        'cultist_spawn',
-                        'goons_spawn',
-                        'raider_spawn',
-                        'rogue_spawn'
-                    );
-                    """
+                    sql_queries.SELECT_LIVE_MAP_STATIC_POINTS
                 )
                 existing_boss_spawn_points = [
                     {
@@ -224,28 +165,7 @@ with DAG(
                     items_by_id,
                 )
 
-                sql = """
-                    INSERT INTO live_map_static_points (
-                        id,
-                        map_id,
-                        floor_id,
-                        category,
-                        name_en,
-                        name_ko,
-                        name_ja,
-                        description_en,
-                        description_ko,
-                        description_ja,
-                        image,
-                        x,
-                        z,
-                        metadata,
-                        sort_order,
-                        is_use
-                    )
-                    VALUES %s
-                    ON CONFLICT (id) DO NOTHING
-                """
+                sql = sql_queries.INSERT_LIVE_MAP_STATIC_POINTS
 
                 if rows:
                     execute_values(
@@ -285,12 +205,7 @@ with DAG(
                     )
                     metadata_ids = [row[0] for row in boss_metadata_rows]
                     cursor.execute(
-                        """
-                        select count(*)
-                        from live_map_static_points
-                        where id = any(%s)
-                          and metadata is not null;
-                        """,
+                        sql_queries.COUNT_STATIC_POINTS_WITH_METADATA,
                         (metadata_ids,),
                     )
                     applied_count = cursor.fetchone()[0]

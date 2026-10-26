@@ -1,3 +1,5 @@
+from custom_module.queries import quest as sql_queries
+
 import json
 import os
 import pendulum
@@ -161,12 +163,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id, normalized_name, name_en, name_ko, name_ja,
-                           trader_id, experience, delay_max, delay_min,
-                           kappa_required, min_player_level, wiki_url
-                    from quests
-                    """
+                    sql_queries.SELECT_QUESTS
                 )
                 db_quests = {
                     str(row[0]): (str(row[0]), *row[1:])
@@ -174,12 +171,7 @@ with DAG(
                 }
 
                 cursor.execute(
-                    """
-                    select objective_id, quest_id, type, description_en,
-                           description_ko, description_ja,
-                           count, found_in_raid, optional, sort_order
-                    from quest_objectives
-                    """
+                    sql_queries.SELECT_QUEST_OBJECTIVES
                 )
                 objective_owner = {}
                 for row in cursor.fetchall():
@@ -192,9 +184,9 @@ with DAG(
                     )
 
                 child_queries = {
-                    "목표 아이템": "select objective_id, item_id, item_type from quest_objective_items",
-                    "목표 필요 열쇠": "select objective_id, key_id from quest_objective_required_keys",
-                    "목표 맵": "select objective_id, map_id from quest_objective_maps",
+                    "목표 아이템": sql_queries.SELECT_QUEST_OBJECTIVE_ITEMS,
+                    "목표 필요 열쇠": sql_queries.SELECT_QUEST_OBJECTIVE_REQUIRED_KEYS,
+                    "목표 맵": sql_queries.SELECT_QUEST_OBJECTIVE_MAPS,
                 }
                 for section, query in child_queries.items():
                     cursor.execute(query)
@@ -206,37 +198,18 @@ with DAG(
                         )
 
                 cursor.execute(
-                    """
-                    select quest_id, related_quest_id, relation_type
-                    from quest_relations
-                    where relation_type = 'require'
-                    """
+                    sql_queries.SELECT_QUEST_RELATIONS
                 )
                 for row in cursor.fetchall():
                     key = tuple(str(value) for value in row)
                     db_sections["선행 퀘스트"][key] = (key[0], ())
 
                 reward_queries = {
-                    "완료 보상 - 스킬": """
-                        select quest_id, name_en, skill_level
-                        from quest_finish_reward_skills
-                    """,
-                    "완료 보상 - 상인 평판": """
-                        select quest_id, trader_id, standing
-                        from quest_finish_reward_trader_standing
-                    """,
-                    "완료 보상 - 거래 잠금 해제": """
-                        select quest_id, offer_id, trader_id, item_id, level
-                        from quest_finish_reward_offer_unlock
-                    """,
-                    "완료 보상 - 아이템": """
-                        select quest_id, item_id, quantity
-                        from quest_finish_reward_items
-                    """,
-                    "완료 보상 - 제작 잠금 해제": """
-                        select quest_id, craft_id, station_level
-                        from quest_finish_reward_craft_unlocks
-                    """,
+                    "완료 보상 - 스킬": sql_queries.SELECT_QUEST_FINISH_REWARD_SKILLS,
+                    "완료 보상 - 상인 평판": sql_queries.SELECT_QUEST_FINISH_REWARD_TRADER_STANDING,
+                    "완료 보상 - 거래 잠금 해제": sql_queries.SELECT_QUEST_FINISH_REWARD_OFFER_UNLOCK,
+                    "완료 보상 - 아이템": sql_queries.SELECT_QUEST_FINISH_REWARD_ITEMS,
+                    "완료 보상 - 제작 잠금 해제": sql_queries.SELECT_QUEST_FINISH_REWARD_CRAFT_UNLOCKS,
                 }
                 for section, query in reward_queries.items():
                     cursor.execute(query)
@@ -254,11 +227,11 @@ with DAG(
                                 tuple(row[2:]),
                             )
 
-                cursor.execute("select id, name_en from items")
+                cursor.execute(sql_queries.SELECT_ITEMS)
                 item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
-                cursor.execute("select id, name_en from maps")
+                cursor.execute(sql_queries.SELECT_MAPS)
                 map_names = {str(row[0]): row[1] for row in cursor.fetchall()}
-                cursor.execute("select id, name_en from traders")
+                cursor.execute(sql_queries.SELECT_TRADERS)
                 trader_names = {str(row[0]): row[1] for row in cursor.fetchall()}
 
         api_ids = set(api_quests)
@@ -554,199 +527,40 @@ with DAG(
             }.values()
         )
 
-        quest_sql = """
-            INSERT INTO quests (
-                id,
-                normalized_name,
-                name_en,
-                name_ko,
-                name_ja,
-                trader_id,
-                experience,
-                delay_max,
-                delay_min,
-                kappa_required,
-                min_player_level,
-                wiki_url,
-                is_use
-            )
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                normalized_name = EXCLUDED.normalized_name,
-                name_en = EXCLUDED.name_en,
-                name_ko = COALESCE(EXCLUDED.name_ko, quests.name_ko),
-                name_ja = COALESCE(EXCLUDED.name_ja, quests.name_ja),
-                trader_id = EXCLUDED.trader_id,
-                experience = EXCLUDED.experience,
-                delay_max = EXCLUDED.delay_max,
-                delay_min = EXCLUDED.delay_min,
-                kappa_required = EXCLUDED.kappa_required,
-                min_player_level = EXCLUDED.min_player_level,
-                wiki_url = EXCLUDED.wiki_url,
-                update_time = now()
-        """
+        quest_sql = sql_queries.QUEST_SQL
 
-        objective_sql = """
-            INSERT INTO quest_objectives (
-                objective_id,
-                quest_id,
-                type,
-                description_en,
-                description_ko,
-                description_ja,
-                count,
-                found_in_raid,
-                optional,
-                sort_order,
-                is_use
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, quest_id) DO UPDATE
-            SET
-                type = EXCLUDED.type,
-                description_en = EXCLUDED.description_en,
-                count = EXCLUDED.count,
-                found_in_raid = EXCLUDED.found_in_raid,
-                optional = EXCLUDED.optional,
-                sort_order = EXCLUDED.sort_order,
-                update_time = now()
-        """
+        objective_sql = sql_queries.OBJECTIVE_SQL
 
-        objective_item_sql = """
-            INSERT INTO quest_objective_items (
-                objective_id,
-                item_id,
-                item_type
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, item_id, item_type) DO NOTHING
-        """
+        objective_item_sql = sql_queries.OBJECTIVE_ITEM_SQL
 
-        objective_required_key_sql = """
-            INSERT INTO quest_objective_required_keys (
-                objective_id,
-                key_id
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, key_id) DO NOTHING
-        """
+        objective_required_key_sql = sql_queries.OBJECTIVE_REQUIRED_KEY_SQL
 
-        objective_map_sql = """
-            INSERT INTO quest_objective_maps (
-                objective_id,
-                map_id
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, map_id) DO NOTHING
-        """
+        objective_map_sql = sql_queries.OBJECTIVE_MAP_SQL
 
-        relation_sql = """
-            INSERT INTO quest_relations (
-                quest_id,
-                related_quest_id,
-                relation_type
-            )
-            VALUES %s
-            ON CONFLICT (quest_id, related_quest_id, relation_type) DO NOTHING
-        """
+        relation_sql = sql_queries.RELATION_SQL
 
-        skill_reward_sql = """
-            INSERT INTO quest_finish_reward_skills (
-                quest_id,
-                name_en,
-                name_ko,
-                name_ja,
-                skill_level
-            )
-            VALUES %s
-        """
+        skill_reward_sql = sql_queries.SKILL_REWARD_SQL
 
-        standing_reward_sql = """
-            INSERT INTO quest_finish_reward_trader_standing (
-                quest_id,
-                trader_id,
-                standing
-            )
-            VALUES %s
-        """
+        standing_reward_sql = sql_queries.STANDING_REWARD_SQL
 
-        offer_reward_sql = """
-            INSERT INTO quest_finish_reward_offer_unlock (
-                quest_id,
-                offer_id,
-                trader_id,
-                item_id,
-                level
-            )
-            VALUES %s
-        """
+        offer_reward_sql = sql_queries.OFFER_REWARD_SQL
 
-        finish_reward_item_sql = """
-            INSERT INTO quest_finish_reward_items (
-                quest_id,
-                item_id,
-                quantity
-            )
-            VALUES %s
-        """
+        finish_reward_item_sql = sql_queries.FINISH_REWARD_ITEM_SQL
 
-        finish_reward_craft_unlock_sql = """
-            INSERT INTO quest_finish_reward_craft_unlocks (
-                quest_id,
-                craft_id,
-                station_level
-            )
-            VALUES %s
-        """
+        finish_reward_craft_unlock_sql = sql_queries.FINISH_REWARD_CRAFT_UNLOCK_SQL
 
-        customization_sql = """
-            INSERT INTO customizations (
-                id, name_key, name_en, name_ko, name_ja, image_link,
-                customization_type, customization_type_name_key,
-                customization_type_name_en, customization_type_name_ko,
-                customization_type_name_ja
-            ) VALUES %s
-            ON CONFLICT (id) DO UPDATE SET
-                name_key = EXCLUDED.name_key,
-                name_en = EXCLUDED.name_en,
-                name_ko = EXCLUDED.name_ko,
-                name_ja = EXCLUDED.name_ja,
-                image_link = EXCLUDED.image_link,
-                customization_type = EXCLUDED.customization_type,
-                customization_type_name_key = EXCLUDED.customization_type_name_key,
-                customization_type_name_en = EXCLUDED.customization_type_name_en,
-                customization_type_name_ko = EXCLUDED.customization_type_name_ko,
-                customization_type_name_ja = EXCLUDED.customization_type_name_ja,
-                update_time = now()
-        """
+        customization_sql = sql_queries.CUSTOMIZATION_SQL
 
-        customization_item_sql = """
-            INSERT INTO customization_items (
-                customization_id, item_id, sort_order
-            ) VALUES %s
-            ON CONFLICT (customization_id, item_id) DO UPDATE SET
-                sort_order = EXCLUDED.sort_order
-        """
+        customization_item_sql = sql_queries.CUSTOMIZATION_ITEM_SQL
 
-        quest_reward_customization_sql = """
-            INSERT INTO quest_reward_customizations (
-                quest_id, customization_id, reward_type, sort_order
-            ) VALUES %s
-            ON CONFLICT (quest_id, customization_id, reward_type) DO UPDATE SET
-                sort_order = EXCLUDED.sort_order,
-                update_time = now()
-        """
+        quest_reward_customization_sql = sql_queries.QUEST_REWARD_CUSTOMIZATION_SQL
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select quest_id, name_en, skill_level, name_ko, name_ja
-                    from quest_finish_reward_skills
-                    """
+                    sql_queries.SELECT_SKILL_REWARD_TRANSLATIONS
                 )
                 existing_skill_names = {
                     (quest_id, name_en, skill_level): (name_ko, name_ja)
@@ -769,19 +583,7 @@ with DAG(
 
                 # quest_objectives는 수동 데이터를 보존하기 위해 upsert로만 관리한다.
                 cursor.execute(
-                    """
-                    truncate table
-                        quest_objective_items,
-                        quest_objective_required_keys,
-                        quest_objective_maps,
-                        quest_relations,
-                        quest_finish_reward_skills,
-                        quest_finish_reward_trader_standing,
-                        quest_finish_reward_offer_unlock,
-                        quest_finish_reward_items,
-                        quest_finish_reward_craft_unlocks
-                    restart identity cascade;
-                """
+                    sql_queries.TRUNCATE_QUEST_OBJECTIVE_ITEMS
                 )
 
                 # quests upsert
@@ -890,22 +692,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    insert into quest_relations (
-                        quest_id,
-                        related_quest_id,
-                        relation_type,
-                        sort_order
-                    )
-                    select
-                        related_quest_id as quest_id,
-                        quest_id as related_quest_id,
-                        'next' as relation_type,
-                        sort_order
-                    from quest_relations
-                    where relation_type = 'require'
-                    on conflict (quest_id, related_quest_id, relation_type) do nothing
-                    """
+                    sql_queries.INSERT_QUEST_RELATIONS
                 )
 
             conn.commit()
@@ -916,32 +703,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    insert into roadmap_node (
-                        id,
-                        total_x_coordinate,
-                        total_y_coordinate,
-                        single_x_coordinate,
-                        single_y_coordinate,
-                        total_kappa_x_coordinate,
-                        total_kappa_y_coordinate,
-                        single_kappa_x_coordinate,
-                        single_kappa_y_coordinate
-                    )
-                    select
-                        q.id,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0
-                    from quests q
-                    where q.is_use is true
-                    on conflict (id) do nothing
-                    """
+                    sql_queries.INSERT_ROADMAP_NODE
                 )
 
             conn.commit()

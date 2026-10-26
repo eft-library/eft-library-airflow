@@ -1,3 +1,5 @@
+from custom_module.queries import trader as sql_queries
+
 import json
 import pendulum
 import os
@@ -92,10 +94,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id, name_en, name_ko, name_ja, image, normalized_name
-                    from traders
-                    """
+                    sql_queries.SELECT_TRADERS
                 )
                 db_traders = {
                     str(row[0]): (str(row[0]), *row[1:])
@@ -103,7 +102,7 @@ with DAG(
                 }
 
                 cursor.execute(
-                    "select id, trader_id, trader_level from trader_barters"
+                    sql_queries.SELECT_TRADER_BARTERS
                 )
                 for row in cursor.fetchall():
                     db_sections["물물교환"][str(row[0])] = (
@@ -112,16 +111,8 @@ with DAG(
                     )
 
                 item_queries = {
-                    "요구 아이템": """
-                        select r.id, b.trader_id, r.barter_id, r.item_id, r.quantity
-                        from barter_required_items r
-                        join trader_barters b on b.id = r.barter_id
-                    """,
-                    "보상 아이템": """
-                        select r.id, b.trader_id, r.barter_id, r.item_id, r.quantity
-                        from barter_reward_items r
-                        join trader_barters b on b.id = r.barter_id
-                    """,
+                    "요구 아이템": sql_queries.SELECT_BARTER_REQUIRED_ITEMS,
+                    "보상 아이템": sql_queries.SELECT_BARTER_REWARD_ITEMS,
                 }
                 for section, query in item_queries.items():
                     cursor.execute(query)
@@ -131,7 +122,7 @@ with DAG(
                             (str(row[2]), str(row[3]), row[4]),
                         )
 
-                cursor.execute("select id, name_en from items")
+                cursor.execute(sql_queries.SELECT_ITEMS)
                 item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
 
         api_ids = set(api_traders)
@@ -342,72 +333,20 @@ with DAG(
         if not trader_rows:
             return
 
-        trader_sql = """
-            insert into traders (id, name_en, name_ko, name_ja, image, normalized_name)
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                name_en = EXCLUDED.name_en,
-                image = EXCLUDED.image,
-                normalized_name = EXCLUDED.normalized_name,
-                update_time = now()
-        """
+        trader_sql = sql_queries.TRADER_SQL
 
-        barter_sql = """
-            insert into trader_barters (
-                id,
-                trader_id,
-                trader_level
-            )
-            values %s
-            on conflict (id) do update
-            set
-                trader_id = excluded.trader_id,
-                trader_level = excluded.trader_level
-        """
+        barter_sql = sql_queries.BARTER_SQL
 
-        barter_required_sql = """
-            insert into barter_required_items (
-                id,
-                barter_id,
-                item_id,
-                quantity
-            )
-            values %s
-            on conflict (id) do update
-            set
-                barter_id = excluded.barter_id,
-                item_id = excluded.item_id,
-                quantity = excluded.quantity
-        """
+        barter_required_sql = sql_queries.BARTER_REQUIRED_SQL
 
-        barter_reward_sql = """
-            insert into barter_reward_items (
-                id,
-                barter_id,
-                item_id,
-                quantity
-            )
-            values %s
-            on conflict (id) do update
-            set
-                barter_id = excluded.barter_id,
-                item_id = excluded.item_id,
-                quantity = excluded.quantity
-        """
+        barter_reward_sql = sql_queries.BARTER_REWARD_SQL
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 # 하위 테이블 전체 비우기 (traders 제외)
-                cursor.execute("""
-                    truncate table
-                        trader_barters,
-                        barter_required_items,
-                        barter_reward_items
-                    restart identity cascade;
-                """)
+                cursor.execute(sql_queries.TRUNCATE_TRADER_BARTERS)
 
                 execute_values(
                     cursor,

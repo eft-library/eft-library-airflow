@@ -1,3 +1,5 @@
+from custom_module.queries import quest as sql_queries
+
 import json
 import os
 import time
@@ -63,23 +65,12 @@ def _fetch_targets(postgres_conn_id):
     with closing(postgres_hook.get_conn()) as conn:
         with closing(conn.cursor()) as cursor:
             cursor.execute(
-                """
-                select normalized_name
-                from quests
-                where is_use is true
-                  and normalized_name is not null
-                order by sort_order, name_en, normalized_name;
-                """
+                sql_queries.SELECT_STATIC_QUEST_TARGETS
             )
             quests = [row[0] for row in cursor.fetchall()]
 
             cursor.execute(
-                """
-                select normalized_name
-                from traders
-                where normalized_name is not null
-                order by name_en, normalized_name;
-                """
+                sql_queries.SELECT_STATIC_TRADER_TARGETS
             )
             traders = [row[0] for row in cursor.fetchall()]
 

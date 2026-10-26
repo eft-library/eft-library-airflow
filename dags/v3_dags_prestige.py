@@ -1,3 +1,5 @@
+from custom_module.queries import prestige as sql_queries
+
 from contextlib import closing
 
 import pendulum
@@ -291,140 +293,18 @@ def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
     }
 
     sql_by_table = {
-        "prestige_levels": """
-            insert into prestige_levels (
-                id, prestige_level, name_key, name_en, name_ko, name_ja,
-                icon_link, image_link, is_use, sort_order
-            ) values %s
-            on conflict (id) do update set
-                prestige_level = excluded.prestige_level,
-                name_key = excluded.name_key,
-                name_en = excluded.name_en,
-                name_ko = excluded.name_ko,
-                name_ja = excluded.name_ja,
-                icon_link = excluded.icon_link,
-                image_link = excluded.image_link,
-                is_use = excluded.is_use,
-                sort_order = excluded.sort_order,
-                update_time = now()
-        """,
-        "prestige_conditions": """
-            insert into prestige_conditions (
-                id, prestige_id, condition_type, description_key,
-                description_en, description_ko, description_ja, count,
-                is_optional, player_level, task_id, station_id, station_level,
-                skill_name, skill_level, dog_tag_level, max_durability,
-                min_durability, found_in_raid, sort_order
-            ) values %s
-            on conflict (id) do update set
-                prestige_id = excluded.prestige_id,
-                condition_type = excluded.condition_type,
-                description_key = excluded.description_key,
-                description_en = excluded.description_en,
-                description_ko = excluded.description_ko,
-                description_ja = excluded.description_ja,
-                count = excluded.count,
-                is_optional = excluded.is_optional,
-                player_level = excluded.player_level,
-                task_id = excluded.task_id,
-                station_id = excluded.station_id,
-                station_level = excluded.station_level,
-                skill_name = excluded.skill_name,
-                skill_level = excluded.skill_level,
-                dog_tag_level = excluded.dog_tag_level,
-                max_durability = excluded.max_durability,
-                min_durability = excluded.min_durability,
-                found_in_raid = excluded.found_in_raid,
-                sort_order = excluded.sort_order,
-                update_time = now()
-        """,
-        "prestige_condition_items": """
-            insert into prestige_condition_items (condition_id, item_id, sort_order)
-            values %s on conflict (condition_id, item_id) do update set
-                sort_order = excluded.sort_order
-        """,
-        "prestige_condition_statuses": """
-            insert into prestige_condition_statuses (condition_id, status, sort_order)
-            values %s on conflict (condition_id, status) do update set
-                sort_order = excluded.sort_order
-        """,
-        "prestige_condition_maps": """
-            insert into prestige_condition_maps (condition_id, map_id, sort_order)
-            values %s on conflict (condition_id, map_id) do update set
-                sort_order = excluded.sort_order
-        """,
-        "prestige_reward_items": """
-            insert into prestige_reward_items (
-                prestige_id, item_id, quantity, attributes, sort_order
-            ) values %s on conflict (prestige_id, item_id) do update set
-                quantity = excluded.quantity,
-                attributes = excluded.attributes,
-                sort_order = excluded.sort_order
-        """,
-        "prestige_reward_skills": """
-            insert into prestige_reward_skills (
-                prestige_id, skill_name, skill_level, sort_order
-            ) values %s on conflict (prestige_id, skill_name) do update set
-                skill_level = excluded.skill_level,
-                sort_order = excluded.sort_order
-        """,
-        "customizations": """
-            insert into customizations (
-                id, name_key, name_en, name_ko,
-                name_ja, image_link, customization_type,
-                customization_type_name_key, customization_type_name_en,
-                customization_type_name_ko, customization_type_name_ja
-            ) values %s on conflict (id) do update set
-                name_key = excluded.name_key,
-                name_en = excluded.name_en,
-                name_ko = excluded.name_ko,
-                name_ja = excluded.name_ja,
-                image_link = excluded.image_link,
-                customization_type = excluded.customization_type,
-                customization_type_name_key = excluded.customization_type_name_key,
-                customization_type_name_en = excluded.customization_type_name_en,
-                customization_type_name_ko = excluded.customization_type_name_ko,
-                customization_type_name_ja = excluded.customization_type_name_ja,
-                update_time = now()
-        """,
-        "customization_items": """
-            insert into customization_items (
-                customization_id, item_id, sort_order
-            ) values %s on conflict (customization_id, item_id) do update set
-                sort_order = excluded.sort_order
-        """,
-        "prestige_reward_customizations": """
-            insert into prestige_reward_customizations (
-                prestige_id, customization_id, sort_order
-            ) values %s on conflict (prestige_id, customization_id) do update set
-                sort_order = excluded.sort_order
-        """,
-        "prestige_transfer_settings": """
-            insert into prestige_transfer_settings (
-                id, prestige_id, setting_type, name_key, name_en, name_ko,
-                name_ja, skill_type, transfer_rate, grid_width, grid_height,
-                sort_order
-            ) values %s on conflict (id) do update set
-                prestige_id = excluded.prestige_id,
-                setting_type = excluded.setting_type,
-                name_key = excluded.name_key,
-                name_en = excluded.name_en,
-                name_ko = excluded.name_ko,
-                name_ja = excluded.name_ja,
-                skill_type = excluded.skill_type,
-                transfer_rate = excluded.transfer_rate,
-                grid_width = excluded.grid_width,
-                grid_height = excluded.grid_height,
-                sort_order = excluded.sort_order,
-                update_time = now()
-        """,
-        "prestige_transfer_filter_values": """
-            insert into prestige_transfer_filter_values (
-                transfer_setting_id, filter_type, value_id, sort_order
-            ) values %s
-            on conflict (transfer_setting_id, filter_type, value_id) do update set
-                sort_order = excluded.sort_order
-        """,
+        "prestige_levels": sql_queries.INSERT_PRESTIGE_LEVELS,
+        "prestige_conditions": sql_queries.INSERT_PRESTIGE_CONDITIONS,
+        "prestige_condition_items": sql_queries.INSERT_PRESTIGE_CONDITION_ITEMS,
+        "prestige_condition_statuses": sql_queries.INSERT_PRESTIGE_CONDITION_STATUSES,
+        "prestige_condition_maps": sql_queries.INSERT_PRESTIGE_CONDITION_MAPS,
+        "prestige_reward_items": sql_queries.INSERT_PRESTIGE_REWARD_ITEMS,
+        "prestige_reward_skills": sql_queries.INSERT_PRESTIGE_REWARD_SKILLS,
+        "customizations": sql_queries.INSERT_CUSTOMIZATIONS,
+        "customization_items": sql_queries.INSERT_CUSTOMIZATION_ITEMS,
+        "prestige_reward_customizations": sql_queries.INSERT_PRESTIGE_REWARD_CUSTOMIZATIONS,
+        "prestige_transfer_settings": sql_queries.INSERT_PRESTIGE_TRANSFER_SETTINGS,
+        "prestige_transfer_filter_values": sql_queries.INSERT_PRESTIGE_TRANSFER_FILTER_VALUES,
     }
 
     postgres_hook = PostgresHook(postgres_conn_id)

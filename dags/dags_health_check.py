@@ -1,3 +1,5 @@
+from custom_module.queries import health_check as sql_queries
+
 from airflow import DAG
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.bash import BashOperator
@@ -28,15 +30,9 @@ LOG_PATTERN = re.compile(
 
 log_path = "/opt/airflow/latest_data/health_check.log"
 
-INSERT_RESPONSE_TIME_SQL = """
-INSERT INTO response_time (service_name, response_ms, checked_time)
-VALUES (%s, %s, %s);
-"""
+INSERT_RESPONSE_TIME_SQL = sql_queries.INSERT_RESPONSE_TIME_SQL
 
-INSERT_HEALTH_CHECK_SQL = """
-INSERT INTO health_check (service_name, status, checked_time)
-VALUES (%s, %s, %s);
-"""
+INSERT_HEALTH_CHECK_SQL = sql_queries.INSERT_HEALTH_CHECK_SQL
 
 default_args = {
     "owner": "airflow",

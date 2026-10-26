@@ -1,3 +1,5 @@
+from custom_module.queries import item_price as sql_queries
+
 import json
 import os
 import pendulum
@@ -80,7 +82,7 @@ with DAG(
         return pvp_en_list, pve_en_list, seasonal
 
     def _fetch_trader_name_map(cursor):
-        cursor.execute("select id, name_en from traders")
+        cursor.execute(sql_queries.SELECT_TRADERS)
         rows = cursor.fetchall()
         trader_name_map = {}
 
@@ -100,59 +102,11 @@ with DAG(
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
-        item_price_sql = """
-            insert into item_prices (
-                item_id,
-                game_mode,
-                season_id,
-                highest_trader_price,
-                highest_trader_id,
-                flea_market_price,
-                trader_count,
-                has_flea
-            )
-            values %s
-            on conflict (item_id, game_mode, season_key) do update
-            set
-                highest_trader_price = excluded.highest_trader_price,
-                highest_trader_id = excluded.highest_trader_id,
-                flea_market_price = excluded.flea_market_price,
-                trader_count = excluded.trader_count,
-                has_flea = excluded.has_flea,
-                update_time = now()
-        """
+        item_price_sql = sql_queries.ITEM_PRICE_SQL
 
-        trader_price_sql = """
-            insert into item_trader_prices (
-                id,
-                item_id,
-                game_mode,
-                season_id,
-                trader_id,
-                price
-            )
-            values %s
-            on conflict (item_id, game_mode, season_key, trader_id) do update
-            set
-                item_id = excluded.item_id,
-                game_mode = excluded.game_mode,
-                trader_id = excluded.trader_id,
-                price = excluded.price
-        """
+        trader_price_sql = sql_queries.TRADER_PRICE_SQL
 
-        history_sql = """
-            insert into item_price_history (
-                item_id,
-                price,
-                game_mode,
-                season_id,
-                price_time
-            )
-            values %s
-            on conflict (item_id, game_mode, season_key, price_time) do update
-            set
-                price = excluded.price
-        """
+        history_sql = sql_queries.HISTORY_SQL
 
         with closing(postgres_hook.get_conn()) as conn:
             with conn, closing(conn.cursor()) as cursor:
@@ -183,21 +137,15 @@ with DAG(
                         )
 
                 season = seasonal["season"]
-                cursor.execute("LOCK TABLE price_seasons IN EXCLUSIVE MODE")
-                cursor.execute("UPDATE price_seasons SET is_current = false WHERE is_current")
+                cursor.execute(sql_queries.LOCK_PRICE_SEASONS)
+                cursor.execute(sql_queries.UPDATE_PRICE_SEASONS)
                 cursor.execute(
-                    """INSERT INTO price_seasons (id, name, starts_at, ends_at, is_current)
-                       VALUES (%s, %s, %s, %s, true)
-                       ON CONFLICT (id) DO UPDATE SET name = excluded.name,
-                           starts_at = excluded.starts_at, ends_at = excluded.ends_at,
-                           is_current = true, update_time = now()""",
+                    sql_queries.INSERT_PRICE_SEASONS,
                     (season["id"], season["name"], season["starts_at"], season["ends_at"]),
                 )
                 for table in ("item_trader_prices", "item_prices"):
                     cursor.execute(
-                        f"DELETE FROM {table} WHERE "
-                        "(game_mode IN ('pvp', 'pve') AND season_id IS NULL) OR "
-                        "(game_mode = 'pvp-season' AND season_id = %s)",
+                        sql_queries.build_delete_current_prices(table),
                         (season["id"],),
                     )
 
@@ -214,8 +162,7 @@ with DAG(
                 if history_rows:
                     execute_values(cursor, history_sql, history_rows, page_size=1000)
                 cursor.execute(
-                    "DELETE FROM item_price_history WHERE game_mode IN ('pvp', 'pve') "
-                    "AND season_id IS NULL AND price_time < now() - interval '14 days'"
+                    sql_queries.DELETE_ITEM_PRICE_HISTORY
                 )
 
     def remove_json_files():

@@ -1,3 +1,5 @@
+from custom_module.queries import live_map_point as sql_queries
+
 import json
 import os
 
@@ -68,13 +70,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id,
-                           normalized_name,
-                           name_en
-                    from maps
-                    where is_use is true;
-                    """
+                    sql_queries.SELECT_MAPS
                 )
                 local_maps = {}
                 for row in cursor.fetchall():
@@ -88,16 +84,7 @@ with DAG(
                     local_maps[normalize_map_name(row[2])] = map_info
 
                 cursor.execute(
-                    """
-                    select id,
-                           map_id,
-                           floor_no,
-                           min_y,
-                           max_y,
-                           sort_order
-                    from live_map_floors
-                    order by map_id, sort_order, floor_no;
-                    """
+                    sql_queries.SELECT_LIVE_MAP_FLOORS
                 )
                 floors_by_map_id = {}
                 for row in cursor.fetchall():
@@ -113,20 +100,7 @@ with DAG(
                     )
 
                 cursor.execute(
-                    """
-                    select id,
-                           floor_id,
-                           map_id,
-                           area_x_min,
-                           area_x_max,
-                           area_z_min,
-                           area_z_max,
-                           override_min_y,
-                           override_max_y,
-                           sort_order
-                    from live_map_floor_zones
-                    order by map_id, sort_order nulls last, id;
-                    """
+                    sql_queries.SELECT_LIVE_MAP_FLOOR_ZONES
                 )
                 floor_zones_by_map_id = {}
                 for row in cursor.fetchall():
@@ -157,19 +131,7 @@ with DAG(
                 if point_rows:
                     execute_values(
                         cursor,
-                        """
-                        INSERT INTO live_map_points (
-                            id,
-                            quest_id,
-                            objective_id,
-                            map_id,
-                            floor_id,
-                            x,
-                            z
-                        )
-                        VALUES %s
-                        ON CONFLICT (id) DO NOTHING
-                        """,
+                        sql_queries.INSERT_LIVE_MAP_POINTS,
                         point_rows,
                         page_size=500,
                     )
@@ -177,19 +139,7 @@ with DAG(
                 if detail_rows:
                     execute_values(
                         cursor,
-                        """
-                        INSERT INTO live_map_point_details (
-                            id,
-                            point_id,
-                            description_en,
-                            description_ko,
-                            description_ja,
-                            image,
-                            sort_order
-                        )
-                        VALUES %s
-                        ON CONFLICT (id) DO NOTHING
-                        """,
+                        sql_queries.INSERT_LIVE_MAP_POINT_DETAILS,
                         detail_rows,
                         page_size=500,
                     )

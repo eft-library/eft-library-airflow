@@ -1,3 +1,5 @@
+from custom_module.queries import hideout as sql_queries
+
 import json
 import pendulum
 import os
@@ -112,158 +114,29 @@ with DAG(
         if not master_rows:
             return
 
-        master_sql = """
-            insert into hideout_master (
-                id,
-                normalized_name,
-                name_en,
-                name_ko,
-                name_ja
-            )
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                normalized_name = EXCLUDED.normalized_name,
-                name_en = EXCLUDED.name_en,
-                name_ko = EXCLUDED.name_ko,
-                name_ja = EXCLUDED.name_ja
-        """
+        master_sql = sql_queries.INITIAL_MASTER_SQL
 
-        level_sql = """
-            insert into hideout_levels (id, master_id, hideout_level, construction_time)
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                master_id = EXCLUDED.master_id,
-                hideout_level = EXCLUDED.hideout_level,
-                construction_time = EXCLUDED.construction_time
-        """
+        level_sql = sql_queries.LEVEL_SQL
 
-        skill_require_sql = """
-            insert into hideout_skill_require (
-                id,
-                hideout_level_id,
-                require_level,
-                name_en,
-                name_ko,
-                name_ja
-            )
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                require_level = EXCLUDED.require_level,
-                name_en = EXCLUDED.name_en,
-                name_ko = EXCLUDED.name_ko,
-                name_ja = EXCLUDED.name_ja
-        """
+        skill_require_sql = sql_queries.INITIAL_SKILL_REQUIRE_SQL
 
-        trader_require_sql = """
-            insert into hideout_trader_require (id, hideout_level_id, trader_id, trader_level)
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                trader_id = EXCLUDED.trader_id,
-                trader_level = EXCLUDED.trader_level
-        """
+        trader_require_sql = sql_queries.TRADER_REQUIRE_SQL
 
-        station_require_sql = """
-            insert into hideout_station_require (id, hideout_level_id, require_master_id, station_level)
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                require_master_id = EXCLUDED.require_master_id,
-                station_level = EXCLUDED.station_level
-        """
+        station_require_sql = sql_queries.STATION_REQUIRE_SQL
 
-        item_require_sql = """
-            insert into hideout_item_require (id, hideout_level_id, item_id, quantity, in_raid)
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                item_id = EXCLUDED.item_id,
-                quantity = EXCLUDED.quantity,
-                in_raid = EXCLUDED.in_raid
-        """
+        item_require_sql = sql_queries.ITEM_REQUIRE_SQL
 
-        craft_sql = """
-            insert into hideout_crafts (
-                id,
-                hideout_level_id,
-                reward_item_id,
-                duration,
-                reward_quantity
-            )
-            values %s
-            on conflict (id) do update
-            set
-                hideout_level_id = excluded.hideout_level_id,
-                reward_item_id = excluded.reward_item_id,
-                duration = excluded.duration,
-                reward_quantity = excluded.reward_quantity
-        """
+        craft_sql = sql_queries.CRAFT_SQL
 
-        craft_require_item_sql = """
-            insert into hideout_craft_require_items (
-                id,
-                craft_id,
-                item_id,
-                quantity
-            )
-            values %s
-            on conflict (id) do update
-            set
-                craft_id = excluded.craft_id,
-                item_id = excluded.item_id,
-                quantity = excluded.quantity
-        """
+        craft_require_item_sql = sql_queries.CRAFT_REQUIRE_ITEM_SQL
 
-        bonus_sql = """
-            insert into hideout_bonus (
-                id,
-                hideout_level_id,
-                bonus_type,
-                name_en,
-                name_ko,
-                name_ja,
-                skill_name_en,
-                skill_name_ko,
-                skill_name_ja,
-                bonus_value
-            )
-            values %s
-            on conflict (id) do update
-            set
-                hideout_level_id = excluded.hideout_level_id,
-                bonus_type = excluded.bonus_type,
-                name_en = excluded.name_en,
-                name_ko = excluded.name_ko,
-                name_ja = excluded.name_ja,
-                skill_name_en = excluded.skill_name_en,
-                skill_name_ko = excluded.skill_name_ko,
-                skill_name_ja = excluded.skill_name_ja,
-                bonus_value = excluded.bonus_value
-        """
+        bonus_sql = sql_queries.INITIAL_BONUS_SQL
 
         postgres_hook = PostgresHook(postgres_conn_id)
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    truncate table
-                        hideout_levels,
-                        hideout_skill_require,
-                        hideout_trader_require,
-                        hideout_station_require,
-                        hideout_item_require,
-                        hideout_crafts,
-                        hideout_craft_require_items,
-                        hideout_bonus
-                    restart identity cascade;
-                """
+                    sql_queries.TRUNCATE_HIDEOUT_LEVELS
                 )
 
                 execute_values(

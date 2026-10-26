@@ -1,3 +1,5 @@
+from custom_module.queries import hideout as sql_queries
+
 import json
 import os
 import time
@@ -63,12 +65,7 @@ def _fetch_targets(postgres_conn_id):
     with closing(postgres_hook.get_conn()) as conn:
         with closing(conn.cursor()) as cursor:
             cursor.execute(
-                """
-                select normalized_name
-                from hideout_master
-                where normalized_name is not null
-                order by name_en, normalized_name;
-                """
+                sql_queries.SELECT_STATIC_HIDEOUT_TARGETS
             )
             stations = [row[0] for row in cursor.fetchall()]
 

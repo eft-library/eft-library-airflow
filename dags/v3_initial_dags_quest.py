@@ -1,3 +1,5 @@
+from custom_module.queries import quest as sql_queries
+
 import json
 import os
 import pendulum
@@ -156,191 +158,33 @@ with DAG(
             }.values()
         )
 
-        quest_sql = """
-            INSERT INTO quests (
-                id,
-                normalized_name,
-                name_en,
-                name_ko,
-                name_ja,
-                trader_id,
-                experience,
-                delay_max,
-                delay_min,
-                kappa_required,
-                min_player_level,
-                wiki_url,
-                is_use
-            )
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                normalized_name = EXCLUDED.normalized_name,
-                name_en = EXCLUDED.name_en,
-                name_ko = EXCLUDED.name_ko,
-                name_ja = EXCLUDED.name_ja,
-                trader_id = EXCLUDED.trader_id,
-                experience = EXCLUDED.experience,
-                delay_max = EXCLUDED.delay_max,
-                delay_min = EXCLUDED.delay_min,
-                kappa_required = EXCLUDED.kappa_required,
-                min_player_level = EXCLUDED.min_player_level,
-                wiki_url = EXCLUDED.wiki_url,
-                update_time = now()
-        """
+        quest_sql = sql_queries.INITIAL_QUEST_SQL
 
-        objective_sql = """
-            INSERT INTO quest_objectives (
-                objective_id,
-                quest_id,
-                type,
-                description_en,
-                description_ko,
-                description_ja,
-                count,
-                found_in_raid,
-                optional,
-                sort_order,
-                is_use
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, quest_id) DO UPDATE
-            SET
-                type = EXCLUDED.type,
-                description_en = EXCLUDED.description_en,
-                description_ko = EXCLUDED.description_ko,
-                description_ja = EXCLUDED.description_ja,
-                count = EXCLUDED.count,
-                found_in_raid = EXCLUDED.found_in_raid,
-                optional = EXCLUDED.optional,
-                sort_order = EXCLUDED.sort_order,
-                update_time = now()
-        """
+        objective_sql = sql_queries.INITIAL_OBJECTIVE_SQL
 
-        objective_item_sql = """
-            INSERT INTO quest_objective_items (
-                objective_id,
-                item_id,
-                item_type
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, item_id, item_type) DO NOTHING
-        """
+        objective_item_sql = sql_queries.OBJECTIVE_ITEM_SQL
 
-        objective_required_key_sql = """
-            INSERT INTO quest_objective_required_keys (
-                objective_id,
-                key_id
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, key_id) DO NOTHING
-        """
+        objective_required_key_sql = sql_queries.OBJECTIVE_REQUIRED_KEY_SQL
 
-        objective_map_sql = """
-            INSERT INTO quest_objective_maps (
-                objective_id,
-                map_id
-            )
-            VALUES %s
-            ON CONFLICT (objective_id, map_id) DO NOTHING
-        """
+        objective_map_sql = sql_queries.OBJECTIVE_MAP_SQL
 
-        relation_sql = """
-            INSERT INTO quest_relations (
-                quest_id,
-                related_quest_id,
-                relation_type
-            )
-            VALUES %s
-            ON CONFLICT (quest_id, related_quest_id, relation_type) DO NOTHING
-        """
+        relation_sql = sql_queries.RELATION_SQL
 
-        skill_reward_sql = """
-            INSERT INTO quest_finish_reward_skills (
-                quest_id,
-                name_en,
-                name_ko,
-                name_ja,
-                skill_level
-            )
-            VALUES %s
-        """
+        skill_reward_sql = sql_queries.SKILL_REWARD_SQL
 
-        standing_reward_sql = """
-            INSERT INTO quest_finish_reward_trader_standing (
-                quest_id,
-                trader_id,
-                standing
-            )
-            VALUES %s
-        """
+        standing_reward_sql = sql_queries.STANDING_REWARD_SQL
 
-        offer_reward_sql = """
-            INSERT INTO quest_finish_reward_offer_unlock (
-                quest_id,
-                offer_id,
-                trader_id,
-                item_id,
-                level
-            )
-            VALUES %s
-        """
+        offer_reward_sql = sql_queries.OFFER_REWARD_SQL
 
-        finish_reward_item_sql = """
-            INSERT INTO quest_finish_reward_items (
-                quest_id,
-                item_id,
-                quantity
-            )
-            VALUES %s
-        """
+        finish_reward_item_sql = sql_queries.FINISH_REWARD_ITEM_SQL
 
-        finish_reward_craft_unlock_sql = """
-            INSERT INTO quest_finish_reward_craft_unlocks (
-                quest_id,
-                craft_id,
-                station_level
-            )
-            VALUES %s
-        """
+        finish_reward_craft_unlock_sql = sql_queries.FINISH_REWARD_CRAFT_UNLOCK_SQL
 
-        customization_sql = """
-            INSERT INTO customizations (
-                id, name_key, name_en, name_ko, name_ja, image_link,
-                customization_type, customization_type_name_key,
-                customization_type_name_en, customization_type_name_ko,
-                customization_type_name_ja
-            ) VALUES %s
-            ON CONFLICT (id) DO UPDATE SET
-                name_key = EXCLUDED.name_key,
-                name_en = EXCLUDED.name_en,
-                name_ko = EXCLUDED.name_ko,
-                name_ja = EXCLUDED.name_ja,
-                image_link = EXCLUDED.image_link,
-                customization_type = EXCLUDED.customization_type,
-                customization_type_name_key = EXCLUDED.customization_type_name_key,
-                customization_type_name_en = EXCLUDED.customization_type_name_en,
-                customization_type_name_ko = EXCLUDED.customization_type_name_ko,
-                customization_type_name_ja = EXCLUDED.customization_type_name_ja,
-                update_time = now()
-        """
+        customization_sql = sql_queries.CUSTOMIZATION_SQL
 
-        customization_item_sql = """
-            INSERT INTO customization_items (
-                customization_id, item_id, sort_order
-            ) VALUES %s
-            ON CONFLICT (customization_id, item_id) DO UPDATE SET
-                sort_order = EXCLUDED.sort_order
-        """
+        customization_item_sql = sql_queries.CUSTOMIZATION_ITEM_SQL
 
-        quest_reward_customization_sql = """
-            INSERT INTO quest_reward_customizations (
-                quest_id, customization_id, reward_type, sort_order
-            ) VALUES %s
-            ON CONFLICT (quest_id, customization_id, reward_type) DO UPDATE SET
-                sort_order = EXCLUDED.sort_order,
-                update_time = now()
-        """
+        quest_reward_customization_sql = sql_queries.QUEST_REWARD_CUSTOMIZATION_SQL
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
@@ -348,19 +192,7 @@ with DAG(
             with closing(conn.cursor()) as cursor:
 
                 cursor.execute(
-                    """
-                    truncate table
-                        quest_objective_items,
-                        quest_objective_required_keys,
-                        quest_objective_maps,
-                        quest_relations,
-                        quest_finish_reward_skills,
-                        quest_finish_reward_trader_standing,
-                        quest_finish_reward_offer_unlock,
-                        quest_finish_reward_items,
-                        quest_finish_reward_craft_unlocks
-                    restart identity cascade;
-                """
+                    sql_queries.TRUNCATE_QUEST_OBJECTIVE_ITEMS
                 )
 
                 # quests upsert

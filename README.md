@@ -75,11 +75,14 @@ flowchart LR
 │   │   ├── static_api_client.py # 화면용 JSON 생성 시 API 요청 간격·재시도 처리
 │   │   ├── data_dump_func.py    # 백업 대상 목록과 셸 명령 생성
 │   │   ├── dag_failure_alert.py # DAG 실패 감시와 메일 알림
+│   │   ├── queries/            # 데이터 종류별 SQL
 │   │   └── *_task_func.py       # API 응답을 DB 저장 형태로 정리하는 함수
 │   └── script/                 # 서비스 상태 확인용 셸 스크립트
 ├── tests/                      # 회귀 테스트
 └── airflow.md                  # 과거 Airflow 설치 기록
 ```
+
+SQL은 `plugins/custom_module/queries/`에서 아이템·퀘스트·가격 등 데이터 종류별로 관리합니다. 초기 적재와 정기 갱신 DAG는 같은 쿼리 모듈을 사용합니다. DB 연결, 파라미터 전달, 트랜잭션 처리는 호출하는 DAG에서 담당합니다.
 
 ## 실행 환경과 설정
 

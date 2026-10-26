@@ -1,3 +1,5 @@
+from custom_module.queries import boss as sql_queries
+
 import json
 import pendulum
 import os
@@ -83,12 +85,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id, name_en, name_ko, name_ja, image, normalized_name,
-                           health_total, head_hp, thorax_hp, stomach_hp,
-                           left_arm_hp, right_arm_hp, left_leg_hp, right_leg_hp
-                    from bosses
-                    """
+                    sql_queries.SELECT_BOSSES
                 )
                 db_boss_by_id = {
                     str(row[0]): (str(row[0]), *row[1:])
@@ -96,14 +93,14 @@ with DAG(
                 }
 
                 cursor.execute(
-                    "select boss_id, map_id, spawn_chance from boss_spawn"
+                    sql_queries.SELECT_BOSS_SPAWN
                 )
                 db_spawns = {
                     (str(row[0]), str(row[1])): row[2]
                     for row in cursor.fetchall()
                 }
 
-                cursor.execute("select id, name_en from maps")
+                cursor.execute(sql_queries.SELECT_MAPS)
                 map_names = {str(row[0]): row[1] for row in cursor.fetchall()}
 
         api_ids = set(api_boss_by_id)
@@ -263,45 +260,15 @@ with DAG(
         if not boss_rows:
             return
 
-        boss_sql = """
-            insert into bosses (
-                id, name_en, name_ko, name_ja, image, normalized_name,
-                health_total, head_hp, thorax_hp, stomach_hp,
-                left_arm_hp, right_arm_hp, left_leg_hp, right_leg_hp
-            )
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                name_en = EXCLUDED.name_en,
-                image = EXCLUDED.image,
-                normalized_name = EXCLUDED.normalized_name,
-                health_total = EXCLUDED.health_total,
-                head_hp = EXCLUDED.head_hp,
-                thorax_hp = EXCLUDED.thorax_hp,
-                stomach_hp = EXCLUDED.stomach_hp,
-                left_arm_hp = EXCLUDED.left_arm_hp,
-                right_arm_hp = EXCLUDED.right_arm_hp,
-                left_leg_hp = EXCLUDED.left_leg_hp,
-                right_leg_hp = EXCLUDED.right_leg_hp,
-                update_time = now()
-        """
+        boss_sql = sql_queries.BOSS_SQL
 
-        boss_item_sql = """
-            insert into boss_item (boss_id, item_id, quantity)
-            values %s
-            ON CONFLICT (boss_id, item_id) DO UPDATE
-            SET quantity = EXCLUDED.quantity
-        """
+        boss_item_sql = sql_queries.BOSS_ITEM_SQL
 
         postgres_hook = PostgresHook(postgres_conn_id)
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    truncate table
-                        boss_item
-                    restart identity cascade;
-                """
+                    sql_queries.TRUNCATE_BOSS_ITEM
                 )
 
                 execute_values(
@@ -351,23 +318,14 @@ with DAG(
             for (boss_id, map_id), spawn_chance in dedup_map.items()
         ]
 
-        sql = """
-            insert into boss_spawn (boss_id, map_id, spawn_chance)
-            values %s
-            ON CONFLICT (boss_id, map_id) DO UPDATE
-            SET spawn_chance = EXCLUDED.spawn_chance
-        """
+        sql = sql_queries.INSERT_BOSS_SPAWN
 
         postgres_hook = PostgresHook(postgres_conn_id)
 
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    truncate table
-                        boss_spawn
-                    restart identity cascade;
-                    """
+                    sql_queries.TRUNCATE_BOSS_SPAWN
                 )
 
                 execute_values(

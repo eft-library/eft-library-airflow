@@ -1,3 +1,5 @@
+from custom_module.queries import story as sql_queries
+
 import json
 import os
 import time
@@ -63,11 +65,7 @@ def _fetch_targets(postgres_conn_id):
     with closing(postgres_hook.get_conn()) as conn:
         with closing(conn.cursor()) as cursor:
             cursor.execute(
-                """
-                select id
-                from story
-                order by sort_order, title_en, id;
-                """
+                sql_queries.SELECT_STORY
             )
             stories = [row[0] for row in cursor.fetchall()]
 

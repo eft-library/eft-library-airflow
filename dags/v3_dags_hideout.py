@@ -1,3 +1,5 @@
+from custom_module.queries import hideout as sql_queries
+
 import json
 import pendulum
 import os
@@ -131,7 +133,7 @@ with DAG(
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    "select id, normalized_name, name_en, name_ko, name_ja from hideout_master"
+                    sql_queries.SELECT_HIDEOUT_MASTER
                 )
                 db_master = {
                     str(row[0]): (str(row[0]), *row[1:])
@@ -139,55 +141,14 @@ with DAG(
                 }
 
                 section_queries = {
-                    "레벨": """
-                        select hl.id, hl.master_id,
-                               hl.master_id, hl.hideout_level, hl.construction_time
-                        from hideout_levels hl
-                    """,
-                    "스킬 요구조건": """
-                        select r.id, hl.master_id,
-                               r.hideout_level_id, r.require_level, r.name_en
-                        from hideout_skill_require r
-                        join hideout_levels hl on hl.id = r.hideout_level_id
-                    """,
-                    "상인 요구조건": """
-                        select r.id, hl.master_id,
-                               r.hideout_level_id, r.trader_id, r.trader_level
-                        from hideout_trader_require r
-                        join hideout_levels hl on hl.id = r.hideout_level_id
-                    """,
-                    "선행 시설": """
-                        select r.id, hl.master_id,
-                               r.hideout_level_id, r.require_master_id, r.station_level
-                        from hideout_station_require r
-                        join hideout_levels hl on hl.id = r.hideout_level_id
-                    """,
-                    "필요 아이템": """
-                        select r.id, hl.master_id,
-                               r.hideout_level_id, r.item_id, r.quantity, r.in_raid
-                        from hideout_item_require r
-                        join hideout_levels hl on hl.id = r.hideout_level_id
-                    """,
-                    "제작": """
-                        select c.id, hl.master_id,
-                               c.hideout_level_id, c.reward_item_id, c.duration, c.reward_quantity
-                        from hideout_crafts c
-                        join hideout_levels hl on hl.id = c.hideout_level_id
-                    """,
-                    "제작 재료": """
-                        select r.id, hl.master_id,
-                               r.craft_id, r.item_id, r.quantity
-                        from hideout_craft_require_items r
-                        join hideout_crafts c on c.id = r.craft_id
-                        join hideout_levels hl on hl.id = c.hideout_level_id
-                    """,
-                    "보너스": """
-                        select b.id, hl.master_id,
-                               b.hideout_level_id, b.bonus_type, b.name_en,
-                               b.skill_name_en, b.bonus_value
-                        from hideout_bonus b
-                        join hideout_levels hl on hl.id = b.hideout_level_id
-                    """,
+                    "레벨": sql_queries.SELECT_HIDEOUT_LEVELS,
+                    "스킬 요구조건": sql_queries.SELECT_HIDEOUT_SKILL_REQUIRE,
+                    "상인 요구조건": sql_queries.SELECT_HIDEOUT_TRADER_REQUIRE,
+                    "선행 시설": sql_queries.SELECT_HIDEOUT_STATION_REQUIRE,
+                    "필요 아이템": sql_queries.SELECT_HIDEOUT_ITEM_REQUIRE,
+                    "제작": sql_queries.SELECT_HIDEOUT_CRAFTS,
+                    "제작 재료": sql_queries.SELECT_HIDEOUT_CRAFT_REQUIRE_ITEMS,
+                    "보너스": sql_queries.SELECT_HIDEOUT_BONUS,
                 }
                 for section, query in section_queries.items():
                     cursor.execute(query)
@@ -196,9 +157,9 @@ with DAG(
                         for row in cursor.fetchall()
                     }
 
-                cursor.execute("select id, name_en from items")
+                cursor.execute(sql_queries.SELECT_ITEMS)
                 item_names = {str(row[0]): row[1] for row in cursor.fetchall()}
-                cursor.execute("select id, name_en from traders")
+                cursor.execute(sql_queries.SELECT_TRADERS)
                 trader_names = {str(row[0]): row[1] for row in cursor.fetchall()}
 
         api_ids = set(api_master)
@@ -418,142 +379,29 @@ with DAG(
         if not master_rows:
             return
 
-        master_sql = """
-            insert into hideout_master (
-                id,
-                normalized_name,
-                name_en,
-                name_ko,
-                name_ja
-            )
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                normalized_name = EXCLUDED.normalized_name,
-                name_en = EXCLUDED.name_en
-        """
+        master_sql = sql_queries.MASTER_SQL
 
-        level_sql = """
-            insert into hideout_levels (id, master_id, hideout_level, construction_time)
-            VALUES %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                master_id = EXCLUDED.master_id,
-                hideout_level = EXCLUDED.hideout_level,
-                construction_time = EXCLUDED.construction_time
-        """
+        level_sql = sql_queries.LEVEL_SQL
 
-        skill_require_sql = """
-            insert into hideout_skill_require (
-                id,
-                hideout_level_id,
-                require_level,
-                name_en,
-                name_ko,
-                name_ja
-            )
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                require_level = EXCLUDED.require_level,
-                name_en = EXCLUDED.name_en
-        """
+        skill_require_sql = sql_queries.SKILL_REQUIRE_SQL
 
-        trader_require_sql = """
-            insert into hideout_trader_require (id, hideout_level_id, trader_id, trader_level)
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                trader_id = EXCLUDED.trader_id,
-                trader_level = EXCLUDED.trader_level
-        """
+        trader_require_sql = sql_queries.TRADER_REQUIRE_SQL
 
-        station_require_sql = """
-            insert into hideout_station_require (id, hideout_level_id, require_master_id, station_level)
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                require_master_id = EXCLUDED.require_master_id,
-                station_level = EXCLUDED.station_level
-        """
+        station_require_sql = sql_queries.STATION_REQUIRE_SQL
 
-        item_require_sql = """
-            insert into hideout_item_require (id, hideout_level_id, item_id, quantity, in_raid)
-            values %s
-            ON CONFLICT (id) DO UPDATE
-            SET
-                hideout_level_id = EXCLUDED.hideout_level_id,
-                item_id = EXCLUDED.item_id,
-                quantity = EXCLUDED.quantity,
-                in_raid = EXCLUDED.in_raid
-        """
+        item_require_sql = sql_queries.ITEM_REQUIRE_SQL
 
-        craft_sql = """
-            insert into hideout_crafts (
-                id,
-                hideout_level_id,
-                reward_item_id,
-                duration,
-                reward_quantity
-            )
-            values %s
-            on conflict (id) do update
-            set
-                hideout_level_id = excluded.hideout_level_id,
-                reward_item_id = excluded.reward_item_id,
-                duration = excluded.duration,
-                reward_quantity = excluded.reward_quantity
-        """
+        craft_sql = sql_queries.CRAFT_SQL
 
-        craft_require_item_sql = """
-            insert into hideout_craft_require_items (
-                id,
-                craft_id,
-                item_id,
-                quantity
-            )
-            values %s
-            on conflict (id) do update
-            set
-                craft_id = excluded.craft_id,
-                item_id = excluded.item_id,
-                quantity = excluded.quantity
-        """
+        craft_require_item_sql = sql_queries.CRAFT_REQUIRE_ITEM_SQL
 
-        bonus_sql = """
-            insert into hideout_bonus (
-                id,
-                hideout_level_id,
-                bonus_type,
-                name_en,
-                name_ko,
-                name_ja,
-                skill_name_en,
-                skill_name_ko,
-                skill_name_ja,
-                bonus_value
-            )
-            values %s
-            on conflict (id) do update
-            set
-                hideout_level_id = excluded.hideout_level_id,
-                bonus_type = excluded.bonus_type,
-                name_en = excluded.name_en,
-                skill_name_en = excluded.skill_name_en,
-                bonus_value = excluded.bonus_value
-        """
+        bonus_sql = sql_queries.BONUS_SQL
 
         postgres_hook = PostgresHook(postgres_conn_id)
         with closing(postgres_hook.get_conn()) as conn:
             with closing(conn.cursor()) as cursor:
                 cursor.execute(
-                    """
-                    select id, name_ko, name_ja
-                    from hideout_skill_require
-                    """
+                    sql_queries.SELECT_SKILL_REQUIRE_TRANSLATIONS
                 )
                 existing_skill_names = {
                     row_id: (name_ko, name_ja)
@@ -572,10 +420,7 @@ with DAG(
                 ]
 
                 cursor.execute(
-                    """
-                    select id, name_ko, name_ja, skill_name_ko, skill_name_ja
-                    from hideout_bonus
-                    """
+                    sql_queries.SELECT_BONUS_TRANSLATIONS
                 )
                 existing_bonus_names = {
                     row_id: (name_ko, name_ja, skill_name_ko, skill_name_ja)
@@ -621,18 +466,7 @@ with DAG(
                 ]
 
                 cursor.execute(
-                    """
-                    truncate table
-                        hideout_levels,
-                        hideout_skill_require,
-                        hideout_trader_require,
-                        hideout_station_require,
-                        hideout_item_require,
-                        hideout_crafts,
-                        hideout_craft_require_items,
-                        hideout_bonus
-                    restart identity cascade;
-                """
+                    sql_queries.TRUNCATE_HIDEOUT_LEVELS
                 )
 
                 execute_values(
