@@ -12,10 +12,10 @@ from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.tarkov_json_api import get_quest_items
-from custom_module.v3.quest_item_task_func import (
+from custom_module.quest_item_task_func import (
     v3_quest_item_process,
 )
-from custom_module.v3.item_task_func import assign_unique_normalized_names
+from custom_module.item_task_func import assign_unique_normalized_names
 
 default_args = {
     "owner": "airflow",

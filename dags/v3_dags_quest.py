@@ -18,7 +18,7 @@ from airflow.task.trigger_rule import TriggerRule
 from psycopg2.extras import execute_values
 
 from custom_module.tarkov_json_api import get_tasks
-from custom_module.v3.quest_task_func import (
+from custom_module.quest_task_func import (
     v3_quest_process,
     v3_quest_objectives_process,
     v3_quest_objective_items_process,

@@ -15,7 +15,7 @@ from psycopg2.extras import execute_values
 
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from custom_module.tarkov_json_api import get_item_prices, get_price_season
-from custom_module.v3.item_price_task_func import (
+from custom_module.item_price_task_func import (
     v3_item_price_row,
     v3_item_trader_price_rows,
     v3_item_price_history_rows,

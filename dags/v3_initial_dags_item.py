@@ -12,7 +12,7 @@ from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.tarkov_json_api import get_items
-from custom_module.v3.item_task_func import (
+from custom_module.item_task_func import (
     v3_item_row_process,
     assign_unique_normalized_names,
     v3_item_penalties_row,

@@ -7,7 +7,7 @@ from contextlib import closing
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'plugins'))
 from custom_module import tarkov_json_api as api
-from custom_module.v3.item_price_task_func import (
+from custom_module.item_price_task_func import (
     v3_item_price_row, v3_item_trader_price_rows, v3_item_price_history_rows,
 )
 

@@ -12,7 +12,7 @@ from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.tarkov_json_api import get_traders
-from custom_module.v3.trader_task_func import (
+from custom_module.trader_task_func import (
     v3_trader_process,
     v3_trader_barter_process,
 )

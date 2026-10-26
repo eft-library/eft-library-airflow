@@ -16,7 +16,7 @@ from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.tarkov_json_api import get_bosses, get_boss_spawn_maps
-from custom_module.v3.boss_task_func import (
+from custom_module.boss_task_func import (
     v3_boss_process,
     v3_boss_item_process,
     v3_boss_spawn_process,

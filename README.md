@@ -75,7 +75,7 @@ flowchart LR
 │   │   ├── static_api_client.py # 화면용 JSON 생성 시 API 요청 간격·재시도 처리
 │   │   ├── data_dump_func.py    # 백업 대상 목록과 셸 명령 생성
 │   │   ├── dag_failure_alert.py # DAG 실패 감시와 메일 알림
-│   │   └── v3/                 # API 응답을 DB 저장 형태로 정리하는 함수
+│   │   └── *_task_func.py       # API 응답을 DB 저장 형태로 정리하는 함수
 │   └── script/                 # 서비스 상태 확인용 셸 스크립트
 ├── tests/                      # 회귀 테스트
 └── airflow.md                  # 과거 Airflow 설치 기록

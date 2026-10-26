@@ -12,7 +12,7 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 
 from custom_module.tarkov_json_api import get_live_map_tasks
-from custom_module.v3.live_map_point_task_func import (
+from custom_module.live_map_point_task_func import (
     build_live_map_point_rows,
     normalize_map_name,
 )

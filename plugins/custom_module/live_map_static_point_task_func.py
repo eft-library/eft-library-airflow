@@ -3,7 +3,7 @@ import re
 
 from psycopg2.extras import Json
 
-from custom_module.v3.live_map_point_task_func import match_floor
+from custom_module.live_map_point_task_func import match_floor
 
 
 def normalize_map_name(value):

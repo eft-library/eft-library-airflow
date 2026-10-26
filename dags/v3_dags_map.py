@@ -15,7 +15,7 @@ from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.tarkov_json_api import get_maps
-from custom_module.v3.map_task_func import v3_map_process
+from custom_module.map_task_func import v3_map_process
 
 default_args = {
     "owner": "airflow",

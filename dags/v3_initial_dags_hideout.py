@@ -12,7 +12,7 @@ from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
 from custom_module.tarkov_json_api import get_hideout
-from custom_module.v3.hideout_task_func import (
+from custom_module.hideout_task_func import (
     v3_hideout_master_process,
     v3_hideout_level_process,
     v3_hideout_skill_require_process,
