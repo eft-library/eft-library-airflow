@@ -3,12 +3,12 @@ from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failur
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import BranchPythonOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.amazon.aws.transfers.local_to_s3 import LocalFilesystemToS3Operator
 import datetime
 import pendulum
 from custom_module.data_dump_func import (
     dump_script,
     remove_old_file_script,
-    get_today,
     compress_backup_script,
 )
 
@@ -21,7 +21,7 @@ def choose_branch(**kwargs):
 
 
 
-today = get_today()
+today = "{{ dag_run.start_date.in_timezone('Asia/Seoul').strftime('%Y_%m_%d') }}"
 backup_file_path = f"/opt/airflow/latest_data/{today}_backup.sql"
 compressed_file_path = f"{backup_file_path}.gz"
 
@@ -37,7 +37,7 @@ with DAG(
 
     data_dump_task = BashOperator(
         task_id="data_dump",
-        bash_command=dump_script(),
+        bash_command=dump_script(backup_file_path),
         do_xcom_push=True,
     )
 
@@ -51,6 +51,17 @@ with DAG(
         bash_command=compress_backup_script(backup_file_path),
     )
 
+    upload_to_rustfs = LocalFilesystemToS3Operator(
+        task_id="upload_to_rustfs",
+        filename=compressed_file_path,
+        dest_key=f"{today}_backup.sql.gz",
+        dest_bucket="postgresql",
+        aws_conn_id="rustfs_storage",
+        replace=True,
+        retries=2,
+        retry_delay=datetime.timedelta(minutes=1),
+    )
+
     success_task = BashOperator(
         task_id="success_task",
         bash_command=remove_old_file_script(),
@@ -60,7 +71,7 @@ with DAG(
 
     # DAG 흐름 정의
     data_dump_task >> branch_task
-    branch_task >> compress_backup >> success_task
+    branch_task >> compress_backup >> upload_to_rustfs >> success_task
     branch_task >> failure_task
 
 add_failure_watcher(dag)

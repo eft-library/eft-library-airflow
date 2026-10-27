@@ -160,11 +160,12 @@ def get_today():
     return f"{year}_{month}_{day}"
 
 
-def dump_script():
+def dump_script(file_path: str = None):
     """
     postgresql dump 뜨고 결과 넘기기
     """
-    today = get_today()
+    if file_path is None:
+        file_path = f"/opt/airflow/latest_data/{get_today()}_backup.sql"
     table_args = " \\\n        ".join(
         f"-t public.{table_name}" for table_name in DATA_DUMP_TABLES
     )
@@ -174,7 +175,7 @@ def dump_script():
         --inserts \\
         {table_args} \\
         platform_db \\
-        > /opt/airflow/latest_data/{today}_backup.sql 2>&1
+        > "{file_path}"
 
         exit_code=$?
         echo $exit_code
@@ -194,4 +195,4 @@ def compress_backup_script(file_path: str):
     """
     백업된 .sql 파일을 gzip으로 압축
     """
-    return f"gzip -f {file_path}"
+    return f'gzip -f "{file_path}"'

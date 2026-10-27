@@ -94,6 +94,7 @@ SQL은 `plugins/custom_module/queries/`에서 아이템·퀘스트·가격 등 �
 | -------------------------------- | ------------------------------------------------------ |
 | Airflow Connection `platform_db` | 데이터 수집·조회 작업에서 사용하는 PostgreSQL 연결     |
 | Airflow Connection `smtp_gmail`  | 실패·서비스 이상·데이터 변경 알림에 사용하는 메일 연결 |
+| Airflow Connection `rustfs_storage` | 압축한 DB 백업을 RustFS의 `postgresql` 버킷에 업로드 |
 | `/opt/airflow/tmp`               | 수집한 응답을 잠시 보관하는 경로                       |
 | `/opt/airflow/next-public`       | 화면용 JSON 출력 경로                                  |
 | `/opt/airflow/latest_data`       | DB 백업과 서비스 상태 확인 로그 저장 경로              |
@@ -120,7 +121,11 @@ DB 백업은 별도로 `pg_dump` 명령을 사용하므로 [백업 모듈](plugi
 
 채팅 사용자 식별자는 차단·제재·수신 설정에서 참조하므로 함께 백업합니다. 메시지 신고는 제외된 채팅 메시지를 참조하므로 함께 제외합니다.
 
-백업이 성공하면 SQL 파일을 gzip으로 압축하고, 저장 폴더에서 `find -mtime +2` 조건에 해당하는 오래된 파일을 삭제합니다. **전체 DB 백업은 아니므로 제외한 데이터는 이 백업으로 복구할 수 없습니다.**
+백업이 성공하면 SQL 파일을 gzip으로 압축하고, `rustfs_storage` 연결로 `postgresql` 버킷의 루트에 `YYYY_MM_DD_backup.sql.gz` 이름으로 업로드합니다. 날짜는 DAG 실행 시작 시각(Asia/Seoul)을 기준으로 하며, 같은 날짜의 재업로드는 기존 객체를 덮어씁니다. 업로드는 실패 시 최대 2회 재시도하고, 성공한 뒤에만 저장 폴더에서 `find -mtime +2` 조건에 해당하는 오래된 파일을 삭제합니다. 버킷에 올린 백업은 이 작업에서 삭제하지 않습니다.
+
+실행 환경에 `apache-airflow-providers-amazon`이 필요합니다. `rustfs_storage`는 Amazon Web Services 유형으로 만들고 Login/Password에 RustFS Access Key/Secret Key를 설정합니다. Extra에는 `endpoint_url`을 `http://172.30.1.100:9000`으로 지정하고, 필요하면 `region_name`과 `config_kwargs.s3.addressing_style`을 각각 `us-east-1`, `path`로 설정합니다. 해당 키에는 비공개 `postgresql` 버킷의 객체 조회 및 업로드 권한이 필요합니다. 압축 작업과 업로드 작업을 실행하는 워커는 같은 `/opt/airflow/latest_data` 경로를 공유해야 합니다.
+
+**전체 DB 백업은 아니므로 제외한 데이터는 이 백업으로 복구할 수 없습니다.**
 
 ### 작업이 실패하면 메일로 알립니다
 
