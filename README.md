@@ -12,7 +12,7 @@
 
 아래 그림은 타르코프 도서관의 전체 구성입니다. 이 저장소는 그중 데이터 수집과 정기 작업을 담당하는 Airflow에 해당합니다.
 
-<img width="1141" height="955" alt="타르코프 도서관 전체 서비스 구성도" src="https://github.com/user-attachments/assets/e7ed7864-3732-4825-b836-5b6cf2f5ed55" />
+<img width="1170" height="960" alt="261027_arch" src="https://github.com/user-attachments/assets/49d7ab62-f53b-4898-b4fc-8c180b9b3689" />
 
 주요 데이터 출처는 Tarkov Dev의 JSON API(`https://json.tarkov.dev`)입니다. 수집한 데이터를 바탕으로 서비스에서 필요한 설명이나 번역을 보완합니다.
 
@@ -90,14 +90,14 @@ SQL은 `plugins/custom_module/queries/`에서 아이템·퀘스트·가격 등 �
 
 이 저장소는 운영 중인 Airflow에 DAG와 공통 모듈을 배치하는 구조입니다. 로컬에서 실행하려면 Airflow와 관련 provider 패키지, DB 연결, 파일 저장 경로를 별도로 준비해야 합니다.
 
-| 설정                             | 용도                                                   |
-| -------------------------------- | ------------------------------------------------------ |
-| Airflow Connection `platform_db` | 데이터 수집·조회 작업에서 사용하는 PostgreSQL 연결     |
-| Airflow Connection `smtp_gmail`  | 실패·서비스 이상·데이터 변경 알림에 사용하는 메일 연결 |
-| Airflow Connection `rustfs_storage` | 압축한 DB 백업을 RustFS의 `postgresql` 버킷에 업로드 |
-| `/opt/airflow/tmp`               | 수집한 응답을 잠시 보관하는 경로                       |
-| `/opt/airflow/next-public`       | 화면용 JSON 출력 경로                                  |
-| `/opt/airflow/latest_data`       | DB 백업과 서비스 상태 확인 로그 저장 경로              |
+| 설정                                | 용도                                                   |
+| ----------------------------------- | ------------------------------------------------------ |
+| Airflow Connection `platform_db`    | 데이터 수집·조회 작업에서 사용하는 PostgreSQL 연결     |
+| Airflow Connection `smtp_gmail`     | 실패·서비스 이상·데이터 변경 알림에 사용하는 메일 연결 |
+| Airflow Connection `rustfs_storage` | 압축한 DB 백업을 RustFS의 `postgresql` 버킷에 업로드   |
+| `/opt/airflow/tmp`                  | 수집한 응답을 잠시 보관하는 경로                       |
+| `/opt/airflow/next-public`          | 화면용 JSON 출력 경로                                  |
+| `/opt/airflow/latest_data`          | DB 백업과 서비스 상태 확인 로그 저장 경로              |
 
 DB 백업은 별도로 `pg_dump` 명령을 사용하므로 [백업 모듈](plugins/custom_module/data_dump_func.py)의 접속 대상과 실행 계정의 PostgreSQL 인증 설정도 확인해야 합니다. 저장 경로에는 작업을 실행하는 계정의 쓰기 권한이 필요합니다.
 
