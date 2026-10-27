@@ -38,8 +38,8 @@ check "FastAPI" \
 check "NextJS" \
   "curl -sf http://172.30.1.100:4002/api/health"
 
-check "MinIO" \
-  "curl -sf http://172.30.1.100:9000/minio/health/live"
+check "RustFS" \
+  "curl -sf http://172.30.1.100:9000/health/live"
 
 # =========================
 # TCP 서비스
