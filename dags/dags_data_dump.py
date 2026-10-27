@@ -21,7 +21,7 @@ def choose_branch(**kwargs):
 
 
 
-today = "{{ dag_run.start_date.in_timezone('Asia/Seoul').strftime('%Y_%m_%d') }}"
+today = "{{ dag_run.start_date.astimezone(dag.timezone).strftime('%Y_%m_%d') }}"
 backup_file_path = f"/opt/airflow/latest_data/{today}_backup.sql"
 compressed_file_path = f"{backup_file_path}.gz"
 
