@@ -18,7 +18,7 @@ class AIOpsAPIError(RuntimeError):
 class AIOpsClient:
     def __init__(self, base_url, token, worker_timeout=900):
         if not token:
-            raise ValueError("AIOps Connection Password에 API 키를 설정하세요.")
+            raise ValueError("Airflow Variable AIOPS_API_TOKEN에 API 키를 설정하세요.")
         self.base_url = base_url.rstrip("/")
         self.headers = {"X-AIOps-Key": token}
         self.worker_timeout = worker_timeout
@@ -63,12 +63,13 @@ class AIOpsClient:
 
 
 def get_client():
-    from airflow.sdk import BaseHook
+    from airflow.sdk import BaseHook, Variable
 
     connection = BaseHook.get_connection("aiops")
     extra = connection.extra_dejson
     base_url = extra.get("base_url", "http://172.30.1.100:9023")
-    return AIOpsClient(base_url, connection.password, float(extra.get("worker_timeout", 900)))
+    token = Variable.get("AIOPS_API_TOKEN")
+    return AIOpsClient(base_url, token, float(extra.get("worker_timeout", 900)))
 
 
 def _call(method, path, body=None):

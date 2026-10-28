@@ -152,9 +152,10 @@ Airflow UI에서 다음 Connection을 먼저 생성합니다.
 | --- | --- |
 | Connection ID | `aiops` |
 | Connection Type | `HTTP` |
-| Password | 운영 AIOps의 `AIOPS_API_TOKEN` 값 |
 | Extra | `{"base_url":"http://172.30.1.100:9023","worker_timeout":900}` |
 
+Airflow Variable `AIOPS_API_TOKEN`에 운영 AIOps의 토큰 값을 저장합니다.
+실행 시 Variable에서 읽어 모든 요청의 `X-AIOps-Key` 헤더로 보냅니다. Connection Password는 사용하지 않습니다.
 주소는 Extra의 `base_url`을 사용하며, 생략하면 위 주소를 사용합니다.
 키는 코드·Git·실행 설정 JSON에 넣지 않습니다. 추가 HTTP provider 없이 기존 `requests`로 호출합니다.
 DAG 배포 전 Airflow 태스크 실행 컨테이너에서 해당 주소의 `/v1/status`에 인증된 요청이 가능한지 확인합니다.
