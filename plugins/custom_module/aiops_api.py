@@ -1,6 +1,8 @@
 """AIOps HTTP orchestration. Analysis retries remain in the server's DB queue."""
 
+import json
 import logging
+import time
 
 import requests
 
@@ -13,6 +15,10 @@ class AIOpsAPIError(RuntimeError):
         self.status_code = status_code
         # Do not include request headers or potentially sensitive response bodies.
         super().__init__(f"AIOps API HTTP {status_code}")
+
+
+class AIOpsStreamInterrupted(RuntimeError):
+    """The stream ended without a trustworthy final event; recheck the DB job."""
 
 
 class AIOpsClient:
@@ -32,9 +38,67 @@ class AIOpsClient:
             raise AIOpsAPIError(response.status_code)
         return response.json()
 
+    def run_worker_stream(self):
+        started = time.monotonic()
+        final_job = None
+        stream_error = False
+        with requests.post(
+            self.base_url + "/v1/worker/run-once/stream",
+            headers=self.headers, stream=True, timeout=(10, 45),
+        ) as response:
+            if not response.ok:
+                raise AIOpsAPIError(response.status_code)
+            if response.headers.get("Content-Type", "").split(";", 1)[0].strip() != "text/event-stream":
+                raise AIOpsStreamInterrupted("Unexpected Worker stream content type")
+            response.encoding = "utf-8"
+            for line in response.iter_lines(chunk_size=1, decode_unicode=True):
+                if time.monotonic() - started > self.worker_timeout:
+                    raise AIOpsStreamInterrupted("Worker stream exceeded configured time limit")
+                if not line or not line.startswith("data:"):
+                    continue
+                try:
+                    event = json.loads(line[5:].lstrip())
+                except (ValueError, TypeError):
+                    raise AIOpsStreamInterrupted("Invalid Worker stream JSON") from None
+                if not isinstance(event, dict):
+                    raise AIOpsStreamInterrupted("Invalid Worker stream event")
+                name = event.get("event")
+                job_id = event.get("job_id")
+                if name == "codex.message":
+                    log.info("Codex [job=%s]: %s", job_id, event.get("message"))
+                elif name == "worker.report":
+                    log.info("AIOps report [job=%s severity=%s]: %s",
+                             job_id, event.get("severity"), event.get("summary"))
+                elif name == "codex.turn.completed":
+                    log.info("Codex token usage [job=%s]: %s", job_id, event.get("usage", {}))
+                elif name == "heartbeat":
+                    log.info("AIOps heartbeat: job=%s elapsed=%ss", job_id, event.get("elapsed_seconds"))
+                elif name == "worker.finished":
+                    final_job = event.get("job")
+                    if not isinstance(final_job, dict) or not final_job.get("status"):
+                        raise AIOpsStreamInterrupted("Invalid Worker final job")
+                    log.info("AIOps Worker finished: job=%s status=%s",
+                             final_job.get("job_id"), final_job["status"])
+                    if event.get("dropped_events"):
+                        log.warning("AIOps stream dropped %s progress events", event["dropped_events"])
+                elif name == "error":
+                    log.warning("AIOps stream error: %s", event.get("error"))
+                    stream_error = True
+                elif name in {
+                    "worker.started", "worker.claimed", "codex.thread.started",
+                    "codex.turn.started", "codex.activity", "codex.report_candidate",
+                    "codex.error", "worker.validating",
+                }:
+                    # Log only documented public fields, never raw events or HTTP headers.
+                    log.info("AIOps event=%s job=%s", name, job_id)
+        if final_job is None or stream_error:
+            raise AIOpsStreamInterrupted("Worker stream ended without confirmed final status")
+        return final_job
+
     def completed(self, job_id):
         job = self.request("GET", f"/v1/jobs/{job_id}")
         state = job["status"]
+        log.info("AIOps target job=%s status=%s", job_id, state)
         if state == "COMPLETED":
             return True
         if state in {"FAILED", "TIMEOUT", "CANCELLED"}:
@@ -50,9 +114,10 @@ class AIOpsClient:
                 return True
             # Also call for RUNNING: after an API restart the Worker recovers stale jobs.
             # A live Worker is protected by the server's DB lock (HTTP 409).
-            self.request("POST", "/v1/worker/run-once", worker=True)
+            self.run_worker_stream()
             return self.completed(job_id)
-        except (requests.ConnectionError, requests.Timeout):
+        except (requests.ConnectionError, requests.Timeout,
+                requests.exceptions.ChunkedEncodingError, AIOpsStreamInterrupted):
             log.warning("AIOps connection interrupted; check the same job on the next poke")
             return False
         except AIOpsAPIError as exc:

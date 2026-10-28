@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -6,7 +7,7 @@ from unittest.mock import Mock, patch
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins"))
-from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, submit_daily, submit_report, report_date, daily_dependency_date
+from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, AIOpsStreamInterrupted, submit_daily, submit_report, report_date, daily_dependency_date
 
 
 class AIOpsTests(unittest.TestCase):
@@ -66,26 +67,93 @@ class AIOpsTests(unittest.TestCase):
             self.assertEqual(request.call_args.kwargs["headers"], {"X-AIOps-Key": "test-key"})
             self.assertEqual(request.call_args.kwargs["timeout"], (10, 900))
 
+    def stream_response(self, events):
+        response = Mock(ok=True, headers={"Content-Type": "text/event-stream; charset=utf-8"})
+        response.iter_lines.return_value = iter(events)
+        context = Mock()
+        context.__enter__ = Mock(return_value=response)
+        context.__exit__ = Mock(return_value=False)
+        return context, response
+
+    def test_stream_logs_messages_before_receiving_final_event(self):
+        events = [
+            {"event": "codex.message", "message": "분석 진행 중", "job_id": "target"},
+            {"event": "codex.turn.completed", "usage": {"input_tokens": 100}},
+            {"event": "heartbeat", "elapsed_seconds": 10},
+            {"event": "worker.report", "severity": "low", "summary": "분석 완료"},
+            {"event": "worker.finished", "job": {"job_id": "target", "status": "COMPLETED"}, "dropped_events": 2},
+        ]
+        context, response = self.stream_response([])
+        with patch("custom_module.aiops_api.requests.post", return_value=context) as post, patch("custom_module.aiops_api.log") as logger:
+            def lines():
+                yield ": keepalive"
+                yield "event: codex.message"
+                yield ""
+                for index, event in enumerate(events):
+                    if index == 1:
+                        self.assertIn("분석", logger.info.call_args.args[-1])
+                    yield "data: " + json.dumps(event, ensure_ascii=False)
+            response.iter_lines.return_value = lines()
+            self.assertEqual(self.client.run_worker_stream()["status"], "COMPLETED")
+            self.assertTrue(post.call_args.kwargs["stream"])
+            self.assertEqual(post.call_args.kwargs["timeout"], (10, 45))
+            self.assertEqual(post.call_args.kwargs["headers"], {"X-AIOps-Key": "test-key"})
+            response.iter_lines.assert_called_once_with(chunk_size=1, decode_unicode=True)
+            self.assertEqual(response.encoding, "utf-8")
+            logger.warning.assert_called_once()
+            context.__exit__.assert_called_once()
+
+    def test_truncated_malformed_and_error_streams_recheck_job_later(self):
+        for lines in [[], ["data: invalid"], ["data: []"],
+                      ['data: {"event":"error","error":"database"}'],
+                      ['data: {"event":"worker.finished","job":null}']]:
+            context, response = self.stream_response(lines)
+            with patch("custom_module.aiops_api.requests.post", return_value=context):
+                self.client.request = Mock(return_value={"status": "PENDING"})
+                self.assertFalse(self.client.advance("target"))
+                self.client.request.assert_called_once_with("GET", "/v1/jobs/target")
+                context.__exit__.assert_called_once()
+
+    def test_stream_http_errors_use_existing_retry_policy(self):
+        for status, retry in [(409, True), (503, True), (401, False), (404, False)]:
+            context, response = self.stream_response([])
+            response.ok = False
+            response.status_code = status
+            self.client.request = Mock(return_value={"status": "PENDING"})
+            with patch("custom_module.aiops_api.requests.post", return_value=context):
+                if retry:
+                    self.assertFalse(self.client.advance("target"))
+                else:
+                    with self.assertRaises(AIOpsAPIError):
+                        self.client.advance("target")
+
+    def test_stream_time_limit_is_enforced_and_connection_closed(self):
+        context, response = self.stream_response(['data: {"event":"heartbeat"}'])
+        with patch("custom_module.aiops_api.requests.post", return_value=context), patch("custom_module.aiops_api.time.monotonic", side_effect=[0, 901]):
+            with self.assertRaises(AIOpsStreamInterrupted):
+                self.client.run_worker_stream()
+            context.__exit__.assert_called_once()
+
     def test_completed_does_not_run_worker(self):
         self.client.request = Mock(return_value={"status": "COMPLETED"})
         self.assertTrue(self.client.advance("target"))
         self.client.request.assert_called_once_with("GET", "/v1/jobs/target")
 
     def test_other_job_completion_is_not_target_success(self):
-        self.client.request = Mock(side_effect=[
-            {"status": "PENDING"}, {"status": "COMPLETED", "job_id": "other"},
-            {"status": "PENDING"},
-        ])
+        self.client.run_worker_stream = Mock(return_value={"status": "COMPLETED", "job_id": "other"})
+        self.client.request = Mock(side_effect=[{"status": "PENDING"}, {"status": "PENDING"}])
         self.assertFalse(self.client.advance("target"))
         self.assertEqual(self.client.request.call_args.args, ("GET", "/v1/jobs/target"))
 
     def test_running_job_can_trigger_server_recovery(self):
-        self.client.request = Mock(side_effect=[{"status": "RUNNING"}, {}, {"status": "COMPLETED"}])
+        self.client.run_worker_stream = Mock(return_value={"status": "COMPLETED"})
+        self.client.request = Mock(side_effect=[{"status": "RUNNING"}, {"status": "COMPLETED"}])
         self.assertTrue(self.client.advance("target"))
 
     def test_interruption_and_busy_retry_same_job(self):
         for error in [requests.Timeout(), requests.ConnectionError(), AIOpsAPIError(409), AIOpsAPIError(503)]:
-            self.client.request = Mock(side_effect=[{"status": "PENDING"}, error])
+            self.client.request = Mock(return_value={"status": "PENDING"})
+            self.client.run_worker_stream = Mock(side_effect=error)
             self.assertFalse(self.client.advance("target"))
             self.client.request = Mock(return_value={"status": "COMPLETED"})
             self.assertTrue(self.client.advance("target"))
