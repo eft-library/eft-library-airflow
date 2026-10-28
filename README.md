@@ -140,6 +140,17 @@ Airflow UI에서는 해당 실행의 실패한 Task 로그부터 확인하면 �
 
 구현은 [dag_failure_alert.py](plugins/custom_module/dag_failure_alert.py)에 있습니다. UI나 CLI에서 수동으로 실패 상태를 지정하면 콜백은 실행되지 않으며, 메일 전송 자체의 오류는 DAG processor 로그에서 확인합니다.
 
+## AIOps 정기 로그 수집
+
+`dags_aiops_collect`는 **5분마다** `POST /v1/collect`에 `{}`를 보내 로그를 수집합니다.
+Connection `aiops`와 Variable `AIOPS_API_TOKEN`을 공유하며 보고서 요청이나 Worker는 호출하지 않습니다.
+`max_active_runs=1`, `catchup=False`로 실행합니다. 최종 실패 시 기존 메일 알림을 사용합니다.
+`collect` 태스크 로그에 응답의 `status`, 서비스별 `coverage`, `database_registration`을 남깁니다.
+HTTP 200의 `status=partial`은 경고로 표시하고 수집 태스크는 성공 처리합니다.
+배치 정보 등록은 AIOps 서버가 담당합니다.
+
+일일 DAG의 분석 전 수집도 유지합니다. 정기 수집은 5분마다, 일일 분석은 하루 한 번 실행됩니다.
+
 ## AIOps 일일 보고서
 
 `dags_aiops_daily`는 매일 **한국 시간 오전 1시**에 전날 보고서를 만듭니다.

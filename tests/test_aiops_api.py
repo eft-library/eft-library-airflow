@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins"))
-from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, AIOpsStreamInterrupted, submit_daily, submit_report, report_date, daily_dependency_date
+from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, AIOpsStreamInterrupted, submit_daily, submit_report, report_date, daily_dependency_date, collect
 
 
 class AIOpsTests(unittest.TestCase):
@@ -59,6 +59,18 @@ class AIOpsTests(unittest.TestCase):
         self.assertEqual(report_date("weekly", context), "2026-10-15")
         self.assertEqual(daily_dependency_date(None, "weekly", **context), pendulum.datetime(2026, 10, 18, 1, tz="Asia/Seoul"))
         self.assertEqual(daily_dependency_date(None, "monthly", **context), pendulum.datetime(2026, 10, 31, 1, tz="Asia/Seoul"))
+
+    def test_collection_logs_coverage_and_database_registration(self):
+        for status in ["completed", "partial"]:
+            result = {"status": status, "coverage": {"fastapi": {"status": "collected"}},
+                      "database_registration": {"status": "ready"}}
+            with patch("custom_module.aiops_api._call", return_value=result) as call, patch("custom_module.aiops_api.log") as logger:
+                collect()
+                call.assert_called_once_with("POST", "/v1/collect", {})
+                self.assertEqual(logger.info.call_count, 3)
+                logger.info.assert_any_call("AIOps collection coverage service=%s: %s", "fastapi", result["coverage"]["fastapi"])
+                logger.info.assert_any_call("AIOps collection database_registration=%s", result["database_registration"])
+                self.assertEqual(logger.warning.call_count, int(status == "partial"))
 
     def test_auth_and_worker_timeout(self):
         with patch("custom_module.aiops_api.requests.request") as request:

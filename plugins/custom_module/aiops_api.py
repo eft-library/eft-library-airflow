@@ -156,9 +156,12 @@ def check_status():
 
 def collect():
     result = _call("POST", "/v1/collect", {})
+    log.info("AIOps collection status=%s", result.get("status"))
+    for service, coverage in result.get("coverage", {}).items():
+        log.info("AIOps collection coverage service=%s: %s", service, coverage)
+    log.info("AIOps collection database_registration=%s", result.get("database_registration"))
     if result.get("status") == "partial":
-        # Keep coverage in the server, without dumping collected logs into Airflow.
-        log.warning("AIOps collection is partial; consult report coverage")
+        log.warning("AIOps collection is partial; consult service coverage above")
 
 
 def report_date(report_type, context):
