@@ -140,6 +140,43 @@ Airflow UI에서는 해당 실행의 실패한 Task 로그부터 확인하면 �
 
 구현은 [dag_failure_alert.py](plugins/custom_module/dag_failure_alert.py)에 있습니다. UI나 CLI에서 수동으로 실패 상태를 지정하면 콜백은 실행되지 않으며, 메일 전송 자체의 오류는 DAG processor 로그에서 확인합니다.
 
+## AIOps 일일 보고서
+
+`dags_aiops_daily`는 매일 **한국 시간 오전 1시**에 전날 보고서를 만듭니다.
+`check_status → collect → submit_report → run_until_completed` 순서로 실행하며,
+접수한 `job_id`가 `COMPLETED`일 때만 성공합니다. 기존 DAG와 같은 실패 메일을 사용합니다.
+
+Airflow UI에서 다음 Connection을 먼저 생성합니다.
+
+| 항목 | 값 |
+| --- | --- |
+| Connection ID | `aiops` |
+| Connection Type | `HTTP` |
+| Password | 운영 AIOps의 `AIOPS_API_TOKEN` 값 |
+| Extra | `{"base_url":"http://172.30.1.100:9023","worker_timeout":900}` |
+
+주소는 Extra의 `base_url`을 사용하며, 생략하면 위 주소를 사용합니다.
+키는 코드·Git·실행 설정 JSON에 넣지 않습니다. 추가 HTTP provider 없이 기존 `requests`로 호출합니다.
+DAG 배포 전 Airflow 태스크 실행 컨테이너에서 해당 주소의 `/v1/status`에 인증된 요청이 가능한지 확인합니다.
+
+수동 실행 시 `{"date":"2026-10-27"}`처럼 날짜를 지정할 수 있습니다.
+날짜를 생략한 수동 실행은 실행 시작일의 전날, 정기 실행은 데이터 구간 종료일의 전날을 사용합니다.
+재시도·태스크 재실행에도 이 기준은 유지됩니다. 미마감 기간과 데이터 없음(422)은 실패 처리합니다.
+수집이 부분 성공이면 경고를 남기고 보고서를 진행하므로 보고서의 coverage를 함께 확인해야 합니다.
+
+Worker HTTP 응답은 최대 900초를 기다립니다. 서버 분석 제한을 늘리면 `worker_timeout`과
+Sensor의 `execution_timeout`(20분)을 함께 조정합니다. Sensor는 최대 3시간 동안 60초 간격으로
+대상 작업을 조회하고 큐의 Worker 한 건을 실행합니다. 대기 사이에는 `reschedule`로 실행 슬롯을 반환합니다.
+409·일시적인 서버 오류·연결 끊김은 다음 조회에서 같은 작업을 확인합니다.
+서버의 재시도 예약은 DB 큐가 관리하며, 다른 작업을 처리했거나 `idle`을 반환해도 대상 작업 완료로 간주하지 않습니다.
+`FAILED`·`TIMEOUT`·`CANCELLED` 및 인증 오류는 실패 처리합니다.
+
+주간·월간 DAG는 아직 포함하지 않습니다. 로컬 검증 명령은 다음과 같습니다.
+
+```sh
+uv run --with requests --with pendulum python -m unittest discover -s tests -v
+```
+
 ## 개발 기록
 
 구현 과정과 시행착오는 [Airflow 개발 기록](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)에 정리하고 있습니다.
