@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins"))
-from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, submit_daily
+from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, submit_daily, submit_report, report_date, daily_dependency_date
 
 
 class AIOpsTests(unittest.TestCase):
@@ -30,6 +30,34 @@ class AIOpsTests(unittest.TestCase):
             run.conf = {"date": "2026-10-20"}
             submit_daily(**context)
             self.assertEqual(call.call_args.args[2]["date"], "2026-10-20")
+
+    def test_aggregate_periods_and_daily_dependencies(self):
+        import pendulum
+
+        for kind, boundary, target, dependency in [
+            ("weekly", "2026-11-02T01:00:00+09:00", "2026-10-26", "2026-11-01T01:00:00+09:00"),
+            ("monthly", "2026-11-01T01:00:00+09:00", "2026-10-01", "2026-10-31T01:00:00+09:00"),
+            ("monthly", "2027-01-01T01:00:00+09:00", "2026-12-01", "2026-12-31T01:00:00+09:00"),
+            ("monthly", "2028-03-01T01:00:00+09:00", "2028-02-01", "2028-02-29T01:00:00+09:00"),
+        ]:
+            with self.subTest(kind=kind, boundary=boundary):
+                run = Mock(conf={}, run_type="scheduled")
+                run.start_date = pendulum.parse(boundary).add(days=10)
+                context = {"dag_run": run, "data_interval_end": pendulum.parse(boundary)}
+                self.assertEqual(report_date(kind, context), target)
+                self.assertEqual(daily_dependency_date(None, kind, **context), pendulum.parse(dependency))
+                with patch("custom_module.aiops_api._call", return_value={"job_id": "target"}) as call:
+                    self.assertEqual(submit_report(kind, **context), "target")
+                    call.assert_called_once_with("POST", "/v1/reports", {"type": kind, "date": target})
+
+    def test_explicit_aggregate_date_controls_daily_dependency(self):
+        import pendulum
+
+        run = Mock(conf={"date": "2026-10-15"}, run_type="manual")
+        context = {"dag_run": run}
+        self.assertEqual(report_date("weekly", context), "2026-10-15")
+        self.assertEqual(daily_dependency_date(None, "weekly", **context), pendulum.datetime(2026, 10, 18, 1, tz="Asia/Seoul"))
+        self.assertEqual(daily_dependency_date(None, "monthly", **context), pendulum.datetime(2026, 10, 31, 1, tz="Asia/Seoul"))
 
     def test_auth_and_worker_timeout(self):
         with patch("custom_module.aiops_api.requests.request") as request:

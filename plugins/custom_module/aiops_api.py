@@ -96,26 +96,54 @@ def collect():
         log.warning("AIOps collection is partial; consult report coverage")
 
 
+def report_date(report_type, context):
+    """Pin the closed period to the run boundary, including delayed executions."""
+    import pendulum
+    from datetime import date
+
+    run = context["dag_run"]
+    explicit_date = (run.conf or {}).get("date")
+    if explicit_date:
+        return date.fromisoformat(explicit_date).isoformat()
+    boundary = (
+        run.start_date if run.run_type == "manual"
+        else context.get("data_interval_end") or run.start_date
+    )
+    local = pendulum.instance(boundary).in_timezone("Asia/Seoul")
+    if report_type == "weekly":
+        target = local.start_of("week").subtract(weeks=1)
+    elif report_type == "monthly":
+        target = local.start_of("month").subtract(months=1)
+    elif report_type == "daily":
+        target = local.subtract(days=1)
+    else:
+        raise ValueError(f"Unknown report type: {report_type}")
+    return target.to_date_string()
+
+
+def submit_report(report_type, **context):
+    target = report_date(report_type, context)
+    job = _call("POST", "/v1/reports", {"type": report_type, "date": target})
+    log.info("AIOps %s date=%s job_id=%s", report_type, target, job["job_id"])
+    return job["job_id"]
+
+
 def submit_daily(**context):
+    return submit_report("daily", **context)
+
+
+def daily_dependency_date(logical_date, report_type, **context):
+    """Daily logical date is one day before its 01:00 interval end."""
     import pendulum
 
-    conf = context["dag_run"].conf or {}
-    explicit_date = conf.get("date")
-    if explicit_date:
-        from datetime import date
-
-        target = date.fromisoformat(explicit_date).isoformat()
+    target = pendulum.parse(report_date(report_type, context), tz="Asia/Seoul")
+    if report_type == "weekly":
+        end = target.start_of("week").add(weeks=1)
+    elif report_type == "monthly":
+        end = target.start_of("month").add(months=1)
     else:
-        # Scheduled runs use the interval boundary; manual runs use their fixed start.
-        run = context["dag_run"]
-        boundary = (
-            run.start_date if run.run_type == "manual"
-            else context.get("data_interval_end") or run.start_date
-        )
-        target = pendulum.instance(boundary).in_timezone("Asia/Seoul").subtract(days=1).to_date_string()
-    job = _call("POST", "/v1/reports", {"type": "daily", "date": target})
-    log.info("AIOps daily date=%s job_id=%s", target, job["job_id"])
-    return job["job_id"]
+        raise ValueError(f"Unknown aggregate report type: {report_type}")
+    return end.subtract(days=1).replace(hour=1)
 
 
 def run_until_completed(**context):

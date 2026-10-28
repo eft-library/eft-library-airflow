@@ -172,7 +172,30 @@ Sensor의 `execution_timeout`(20분)을 함께 조정합니다. Sensor는 최대
 서버의 재시도 예약은 DB 큐가 관리하며, 다른 작업을 처리했거나 `idle`을 반환해도 대상 작업 완료로 간주하지 않습니다.
 `FAILED`·`TIMEOUT`·`CANCELLED` 및 인증 오류는 실패 처리합니다.
 
-주간·월간 DAG는 아직 포함하지 않습니다. 로컬 검증 명령은 다음과 같습니다.
+### 주간·월간 보고서
+
+| DAG | 한국 시간 일정 | 대상 |
+| --- | --- | --- |
+| `dags_aiops_weekly` | 월요일 오전 1시 | 지난주 월~일 일일 보고서 |
+| `dags_aiops_monthly` | 매월 1일 오전 1시 | 지난달 일일 보고서 |
+
+두 DAG는 `wait_for_daily → check_status → submit_report → run_until_completed` 순서로 실행합니다.
+마감일의 일일 분석(주간은 일요일, 월간은 말일)을 담당하는 정기 `dags_aiops_daily`의
+`run_until_completed` 성공을 최대 4시간 기다립니다. 해당 태스크가 실패하거나 건너뛰면 상위 보고서도 실패합니다.
+일일 DAG를 함께 활성화해야 하며, 수동으로 실행한 일일 DAG는 정기 실행의 대체로 인식하지 않습니다.
+
+별도 원본 수집 없이 `weekly`·`monthly` 보고서를 요청합니다. 두 작업은 서로 기다리지 않으며,
+같은 날짜에 실행되어 Worker 잠금이 충돌하면 기존 재확인 흐름으로 처리합니다.
+기간 중 다른 날짜의 보고서 누락 여부는 AIOps에서 판단하고 불완전 보고서로 표시합니다.
+모든 날짜의 완전성을 Airflow가 보장하는 것은 아닙니다.
+
+정기 실행은 데이터 구간 종료 시점을 기준으로 지난주 월요일·지난달 1일을 요청 날짜로 고정합니다.
+세 DAG에 `CronDataIntervalTimetable`을 명시하여 일일 의존 실행의 논리 날짜를 일관되게 계산합니다.
+수동 실행에서는 `{"date":"2026-10-15"}`처럼 대상 주·월에 속하는 날짜를 지정할 수 있습니다.
+이 경우에도 해당 기간 마지막 날의 정기 일일 분석 성공을 기다리므로, 과거 정기 실행이 없으면 대기 후 실패합니다.
+Connection `aiops`와 Variable `AIOPS_API_TOKEN`은 일일 DAG와 공유합니다.
+
+로컬 검증 명령은 다음과 같습니다.
 
 ```sh
 uv run --with requests --with pendulum python -m unittest discover -s tests -v

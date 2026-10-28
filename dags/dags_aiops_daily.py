@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pendulum
 from airflow import DAG
+from airflow.timetables.interval import CronDataIntervalTimetable
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.standard.sensors.python import PythonSensor
 from custom_module.aiops_api import check_status, collect, submit_daily, run_until_completed
@@ -11,7 +12,7 @@ from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failur
 
 with DAG(
     dag_id="dags_aiops_daily",
-    schedule="0 1 * * *",
+    schedule=CronDataIntervalTimetable("0 1 * * *", timezone="Asia/Seoul"),
     start_date=pendulum.datetime(2026, 10, 28, tz="Asia/Seoul"),
     catchup=False,
     max_active_runs=1,
