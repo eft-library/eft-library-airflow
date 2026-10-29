@@ -12,7 +12,7 @@
 
 아래 그림은 타르코프 도서관의 전체 구성입니다. 이 저장소는 그중 데이터 수집과 정기 작업을 담당하는 Airflow에 해당합니다.
 
-<img width="1351" height="1167" alt="261029_detail_arch" src="https://github.com/user-attachments/assets/14993361-38d8-4a79-9d8b-15eba8ed009e" />
+<img width="1344" height="1178" alt="261029_detail_arch" src="https://github.com/user-attachments/assets/b995e80f-8827-49a1-9d35-13d3db581014" />
 
 주요 데이터 출처는 Tarkov Dev의 JSON API(`https://json.tarkov.dev`)입니다. 수집한 데이터를 바탕으로 서비스에서 필요한 설명이나 번역을 보완합니다.
 
