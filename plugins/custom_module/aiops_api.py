@@ -107,6 +107,39 @@ class AIOpsClient:
             raise RuntimeError(f"Unknown AIOps job status: {state}")
         return False
 
+    def investigation_completed(self, investigation_id):
+        investigation = self.request("GET", f"/v1/investigations/{investigation_id}")
+        state = investigation["status"]
+        error = investigation.get("error")
+        log.info("AIOps investigation=%s report=%s status=%s error=%s",
+                 investigation_id, investigation.get("report_id"), state, error)
+        if state == "COMPLETED":
+            return True
+        if state not in {"PENDING", "RUNNING"}:
+            raise RuntimeError(f"AIOps investigation={investigation_id} status={state} error={error}")
+        return False
+
+    def advance_investigation(self, investigation_id):
+        try:
+            if self.investigation_completed(investigation_id):
+                return True
+            # RUNNING may be left by a stopped Worker. The shared server lock
+            # protects live work; this call also recovers interrupted work.
+            self.request(
+                "POST", "/v1/investigations/worker/run-once",
+                body={"investigation_id": investigation_id}, worker=True,
+            )
+            # A 200/idle response is not completion. Always re-read the target.
+            return self.investigation_completed(investigation_id)
+        except (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError):
+            log.warning("AIOps investigation=%s error=connection_interrupted", investigation_id)
+            return False
+        except AIOpsAPIError as exc:
+            if exc.status_code not in TRANSIENT_HTTP:
+                raise
+            log.warning("AIOps investigation=%s error=http_%s", investigation_id, exc.status_code)
+            return False
+
     def advance(self, job_id):
         """Each sensor poke checks the target, runs one queue item, then checks again."""
         try:
@@ -222,5 +255,38 @@ def run_until_completed(**context):
         raise AirflowFailException("Missing AIOps job_id")
     try:
         return get_client().advance(job_id)
+    except (AIOpsAPIError, RuntimeError) as exc:
+        raise AirflowFailException(str(exc)) from None
+
+
+def submit_investigation(**context):
+    from airflow.exceptions import AirflowFailException
+
+    job_id = context["ti"].xcom_pull(task_ids="submit_report")
+    if not job_id:
+        raise AirflowFailException("Missing daily job_id")
+    job = _call("GET", f"/v1/jobs/{job_id}")
+    if job.get("status") != "COMPLETED" or not job.get("report_id"):
+        raise AirflowFailException("Daily job must be COMPLETED with report_id before investigation")
+    report_id = job["report_id"]
+    investigation = _call("POST", "/v1/investigations", {
+        "report_id": report_id, "request_key": "default",
+    })
+    investigation_id = investigation.get("investigation_id")
+    if not investigation_id:
+        raise AirflowFailException("Missing investigation_id in submission response")
+    log.info("AIOps investigation=%s report=%s status=%s error=%s",
+             investigation_id, report_id, investigation.get("status"), investigation.get("error"))
+    return investigation_id
+
+
+def run_investigation_until_completed(**context):
+    from airflow.exceptions import AirflowFailException
+
+    investigation_id = context["ti"].xcom_pull(task_ids="submit_investigation")
+    if not investigation_id:
+        raise AirflowFailException("Missing investigation_id")
+    try:
+        return get_client().advance_investigation(investigation_id)
     except (AIOpsAPIError, RuntimeError) as exc:
         raise AirflowFailException(str(exc)) from None

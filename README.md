@@ -192,6 +192,26 @@ Sensor의 `execution_timeout`(20분)을 함께 조정합니다. Sensor는 최대
 서버의 재시도 예약은 DB 큐가 관리하며, 다른 작업을 처리했거나 `idle`을 반환해도 대상 작업 완료로 간주하지 않습니다.
 `FAILED`·`TIMEOUT`·`CANCELLED` 및 인증 오류는 실패 처리합니다.
 
+### 일일 심화 조사
+
+일일 DAG에만 `run_until_completed → submit_investigation → run_investigation_until_completed`를 연결합니다.
+완료된 일일 작업을 다시 조회하여 정확한 `report_id`를 얻고,
+`POST /v1/investigations`에 `request_key="default"`로 접수합니다.
+응답의 `investigation_id`만 XCom에 저장하며, 재시도에도 같은 키를 유지합니다.
+
+조사 Sensor는 상태를 먼저 조회하고 미완료이면
+`POST /v1/investigations/worker/run-once`에 해당 조사 ID를 지정합니다.
+일반 보고서 스트리밍 Worker는 사용하지 않으며, 조사 Worker는 동기 JSON 응답입니다.
+읽기 제한은 Connection의 `worker_timeout`(기본 900초)을 사용합니다.
+`COMPLETED`만 성공이며 `idle`·`PENDING`·`RUNNING`은 완료가 아닙니다.
+409·일시적 연결 오류는 같은 ID를 다음 실행에서 다시 조회하고, `FAILED`·`TIMEOUT`은 오류 코드와 함께 실패 처리합니다.
+조사 ID·원본 보고서 ID·상태·오류 코드만 기록하며 전체 조사 입력·결과는 로그에 남기지 않습니다.
+
+조사 Sensor는 최대 3시간 대기하고, 일일 DAG 전체 제한은 8시간입니다.
+조사 실패 시 일일 DAG는 실패하지만 이미 저장된 일일 보고서는 유지됩니다.
+결과는 웹의 일일 보고서 상세 **심화 조사 · 대응 가이드**에서 확인합니다.
+주간·월간 DAG는 기존 일일 분석 완료 태스크를 기다리며, 심화 조사 완료를 추가로 기다리지는 않습니다.
+
 ### 주간·월간 보고서
 
 | DAG | 한국 시간 일정 | 대상 |

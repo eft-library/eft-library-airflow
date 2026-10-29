@@ -7,7 +7,10 @@ from airflow import DAG
 from airflow.timetables.interval import CronDataIntervalTimetable
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.standard.sensors.python import PythonSensor
-from custom_module.aiops_api import check_status, collect, submit_daily, run_until_completed
+from custom_module.aiops_api import (
+    check_status, collect, submit_daily, run_until_completed,
+    submit_investigation, run_investigation_until_completed,
+)
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 
 with DAG(
@@ -16,7 +19,7 @@ with DAG(
     start_date=pendulum.datetime(2026, 10, 28, tz="Asia/Seoul"),
     catchup=False,
     max_active_runs=1,
-    dagrun_timeout=timedelta(hours=4),
+    dagrun_timeout=timedelta(hours=8),
     default_args={"owner": "airflow", "retries": 2, "retry_delay": timedelta(minutes=2)},
     on_failure_callback=send_dag_failure_email,
     tags=["aiops", "daily"],
@@ -33,6 +36,15 @@ with DAG(
         execution_timeout=timedelta(minutes=20),
         retries=0,
     )
-    status >> collection >> report >> completed
+    investigation = PythonOperator(
+        task_id="submit_investigation", python_callable=submit_investigation,
+    )
+    investigation_completed = PythonSensor(
+        task_id="run_investigation_until_completed",
+        python_callable=run_investigation_until_completed,
+        mode="reschedule", poke_interval=60, timeout=3 * 60 * 60,
+        execution_timeout=timedelta(minutes=20), retries=0,
+    )
+    status >> collection >> report >> completed >> investigation >> investigation_completed
 
 add_failure_watcher(dag)

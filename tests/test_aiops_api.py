@@ -72,6 +72,72 @@ class AIOpsTests(unittest.TestCase):
                 logger.info.assert_any_call("AIOps collection database_registration=%s", result["database_registration"])
                 self.assertEqual(logger.warning.call_count, int(status == "partial"))
 
+    def test_investigation_worker_checks_exact_id_and_ignores_idle(self):
+        for initial in ["PENDING", "RUNNING"]:
+            for final in ["PENDING", "RUNNING", "COMPLETED"]:
+                self.client.request = Mock(side_effect=[
+                    {"status": initial, "report_id": "daily-v2"},
+                    {"status": "idle"}, {"status": final, "report_id": "daily-v2"},
+                ])
+                self.assertEqual(self.client.advance_investigation("inv"), final == "COMPLETED")
+                self.assertEqual(self.client.request.call_args_list[1].args, ("POST", "/v1/investigations/worker/run-once"))
+                self.assertEqual(self.client.request.call_args_list[1].kwargs, {"body": {"investigation_id": "inv"}, "worker": True})
+                self.assertEqual(self.client.request.call_args.args, ("GET", "/v1/investigations/inv"))
+
+    def test_completed_investigation_reuses_result_without_worker(self):
+        self.client.request = Mock(return_value={"status": "COMPLETED"})
+        self.assertTrue(self.client.advance_investigation("inv"))
+        self.client.request.assert_called_once_with("GET", "/v1/investigations/inv")
+
+    def test_investigation_terminal_errors_fail_without_worker(self):
+        for state in ["FAILED", "TIMEOUT", "UNKNOWN"]:
+            self.client.request = Mock(return_value={"status": state, "error": "execution"})
+            with self.assertRaisesRegex(RuntimeError, "error=execution"):
+                self.client.advance_investigation("inv")
+            self.assertEqual(self.client.request.call_count, 1)
+
+    def test_investigation_retry_preserves_id_and_rechecks_before_worker(self):
+        for error in [requests.Timeout(), requests.ConnectionError(), AIOpsAPIError(409), AIOpsAPIError(503)]:
+            self.client.request = Mock(side_effect=[{"status": "PENDING"}, error])
+            self.assertFalse(self.client.advance_investigation("inv"))
+            self.client.request = Mock(return_value={"status": "COMPLETED"})
+            self.assertTrue(self.client.advance_investigation("inv"))
+            self.client.request.assert_called_once_with("GET", "/v1/investigations/inv")
+        self.client.request = Mock(side_effect=AIOpsAPIError(401))
+        with self.assertRaises(AIOpsAPIError):
+            self.client.advance_investigation("inv")
+
+    def test_submit_investigation_uses_exact_completed_revision_and_stable_key(self):
+        from types import ModuleType
+        from custom_module.aiops_api import submit_investigation
+
+        exceptions = ModuleType("airflow.exceptions")
+        exceptions.AirflowFailException = RuntimeError
+        ti = Mock()
+        ti.xcom_pull.return_value = "daily-job"
+        with patch.dict(sys.modules, {"airflow.exceptions": exceptions}):
+            with patch("custom_module.aiops_api._call", side_effect=[
+                {"status": "COMPLETED", "report_id": "daily-v2"},
+                {"investigation_id": "inv", "status": "PENDING"},
+            ] * 2) as call:
+                for _ in range(2):
+                    self.assertEqual(submit_investigation(ti=ti), "inv")
+                self.assertEqual(call.call_args_list[0].args, ("GET", "/v1/jobs/daily-job"))
+                self.assertEqual(call.call_args_list[1].args, ("POST", "/v1/investigations", {"report_id": "daily-v2", "request_key": "default"}))
+                self.assertEqual(call.call_args_list[1], call.call_args_list[3])
+            for job in [{"status": "PENDING", "report_id": "daily-v2"}, {"status": "COMPLETED"}]:
+                with patch("custom_module.aiops_api._call", return_value=job) as call:
+                    with self.assertRaises(RuntimeError):
+                        submit_investigation(ti=ti)
+                    self.assertEqual(call.call_count, 1)
+
+    def test_investigation_worker_uses_long_json_read_timeout(self):
+        with patch("custom_module.aiops_api.requests.request") as request:
+            request.return_value.ok = True
+            self.client.request("POST", "/v1/investigations/worker/run-once", body={"investigation_id": "inv"}, worker=True)
+            self.assertEqual(request.call_args.kwargs["timeout"], (10, 900))
+            self.assertEqual(request.call_args.kwargs["json"], {"investigation_id": "inv"})
+
     def test_auth_and_worker_timeout(self):
         with patch("custom_module.aiops_api.requests.request") as request:
             request.return_value.ok = True
