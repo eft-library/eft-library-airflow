@@ -112,6 +112,21 @@ def get_items(lang="en", game_mode="regular"):
     return items
 
 
+def get_item_names(languages=("ko", "ja"), game_mode="regular"):
+    """Read only translated item names; absent translations must preserve DB values."""
+    items = _request_json(f"{game_mode}/items")["data"].get("items", {})
+    result = {}
+    for lang in languages:
+        translations = _request_json(f"{game_mode}/items_{lang}").get("data", {})
+        names = {}
+        for item in items.values():
+            name = translations.get(item.get("name"))
+            if isinstance(name, str) and name.strip():
+                names[item["id"]] = {"name": name}
+        result[lang] = names
+    return result
+
+
 def get_item_prices(game_mode="regular"):
     data = get_json_data("items", "en", game_mode)
     validate_price_items(data)

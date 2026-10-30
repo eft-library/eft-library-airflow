@@ -13,7 +13,7 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.tarkov_json_api import get_items
+from custom_module.tarkov_json_api import get_items, get_item_names
 from custom_module.item_task_func import (
     v3_item_row_process,
     assign_unique_normalized_names,
@@ -37,6 +37,7 @@ default_args = {
 }
 
 en_path = "/opt/airflow/tmp/v3_item_en_list.json"
+names_path = "/opt/airflow/tmp/v3_item_localized_names.json"
 
 with DAG(
     on_failure_callback=send_dag_failure_email,
@@ -50,11 +51,15 @@ with DAG(
 
     def fetch_item():
         item_list_en = get_items("en")
+        localized_names = get_item_names()
 
         with open(en_path, "w") as f:
             json.dump(item_list_en, f)
 
-        return {"en": en_path}
+        with open(names_path, "w") as f:
+            json.dump(localized_names, f)
+
+        return {"en": en_path, "names": names_path}
 
     def upsert_item(postgres_conn_id):
         context = get_current_context()
@@ -63,6 +68,9 @@ with DAG(
 
         with open(item_paths["en"], "r") as f:
             item_en_list = json.load(f)
+
+        with open(item_paths["names"], "r") as f:
+            localized_names = json.load(f)
 
         item_en_dict = {item["id"]: item for item in item_en_list}
 
@@ -83,7 +91,10 @@ with DAG(
                 ammo_efficiency_rows.append((iid, *eff))
         # items
         item_rows = [
-            v3_item_row_process(item_en_dict[iid], None, None)
+            v3_item_row_process(
+                item_en_dict[iid], localized_names["ko"].get(iid),
+                localized_names["ja"].get(iid),
+            )
             for iid in item_ids
         ]
 
@@ -297,7 +308,7 @@ with DAG(
             conn.commit()
 
     def remove_json_files():
-        files = [en_path]
+        files = [en_path, names_path]
 
         for path in files:
             try:
