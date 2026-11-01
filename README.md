@@ -156,12 +156,27 @@ Connection `aiops`와 Variable `AIOPS_API_TOKEN`을 공유하며 보고서 요�
 HTTP 200의 `status=partial`은 경고로 표시하고 수집 태스크는 성공 처리합니다.
 배치 정보 등록은 AIOps 서버가 담당합니다.
 
-일일 DAG의 분석 전 수집도 유지합니다. 정기 수집은 5분마다, 일일 분석은 하루 한 번 실행됩니다.
+수집은 이 5분 DAG에서만 담당하며 일일 DAG에서는 수집하지 않습니다.
+일일 분석은 하루 한 번 실행됩니다.
+
+배포 전에 Airflow **Admin → Pools**에서 `aiops_ingestion`을 **1슬롯**으로 생성합니다.
+CLI로도 생성할 수 있습니다.
+
+```sh
+airflow pools set aiops_ingestion 1 "AIOps collection and report submission"
+```
+
+5분 수집의 `collect`와 일일·주간·월간의 `submit_report`만 이 Pool을 공유합니다.
+오래 걸리는 보고서 Worker와 심화 조사는 이 Pool을 사용하지 않습니다.
+Pool이 없으면 해당 태스크가 실행되지 않으므로 DAG 활성화 전에 생성해야 합니다.
+HTTP 409는 수집 태스크에서 30초 후 최대 1회, 보고서 접수에서 2분 후 최대 2회 재시도합니다.
+재시도 한도를 넘으면 기존 실패 알림을 보냅니다. 외부 수동 API 호출은 Pool로 제어되지 않습니다.
+최근 정기 수집의 성공을 일일 DAG에서 별도로 강제하지 않으며, 누락은 보고서 coverage에서 확인합니다.
 
 ## AIOps 일일 보고서
 
 `dags_aiops_daily`는 매일 **한국 시간 오전 1시**에 전날 보고서를 만듭니다.
-`check_status → collect → submit_report → run_until_completed` 순서로 실행하며,
+`check_status → submit_report → run_until_completed` 순서로 실행하며,
 접수한 `job_id`가 `COMPLETED`일 때만 성공합니다. 기존 DAG와 같은 실패 메일을 사용합니다.
 
 Airflow UI에서 다음 Connection을 먼저 생성합니다.
@@ -181,7 +196,7 @@ DAG 배포 전 Airflow 태스크 실행 컨테이너에서 해당 주소의 `/v1
 수동 실행 시 `{"date":"2026-10-27"}`처럼 날짜를 지정할 수 있습니다.
 날짜를 생략한 수동 실행은 실행 시작일의 전날, 정기 실행은 데이터 구간 종료일의 전날을 사용합니다.
 재시도·태스크 재실행에도 이 기준은 유지됩니다. 미마감 기간과 데이터 없음(422)은 실패 처리합니다.
-수집이 부분 성공이면 경고를 남기고 보고서를 진행하므로 보고서의 coverage를 함께 확인해야 합니다.
+정기 수집이 부분 성공하거나 누락되었을 수 있으므로 보고서의 coverage를 함께 확인해야 합니다.
 
 Worker는 `POST /v1/worker/run-once/stream`의 SSE 응답을 실시간 수신합니다.
 일일·주간·월간 모두 `run_until_completed` 태스크의 Logs에서 Codex 공개 메시지,

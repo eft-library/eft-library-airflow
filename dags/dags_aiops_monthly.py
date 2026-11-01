@@ -41,6 +41,7 @@ with DAG(
     status = PythonOperator(task_id="check_status", python_callable=check_status)
     report = PythonOperator(
         task_id="submit_report", python_callable=submit_report,
+        pool="aiops_ingestion", pool_slots=1,
         op_kwargs={"report_type": "monthly"},
     )
     completed = PythonSensor(

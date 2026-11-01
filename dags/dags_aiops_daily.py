@@ -1,4 +1,4 @@
-"""Collect host logs and finish the previous day's AIOps report over HTTP."""
+"""Finish the previous day's AIOps report over HTTP."""
 
 from datetime import timedelta
 
@@ -8,7 +8,7 @@ from airflow.timetables.interval import CronDataIntervalTimetable
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.standard.sensors.python import PythonSensor
 from custom_module.aiops_api import (
-    check_status, collect, submit_daily, run_until_completed,
+    check_status, submit_daily, run_until_completed,
     submit_investigation, run_investigation_until_completed,
 )
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
@@ -25,8 +25,10 @@ with DAG(
     tags=["aiops", "daily"],
 ) as dag:
     status = PythonOperator(task_id="check_status", python_callable=check_status)
-    collection = PythonOperator(task_id="collect", python_callable=collect)
-    report = PythonOperator(task_id="submit_report", python_callable=submit_daily)
+    report = PythonOperator(
+        task_id="submit_report", python_callable=submit_daily,
+        pool="aiops_ingestion", pool_slots=1,
+    )
     completed = PythonSensor(
         task_id="run_until_completed",
         python_callable=run_until_completed,
@@ -45,6 +47,6 @@ with DAG(
         mode="reschedule", poke_interval=60, timeout=3 * 60 * 60,
         execution_timeout=timedelta(minutes=20), retries=0,
     )
-    status >> collection >> report >> completed >> investigation >> investigation_completed
+    status >> report >> completed >> investigation >> investigation_completed
 
 add_failure_watcher(dag)

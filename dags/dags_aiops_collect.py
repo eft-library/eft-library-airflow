@@ -22,6 +22,7 @@ with DAG(
 ) as dag:
     collection = PythonOperator(
         task_id="collect", python_callable=collect,
+        pool="aiops_ingestion", pool_slots=1,
         execution_timeout=timedelta(minutes=3), do_xcom_push=False,
     )
 
