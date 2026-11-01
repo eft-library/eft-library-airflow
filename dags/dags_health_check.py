@@ -78,7 +78,7 @@ with DAG(
 
                     cursor.execute(
                         INSERT_RESPONSE_TIME_SQL,
-                        (service_name, elapsed, datetime.now()),
+                        (service_name, elapsed, datetime.now(timezone.utc)),
                     )
             conn.commit()
 
