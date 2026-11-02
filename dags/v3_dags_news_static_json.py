@@ -91,7 +91,7 @@ with DAG(
     dag_id="v3_dags_news_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
-    schedule="35 6 * * *",
+    schedule="35 3 * * *",
     tags=["news", "static-json", "next-public"],
     catchup=False,
 ) as dag:

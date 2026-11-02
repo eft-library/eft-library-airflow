@@ -280,7 +280,7 @@ with DAG(
     dag_id="v3_dags_live_map_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 18, tz="Asia/Seoul"),
-    schedule="0 5 * * *",
+    schedule="0 3 * * *",
     tags=["live-map", "static-json", "next-public"],
     catchup=False,
 ) as dag:

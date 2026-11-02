@@ -129,7 +129,7 @@ with DAG(
     dag_id="v3_dags_map_of_tarkov_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
-    schedule="0 7 * * *",
+    schedule="45 3 * * *",
     tags=["map-of-tarkov", "static-json", "next-public"],
     catchup=False,
 ) as dag:

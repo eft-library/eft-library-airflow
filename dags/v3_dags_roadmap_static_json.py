@@ -91,7 +91,7 @@ with DAG(
     dag_id="v3_dags_roadmap_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
-    schedule="20 5 * * *",
+    schedule="10 3 * * *",
     tags=["roadmap", "static-json", "next-public"],
     catchup=False,
 ) as dag:

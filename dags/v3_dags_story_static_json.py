@@ -139,7 +139,7 @@ with DAG(
     dag_id="v3_dags_story_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
-    schedule="45 5 * * *",
+    schedule="20 3 * * *",
     tags=["story", "static-json", "next-public"],
     catchup=False,
 ) as dag:
