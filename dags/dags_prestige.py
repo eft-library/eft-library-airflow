@@ -1,0 +1,340 @@
+from custom_module.queries import prestige as sql_queries
+
+from contextlib import closing
+
+import pendulum
+from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.standard.operators.python import PythonOperator
+from psycopg2.extras import Json, execute_values
+
+from custom_module.tarkov_json_api import get_prestige_data
+
+
+POSTGRES_CONN_ID = "platform_db"
+
+default_args = {
+    "owner": "airflow",
+    "retries": 1,
+    "retry_delay": pendulum.duration(minutes=5),
+}
+
+
+def _localized_value(raw_value, localized_value):
+    if localized_value in (None, "") or localized_value == raw_value:
+        return None
+    return localized_value
+
+
+def _by_id(rows):
+    return {row.get("id"): row for row in rows or [] if row.get("id")}
+
+
+def _deduplicate(rows, key_indexes):
+    deduplicated = {}
+    for row in rows:
+        key = tuple(row[index] for index in key_indexes)
+        deduplicated[key] = row
+    return list(deduplicated.values())
+
+
+def sync_prestige(postgres_conn_id=POSTGRES_CONN_ID):
+    payload = get_prestige_data()
+    raw_levels = payload["raw"]
+    if not raw_levels:
+        raise ValueError("Empty prestige data from json.tarkov.dev/regular/tasks")
+
+    localized_levels = {
+        lang: _by_id(payload[lang]) for lang in ("en", "ko", "ja")
+    }
+
+    level_rows = []
+    condition_rows = []
+    condition_item_rows = []
+    condition_status_rows = []
+    condition_map_rows = []
+    reward_item_rows = []
+    reward_skill_rows = []
+    customization_rows = []
+    customization_item_rows = []
+    prestige_customization_rows = []
+    transfer_setting_rows = []
+    transfer_filter_rows = []
+
+    for level_sort_order, raw_level in enumerate(raw_levels, start=1):
+        prestige_id = raw_level["id"]
+        localized_level = {
+            lang: localized_levels[lang].get(prestige_id, {})
+            for lang in ("en", "ko", "ja")
+        }
+        name_key = raw_level.get("name")
+        level_rows.append(
+            (
+                prestige_id,
+                raw_level.get("prestigeLevel"),
+                name_key,
+                _localized_value(name_key, localized_level["en"].get("name")),
+                _localized_value(name_key, localized_level["ko"].get("name")),
+                _localized_value(name_key, localized_level["ja"].get("name")),
+                raw_level.get("iconLink"),
+                raw_level.get("imageLink"),
+                True,
+                level_sort_order,
+            )
+        )
+
+        localized_conditions = {
+            lang: _by_id(localized_level[lang].get("conditions"))
+            for lang in ("en", "ko", "ja")
+        }
+        for condition_sort_order, condition in enumerate(
+            raw_level.get("conditions") or [], start=1
+        ):
+            condition_id = condition.get("id")
+            if not condition_id:
+                continue
+            description_key = condition.get("description")
+            condition_rows.append(
+                (
+                    condition_id,
+                    prestige_id,
+                    condition.get("type"),
+                    description_key,
+                    _localized_value(
+                        description_key,
+                        localized_conditions["en"]
+                        .get(condition_id, {})
+                        .get("description"),
+                    ),
+                    _localized_value(
+                        description_key,
+                        localized_conditions["ko"]
+                        .get(condition_id, {})
+                        .get("description"),
+                    ),
+                    _localized_value(
+                        description_key,
+                        localized_conditions["ja"]
+                        .get(condition_id, {})
+                        .get("description"),
+                    ),
+                    condition.get("count"),
+                    condition.get("optional", False),
+                    condition.get("playerLevel"),
+                    condition.get("task"),
+                    condition.get("station"),
+                    condition.get("stationLevel"),
+                    condition.get("skill"),
+                    condition.get("level"),
+                    condition.get("dogTagLevel"),
+                    condition.get("maxDurability"),
+                    condition.get("minDurability"),
+                    condition.get("foundInRaid"),
+                    condition_sort_order,
+                )
+            )
+            for sort_order, item_id in enumerate(condition.get("items") or [], start=1):
+                condition_item_rows.append((condition_id, item_id, sort_order))
+            for sort_order, status in enumerate(condition.get("status") or [], start=1):
+                condition_status_rows.append((condition_id, status, sort_order))
+            for sort_order, map_id in enumerate(condition.get("maps") or [], start=1):
+                condition_map_rows.append((condition_id, map_id, sort_order))
+
+        rewards = raw_level.get("rewards") or {}
+        for sort_order, reward in enumerate(rewards.get("items") or [], start=1):
+            item_id = reward.get("item")
+            if item_id:
+                reward_item_rows.append(
+                    (
+                        prestige_id,
+                        item_id,
+                        reward.get("count"),
+                        Json(reward.get("attributes") or {}),
+                        sort_order,
+                    )
+                )
+
+        for sort_order, reward in enumerate(
+            rewards.get("skillLevelReward") or [], start=1
+        ):
+            skill_name = reward.get("skill")
+            if skill_name:
+                reward_skill_rows.append(
+                    (prestige_id, skill_name, reward.get("level"), sort_order)
+                )
+
+        localized_customizations = {
+            lang: _by_id(
+                (localized_level[lang].get("rewards") or {}).get("customization")
+            )
+            for lang in ("en", "ko", "ja")
+        }
+        for sort_order, customization in enumerate(
+            rewards.get("customization") or [], start=1
+        ):
+            customization_id = customization.get("id")
+            if not customization_id:
+                continue
+            name_key = customization.get("name")
+            type_name_key = customization.get("customizationTypeName")
+
+            def customization_value(lang, field, raw_value):
+                value = localized_customizations[lang].get(customization_id, {}).get(field)
+                return _localized_value(raw_value, value)
+
+            customization_rows.append(
+                (
+                    customization_id,
+                    name_key,
+                    customization_value("en", "name", name_key),
+                    customization_value("ko", "name", name_key),
+                    customization_value("ja", "name", name_key),
+                    customization.get("imageLink"),
+                    customization.get("customizationType"),
+                    type_name_key,
+                    customization_value(
+                        "en", "customizationTypeName", type_name_key
+                    ),
+                    customization_value(
+                        "ko", "customizationTypeName", type_name_key
+                    ),
+                    customization_value(
+                        "ja", "customizationTypeName", type_name_key
+                    ),
+                )
+            )
+            for item_sort_order, item_id in enumerate(
+                customization.get("items") or [], start=1
+            ):
+                customization_item_rows.append(
+                    (customization_id, item_id, item_sort_order)
+                )
+            prestige_customization_rows.append(
+                (prestige_id, customization_id, sort_order)
+            )
+
+        localized_transfer_settings = {
+            lang: localized_level[lang].get("transferSettings") or []
+            for lang in ("en", "ko", "ja")
+        }
+        setting_type_counts = {}
+        for sort_order, setting in enumerate(
+            raw_level.get("transferSettings") or [], start=1
+        ):
+            setting_type = "item_grid" if "itemFilters" in setting else "skill"
+            setting_type_counts[setting_type] = setting_type_counts.get(setting_type, 0) + 1
+            if setting_type == "skill":
+                setting_suffix = setting.get("skillType") or setting_type_counts[setting_type]
+            else:
+                setting_suffix = setting_type_counts[setting_type]
+            setting_id = f"{prestige_id}:{setting_type}:{setting_suffix}"
+            name_key = setting.get("name")
+
+            def transfer_name(lang):
+                localized_settings = localized_transfer_settings[lang]
+                localized_setting = (
+                    localized_settings[sort_order - 1]
+                    if len(localized_settings) >= sort_order
+                    else {}
+                )
+                return _localized_value(name_key, localized_setting.get("name"))
+
+            transfer_setting_rows.append(
+                (
+                    setting_id,
+                    prestige_id,
+                    setting_type,
+                    name_key,
+                    transfer_name("en"),
+                    transfer_name("ko"),
+                    transfer_name("ja"),
+                    setting.get("skillType"),
+                    setting.get("transferRate"),
+                    setting.get("gridWidth"),
+                    setting.get("gridHeight"),
+                    sort_order,
+                )
+            )
+            filter_mappings = {
+                "allowedCategories": "allowed_category",
+                "allowedItems": "allowed_item",
+                "excludedCategories": "excluded_category",
+                "excludedItems": "excluded_item",
+            }
+            item_filters = setting.get("itemFilters") or {}
+            for json_field, filter_type in filter_mappings.items():
+                for filter_sort_order, value_id in enumerate(
+                    item_filters.get(json_field) or [], start=1
+                ):
+                    transfer_filter_rows.append(
+                        (setting_id, filter_type, value_id, filter_sort_order)
+                    )
+
+    row_groups = {
+        "prestige_levels": _deduplicate(level_rows, (0,)),
+        "prestige_conditions": _deduplicate(condition_rows, (0,)),
+        "prestige_condition_items": _deduplicate(condition_item_rows, (0, 1)),
+        "prestige_condition_statuses": _deduplicate(condition_status_rows, (0, 1)),
+        "prestige_condition_maps": _deduplicate(condition_map_rows, (0, 1)),
+        "prestige_reward_items": _deduplicate(reward_item_rows, (0, 1)),
+        "prestige_reward_skills": _deduplicate(reward_skill_rows, (0, 1)),
+        "customizations": _deduplicate(customization_rows, (0,)),
+        "customization_items": _deduplicate(
+            customization_item_rows, (0, 1)
+        ),
+        "prestige_reward_customizations": _deduplicate(
+            prestige_customization_rows, (0, 1)
+        ),
+        "prestige_transfer_settings": _deduplicate(transfer_setting_rows, (0,)),
+        "prestige_transfer_filter_values": _deduplicate(
+            transfer_filter_rows, (0, 1, 2)
+        ),
+    }
+
+    sql_by_table = {
+        "prestige_levels": sql_queries.INSERT_PRESTIGE_LEVELS,
+        "prestige_conditions": sql_queries.INSERT_PRESTIGE_CONDITIONS,
+        "prestige_condition_items": sql_queries.INSERT_PRESTIGE_CONDITION_ITEMS,
+        "prestige_condition_statuses": sql_queries.INSERT_PRESTIGE_CONDITION_STATUSES,
+        "prestige_condition_maps": sql_queries.INSERT_PRESTIGE_CONDITION_MAPS,
+        "prestige_reward_items": sql_queries.INSERT_PRESTIGE_REWARD_ITEMS,
+        "prestige_reward_skills": sql_queries.INSERT_PRESTIGE_REWARD_SKILLS,
+        "customizations": sql_queries.INSERT_CUSTOMIZATIONS,
+        "customization_items": sql_queries.INSERT_CUSTOMIZATION_ITEMS,
+        "prestige_reward_customizations": sql_queries.INSERT_PRESTIGE_REWARD_CUSTOMIZATIONS,
+        "prestige_transfer_settings": sql_queries.INSERT_PRESTIGE_TRANSFER_SETTINGS,
+        "prestige_transfer_filter_values": sql_queries.INSERT_PRESTIGE_TRANSFER_FILTER_VALUES,
+    }
+
+    postgres_hook = PostgresHook(postgres_conn_id)
+    with closing(postgres_hook.get_conn()) as conn:
+        with closing(conn.cursor()) as cursor:
+            for table_name, rows in row_groups.items():
+                if rows:
+                    execute_values(
+                        cursor,
+                        sql_by_table[table_name],
+                        rows,
+                        page_size=500,
+                    )
+                    print(f"Upserted {len(rows)} rows into {table_name}")
+        conn.commit()
+
+
+with DAG(
+    on_failure_callback=send_dag_failure_email,
+    dag_id="dags_prestige",
+    default_args=default_args,
+    start_date=pendulum.datetime(2026, 8, 1, tz="Asia/Seoul"),
+    schedule="8 0 * * *",
+    tags=["postgresql", "tarkov-dev-api", "prestige"],
+    catchup=False,
+) as dag:
+    sync_prestige_task = PythonOperator(
+        task_id="sync_prestige",
+        python_callable=sync_prestige,
+        op_kwargs={"postgres_conn_id": POSTGRES_CONN_ID},
+    )
+
+add_failure_watcher(dag)

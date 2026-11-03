@@ -1,0 +1,392 @@
+from custom_module.queries import price as sql_queries
+
+import json
+import os
+import time
+from collections import defaultdict
+from contextlib import closing
+from datetime import date, datetime
+from decimal import Decimal
+from pathlib import Path
+from urllib.parse import quote
+
+import pendulum
+from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.standard.operators.python import PythonOperator
+
+
+default_args = {
+    "owner": "airflow",
+    "retries": 1,
+    "retry_delay": pendulum.duration(minutes=5),
+}
+
+API_BASE_URL = "https://back.eftlibrary.com/api"
+OUTPUT_DIR = Path("/opt/airflow/next-public")
+PUBLIC_BASE_PATH = "/static/price"
+
+
+def _safe_filename(value):
+    return quote(str(value), safe="-_.")
+
+
+def _json_default(value):
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
+def _write_json_atomic(path, payload):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(
+            payload,
+            f,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            default=_json_default,
+        )
+        f.write("\n")
+
+    with open(tmp_path, "r", encoding="utf-8") as f:
+        json.load(f)
+
+    os.replace(tmp_path, path)
+
+
+def _dict_rows(cursor):
+    columns = [desc[0] for desc in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def _to_float(value):
+    return float(value) if value is not None else None
+
+
+def _serialize_price(row):
+    return {
+        "game_mode": row["game_mode"],
+        "season_id": row["season_id"],
+        "highest_trader_price": _to_float(row["highest_trader_price"]),
+        "highest_trader_id": row["highest_trader_id"],
+        "flea_market_price": _to_float(row["flea_market_price"]),
+        "trader_count": row["trader_count"],
+        "has_flea": row["has_flea"],
+        "update_time": row["update_time"],
+    }
+
+
+def _serialize_history(row):
+    return {
+        "game_mode": row["game_mode"],
+        "season_id": row["season_id"],
+        "price": row["price"],
+        "price_time": row["price_time"],
+    }
+
+
+def _serialize_trader_price(row):
+    return {
+        "id": row["id"],
+        "game_mode": row["game_mode"],
+        "season_id": row["season_id"],
+        "trader_id": row["trader_id"],
+        "price": _to_float(row["price"]),
+        "trader": (
+            {
+                "id": row["trader_id"],
+                "normalized_name": row["trader_normalized_name"],
+                "name_en": row["trader_name_en"],
+                "name_ko": row["trader_name_ko"],
+                "name_ja": row["trader_name_ja"],
+                "image": row["trader_image"],
+            }
+            if row["trader_normalized_name"] is not None
+            else None
+        ),
+    }
+
+
+def _build_price_trend(history_by_type):
+    return {
+        game_mode: [
+            _to_float(history["price"])
+            for history in history_by_type.get(game_mode, [])[-8:]
+        ]
+        for game_mode in ("pvp", "pve", "pvp-season")
+    }
+
+
+def _build_price_tiers(rows):
+    tiers = ["S", "A", "B", "C", "D", "E", "F"]
+    tier_size = 100
+    tier_dict = {
+        tier: {"min": float("inf"), "max": 0, "list": []} for tier in tiers
+    }
+
+    for index, row in enumerate(rows[:700]):
+        tier_name = tiers[index // tier_size]
+        per_slot = row["per_slot"]
+        tier_dict[tier_name]["min"] = min(tier_dict[tier_name]["min"], per_slot)
+        tier_dict[tier_name]["max"] = max(tier_dict[tier_name]["max"], per_slot)
+        tier_dict[tier_name]["list"].append(row)
+
+    return [
+        {
+            "tier": tier,
+            "min": 0 if not tier_dict[tier]["list"] else tier_dict[tier]["min"],
+            "max": 0 if not tier_dict[tier]["list"] else tier_dict[tier]["max"],
+            "list": tier_dict[tier]["list"],
+        }
+        for tier in tiers
+    ]
+
+
+def _rank_payload(rank_rows, categories=None, selected_season_id=None):
+    filtered = [
+        row
+        for row in rank_rows
+        if categories is None or row["category"] in categories
+    ]
+    result = {"selected_season_id": selected_season_id}
+    for game_mode in ("pvp", "pve", "pvp-season"):
+        mode_rows = [
+            row for row in filtered if row["game_mode"] == game_mode
+        ]
+        result[f"{game_mode}_top_list"] = _build_price_tiers(mode_rows)
+    return result
+
+
+def _load_price_data(postgres_conn_id):
+    print("[price-static] load price data from database")
+    postgres_hook = PostgresHook(postgres_conn_id)
+
+    with closing(postgres_hook.get_conn()) as conn:
+        conn.set_session(isolation_level="REPEATABLE READ", readonly=True)
+        with closing(conn.cursor()) as cursor:
+            cursor.execute(sql_queries.SELECT_PRICE_SEASONS)
+            current = cursor.fetchone()
+            selected_season_id = current[0] if current else None
+            cursor.execute(
+                sql_queries.SELECT_ITEMS
+            )
+            items = _dict_rows(cursor)
+
+            cursor.execute(
+                sql_queries.SELECT_ITEM_PRICES
+            )
+            prices = _dict_rows(cursor)
+
+            cursor.execute(
+                sql_queries.SELECT_ITEM_PRICE_HISTORY
+            )
+            histories = _dict_rows(cursor)
+
+            cursor.execute(
+                sql_queries.SELECT_ITEM_TRADER_PRICES
+            )
+            trader_prices = _dict_rows(cursor)
+
+    print(
+        "[price-static] loaded: "
+        f"items={len(items)}, prices={len(prices)}, "
+        f"histories={len(histories)}, trader_prices={len(trader_prices)}"
+    )
+    return items, prices, histories, trader_prices, selected_season_id
+
+
+def generate_price_static_json(postgres_conn_id):
+    started_at = time.monotonic()
+    root = OUTPUT_DIR / "static" / "price" / "v3"
+    generated_at = pendulum.now("UTC").to_iso8601_string()
+    items, prices, histories, trader_prices, selected_season_id = _load_price_data(postgres_conn_id)
+
+    prices_by_item = defaultdict(dict)
+    histories_by_item = defaultdict(lambda: {"pvp": [], "pve": [], "pvp-season": []})
+    trader_prices_by_item = defaultdict(lambda: {"pvp": [], "pve": [], "pvp-season": []})
+
+    for price in prices:
+        prices_by_item[price["item_id"]][price["game_mode"]] = _serialize_price(price)
+
+    for history in histories:
+        histories_by_item[history["item_id"]].setdefault(
+            history["game_mode"], []
+        ).append(_serialize_history(history))
+
+    for trader_price in trader_prices:
+        trader_prices_by_item[trader_price["item_id"]].setdefault(
+            trader_price["game_mode"], []
+        ).append(_serialize_trader_price(trader_price))
+
+    files = {"details": [], "rank_categories": []}
+    search_index = []
+    rank_rows = []
+
+    print(f"[price-static] output root: {root}")
+
+    for index, item in enumerate(items, start=1):
+        detail = {
+            "id": item["id"],
+            "normalized_name": item["normalized_name"],
+            "name_en": item["name_en"],
+            "name_ko": item["name_ko"],
+            "name_ja": item["name_ja"],
+            "image": item["image"],
+            "category": item["category"],
+            "parent_category": item["parent_category"],
+            "width": item["width"],
+            "height": item["height"],
+            "selected_season_id": selected_season_id,
+            "prices": {
+                "pvp": prices_by_item[item["id"]].get("pvp"),
+                "pve": prices_by_item[item["id"]].get("pve"),
+                "pvp-season": prices_by_item[item["id"]].get("pvp-season"),
+            },
+            "history_by_type": histories_by_item[item["id"]],
+            "trader_prices": trader_prices_by_item[item["id"]],
+        }
+
+        search_index.append(
+            {
+                "id": item["id"],
+                "normalized_name": item["normalized_name"],
+                "name_en": item["name_en"],
+                "name_ko": item["name_ko"],
+                "name_ja": item["name_ja"],
+                "image": item["image"],
+                "category": item["category"],
+                "parent_category": item["parent_category"],
+                "width": item["width"],
+                "height": item["height"],
+                "selected_season_id": selected_season_id,
+                "prices": detail["prices"],
+                "trend_by_type": _build_price_trend(detail["history_by_type"]),
+            }
+        )
+
+        for game_mode, price in detail["prices"].items():
+            if (
+                price is None
+                or price["flea_market_price"] is None
+                or item["width"] is None
+                or item["height"] is None
+                or item["width"] <= 0
+                or item["height"] <= 0
+            ):
+                continue
+            per_slot = price["flea_market_price"] / (item["width"] * item["height"])
+            rank_rows.append(
+                {
+                    "id": item["id"],
+                    "normalized_name": item["normalized_name"],
+                    "name_en": item["name_en"],
+                    "name_ko": item["name_ko"],
+                    "name_ja": item["name_ja"],
+                    "image": item["image"],
+                    "width": item["width"],
+                    "height": item["height"],
+                    "category": item["category"],
+                    "game_mode": game_mode,
+                    "flea_market_price": price["flea_market_price"],
+                    "highest_trader_price": price["highest_trader_price"],
+                    "highest_trader_id": price["highest_trader_id"],
+                    "per_slot": per_slot,
+                }
+            )
+
+        filename = f"{_safe_filename(item['normalized_name'])}.json"
+        _write_json_atomic(
+            root / "details" / filename,
+            {"status": 200, "msg": "OK", "data": detail},
+        )
+        files["details"].append(
+            {
+                "id": item["normalized_name"],
+                "path": f"{PUBLIC_BASE_PATH}/v3/details/{filename}",
+            }
+        )
+
+        if index % 500 == 0:
+            print(f"[price-static] details written: {index}/{len(items)}")
+
+    rank_rows.sort(key=lambda row: row["per_slot"], reverse=True)
+    categories = sorted({row["category"] for row in rank_rows if row["category"]})
+
+    _write_json_atomic(
+        root / "search-index.json",
+        {"status": 200, "msg": "OK", "data": search_index},
+    )
+    _write_json_atomic(
+        root / "rank" / "all.json",
+        {"status": 200, "msg": "OK", "data": _rank_payload(rank_rows, selected_season_id=selected_season_id)},
+    )
+
+    for category in categories:
+        filename = f"{_safe_filename(category)}.json"
+        _write_json_atomic(
+            root / "rank" / "categories" / filename,
+            {
+                "status": 200,
+                "msg": "OK",
+                "data": _rank_payload(rank_rows, {category}, selected_season_id),
+            },
+        )
+        files["rank_categories"].append(
+            {
+                "id": category,
+                "path": f"{PUBLIC_BASE_PATH}/v3/rank/categories/{filename}",
+            }
+        )
+
+    index_payload = {
+        "status": 200,
+        "msg": "OK",
+        "generated_at": generated_at,
+        "selected_season_id": selected_season_id,
+        "api_base_url": API_BASE_URL,
+        "data": {
+            "files": {
+                **files,
+                "search_index": f"{PUBLIC_BASE_PATH}/v3/search-index.json",
+                "rank_all": f"{PUBLIC_BASE_PATH}/v3/rank/all.json",
+            },
+            "counts": {
+                "details": len(files["details"]),
+                "rank_categories": len(files["rank_categories"]),
+            },
+        },
+    }
+    _write_json_atomic(root / "index.json", index_payload)
+
+    print(
+        "Generated price static JSON: "
+        f"details={len(files['details'])}, "
+        f"rank_categories={len(files['rank_categories'])}, "
+        f"output={root}, "
+        f"elapsed={time.monotonic() - started_at:.2f}s"
+    )
+
+
+with DAG(
+    on_failure_callback=send_dag_failure_email,
+    dag_id="dags_price_static_json",
+    default_args=default_args,
+    start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
+    schedule=None,
+    tags=["price", "static-json", "next-public"],
+    catchup=False,
+    max_active_runs=1,
+) as dag:
+    generate_price_static_json_task = PythonOperator(
+        task_id="generate_price_static_json",
+        python_callable=generate_price_static_json,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
+add_failure_watcher(dag)

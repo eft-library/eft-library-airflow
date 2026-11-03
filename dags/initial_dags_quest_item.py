@@ -1,0 +1,144 @@
+from custom_module.queries import quest_item as sql_queries
+
+import json
+import pendulum
+import os
+
+from airflow import DAG
+from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
+from airflow.providers.standard.operators.python import PythonOperator
+from airflow.sdk import get_current_context
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from contextlib import closing
+from psycopg2.extras import execute_values
+from airflow.task.trigger_rule import TriggerRule
+
+from custom_module.tarkov_json_api import get_quest_items
+from custom_module.quest_item_task_func import (
+    v3_quest_item_process,
+)
+from custom_module.item_task_func import assign_unique_normalized_names
+
+default_args = {
+    "owner": "airflow",
+    "retries": 1,
+    "retry_delay": pendulum.duration(minutes=5),
+}
+
+en_path = "/opt/airflow/tmp/v3_initial_quest_item_en_list.json"
+ko_path = "/opt/airflow/tmp/v3_initial_quest_item_ko_list.json"
+ja_path = "/opt/airflow/tmp/v3_initial_quest_item_ja_list.json"
+
+with DAG(
+    on_failure_callback=send_dag_failure_email,
+    dag_id="initial_dags_quest_item",
+    default_args=default_args,
+    start_date=pendulum.datetime(2026, 3, 1, tz="Asia/Seoul"),
+    schedule=None,
+    tags=["postgresql", "tarkov-dev-api", "initial-load", "manual-only"],
+    catchup=False,
+) as dag:
+
+    def fetch_quest_item():
+        item_list_en = get_quest_items("en")
+        item_list_ko = get_quest_items("ko")
+        item_list_ja = get_quest_items("ja")
+
+        with open(en_path, "w") as f:
+            json.dump(item_list_en, f)
+        with open(ko_path, "w") as f:
+            json.dump(item_list_ko, f)
+        with open(ja_path, "w") as f:
+            json.dump(item_list_ja, f)
+
+        return {"en": en_path, "ko": ko_path, "ja": ja_path}
+
+    def upsert_quest_item(postgres_conn_id):
+        context = get_current_context()
+        ti = context["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_quest_item")
+
+        with open(item_paths["en"], "r") as f:
+            item_en_list = json.load(f)
+        with open(item_paths["ko"], "r") as f:
+            item_ko_list = json.load(f)
+        with open(item_paths["ja"], "r") as f:
+            item_ja_list = json.load(f)
+
+        item_en_dict = {item["id"]: item for item in item_en_list}
+        item_ko_dict = {item["id"]: item for item in item_ko_list}
+        item_ja_dict = {item["id"]: item for item in item_ja_list}
+
+        item_ids = set(item_en_dict) & set(item_ko_dict) & set(item_ja_dict)
+
+        rows = [
+            v3_quest_item_process(
+                item_en_dict[item_id],
+                item_ko_dict[item_id],
+                item_ja_dict[item_id],
+            )
+            for item_id in item_ids
+        ]
+
+        if not rows:
+            return
+
+        sql = sql_queries.INITIAL_INSERT_ITEMS
+
+        postgres_hook = PostgresHook(postgres_conn_id)
+
+        with closing(postgres_hook.get_conn()) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    sql_queries.SELECT_ITEMS
+                )
+                existing_normalized_names_by_id = dict(cursor.fetchall())
+                rows = assign_unique_normalized_names(
+                    rows, existing_normalized_names_by_id
+                )
+
+                execute_values(
+                    cursor,
+                    sql,
+                    rows,
+                    page_size=500,
+                )
+            conn.commit()
+
+    def remove_json_files():
+        files = [
+            en_path,
+            ko_path,
+            ja_path,
+        ]
+
+        for path in files:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"Deleted: {path}")
+                else:
+                    print(f"File not found: {path}")
+            except Exception as e:
+                print(f"Error deleting {path}: {e}")
+
+    fetch_quest_item_task = PythonOperator(
+        task_id="fetch_quest_item",
+        python_callable=fetch_quest_item,
+    )
+
+    upsert_quest_item_task = PythonOperator(
+        task_id="upsert_quest_item",
+        python_callable=upsert_quest_item,
+        op_kwargs={"postgres_conn_id": "platform_db"},
+    )
+
+    remove_json_files_task = PythonOperator(
+        task_id="remove_json_files",
+        python_callable=remove_json_files,
+        trigger_rule=TriggerRule.ALL_DONE,
+    )
+
+    fetch_quest_item_task >> upsert_quest_item_task >> remove_json_files_task
+
+add_failure_watcher(dag)

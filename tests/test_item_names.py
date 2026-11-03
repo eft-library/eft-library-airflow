@@ -32,7 +32,7 @@ class ItemNameTests(unittest.TestCase):
         self.assertIn("name_ja=COALESCE(NULLIF(excluded.name_ja, ''), items.name_ja)", INSERT_ITEMS)
 
     def test_name_fetch_failure_does_not_publish_partial_files(self):
-        path = Path(__file__).resolve().parents[1] / 'dags/v3_dags_item.py'
+        path = Path(__file__).resolve().parents[1] / 'dags/dags_item.py'
         tree = ast.parse(path.read_text())
         fn = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == 'fetch_item')
         namespace = {'get_items': Mock(return_value=[]), 'get_item_names': Mock(side_effect=RuntimeError('unavailable')), 'open': Mock()}

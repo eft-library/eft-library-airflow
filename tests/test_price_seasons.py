@@ -70,7 +70,7 @@ class PriceSeasonTests(unittest.TestCase):
               'v3_item_price_row': v3_item_price_row,
               'v3_item_trader_price_rows': v3_item_trader_price_rows,
               'v3_item_price_history_rows': v3_item_price_history_rows}
-        fn = dag_function('dags/v3_dags_item_price.py', 'upsert_item_price', ns)
+        fn = dag_function('dags/dags_item_price.py', 'upsert_item_price', ns)
         fn('test')
         self.assertEqual(bulk.call_count, 3)
         conn.__exit__.assert_called_once_with(None, None, None)
@@ -93,15 +93,15 @@ class PriceSeasonTests(unittest.TestCase):
                 ns["get_item_prices"].side_effect = items
             else:
                 ns["get_item_prices"].return_value = items
-            fn = dag_function('dags/v3_dags_item_price.py', 'fetch_item_price', ns)
+            fn = dag_function('dags/dags_item_price.py', 'fetch_item_price', ns)
             with self.assertRaises((RuntimeError, ValueError)):
                 fn()
             ns["open"].assert_not_called()
 
     def test_static_modes_and_selected_season(self):
         ns = {}
-        dag_function('dags/v3_dags_price_static_json.py', '_build_price_tiers', ns)
-        rank = dag_function('dags/v3_dags_price_static_json.py', '_rank_payload', ns)
+        dag_function('dags/dags_price_static_json.py', '_build_price_tiers', ns)
+        rank = dag_function('dags/dags_price_static_json.py', '_rank_payload', ns)
         result = rank([], selected_season_id='s1')
         self.assertIn('pvp-season_top_list', result)
         self.assertEqual(result['selected_season_id'], 's1')

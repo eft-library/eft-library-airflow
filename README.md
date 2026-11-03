@@ -47,7 +47,7 @@ flowchart LR
 
 `*_static_json.py` 파일은 백엔드 API나 DB에서 데이터를 읽어 화면에 필요한 형태의 JSON 파일을 만듭니다. 생성한 파일은 웹사이트에서 사용할 수 있도록 `/opt/airflow/next-public` 아래에 저장합니다.
 
-정기 JSON 생성은 한국 시간 03:00~04:00에 5분 간격으로 실행합니다. 아래 이름은 `v3_dags_{이름}_static_json`의 이름 부분입니다.
+정기 JSON 생성은 한국 시간 03:00~04:00에 5분 간격으로 실행합니다. 아래 이름은 `dags_{이름}_static_json`의 이름 부분입니다.
 
 | JSON | 실행 시각 (Asia/Seoul) |
 | --- | --- |
@@ -73,16 +73,16 @@ flowchart LR
 
 | 작업                 | 담당 파일                                                       | 하는 일                                              |
 | -------------------- | --------------------------------------------------------------- | ---------------------------------------------------- |
-| 게임 정보 갱신       | `v3_dags_item.py`, `v3_dags_quest.py`, `v3_dags_map.py` 등      | 아이템·퀘스트·지도·보스·은신처·상인 정보 갱신        |
-| 아이템 가격 갱신     | `v3_dags_item_price.py`                                         | PVP·PVE·시즌 가격 저장 및 오래된 일반 가격 이력 정리 |
-| 지도 위치 정보 갱신  | `v3_dags_live_map_point.py`, `v3_dags_live_map_static_point.py` | 퀘스트 관련 위치와 고정 지점 정보 갱신               |
-| 프레스티지 정보 갱신 | `v3_dags_prestige.py`                                           | 조건·보상 등 프레스티지 정보 갱신                    |
-| 검색 자동완성 갱신   | `v3_dags_autocomplete.py`                                       | 검색에 사용하는 자동완성 데이터 갱신                 |
-| 화면용 JSON 생성     | `v3_dags_*_static_json.py`                                      | 아이템·지도·홈·검색 등 화면별 JSON 생성              |
+| 게임 정보 갱신       | `dags_item.py`, `dags_quest.py`, `dags_map.py` 등      | 아이템·퀘스트·지도·보스·은신처·상인 정보 갱신        |
+| 아이템 가격 갱신     | `dags_item_price.py`                                         | PVP·PVE·시즌 가격 저장 및 오래된 일반 가격 이력 정리 |
+| 지도 위치 정보 갱신  | `dags_live_map_point.py`, `dags_live_map_static_point.py` | 퀘스트 관련 위치와 고정 지점 정보 갱신               |
+| 프레스티지 정보 갱신 | `dags_prestige.py`                                           | 조건·보상 등 프레스티지 정보 갱신                    |
+| 검색 자동완성 갱신   | `dags_autocomplete.py`                                       | 검색에 사용하는 자동완성 데이터 갱신                 |
+| 화면용 JSON 생성     | `dags_*_static_json.py`                                      | 아이템·지도·홈·검색 등 화면별 JSON 생성              |
 | DB 백업              | `dags_data_dump.py`                                             | 선택한 테이블을 SQL 파일로 백업하고 압축             |
 | 서비스 상태 확인     | `dags_health_check.py`                                          | 서비스 상태와 응답 시간을 확인하고 기록              |
 
-각 파일은 [dags](dags) 폴더에서 확인할 수 있습니다. `v3_initial_dags_*.py`는 초기 적재용이며 자동 실행 일정 없이 수동으로 실행합니다. 정기 갱신용 DAG와 구분해서 사용합니다.
+각 파일은 [dags](dags) 폴더에서 확인할 수 있습니다. `initial_dags_*.py`는 초기 적재용이며 자동 실행 일정 없이 수동으로 실행합니다. 정기 갱신용 DAG와 구분해서 사용합니다.
 
 ## 디렉토리 구조
 
@@ -125,7 +125,7 @@ DB 백업은 별도로 `pg_dump` 명령을 사용하므로 [백업 모듈](plugi
 
 ### 아이템 이름도 한국어·일본어로 갱신합니다
 
-일일 `v3_dags_item`은 기본 정보·속성·분류를 영어 데이터로 처리하고,
+일일 `dags_item`은 기본 정보·속성·분류를 영어 데이터로 처리하고,
 한국어·일본어는 아이템 ID별 이름만 추출해 `items.name_ko`, `items.name_ja`를 갱신합니다.
 번역 이름이 누락되거나 빈 값이면 기존 DB 이름을 유지합니다. 설명 등 다른 번역 필드는 갱신하지 않습니다.
 기존 이름도 매일 API 번역으로 갱신하므로 수동 수정한 이름은 API 값으로 덮어쓸 수 있습니다.
@@ -288,3 +288,41 @@ uv run --with requests --with pendulum python -m unittest discover -s tests -v
 구현 과정과 시행착오는 [Airflow 개발 기록](https://velog.io/@poeynus/series/Airflow-%EA%B0%9C%EB%B0%9C)에 정리하고 있습니다.
 
 여기서 확인해주세용 !!!
+
+## 상인 판매·교환 상품 수집
+
+`dags_trader_offers`는 매시간 한국 시간 **35분**에 `regular → pvp`, `pve`,
+`pvp-season`의 items·barters·traders를 수집합니다. 가격 수집의 `sellToTrader` 대신
+`buyFromTrader`를 사용하며, 별도 정적 JSON 생성은 포함하지 않습니다.
+
+- Connection: `platform_db`. 백엔드 `platform_db.sql`의 `trader_offers`,
+  `trader_offer_costs`, `trader_offer_rewards`, `trader_offer_task_unlocks`,
+  `trader_restock_state`가 필요합니다.
+- 비용·보상 아이템과 상인은 먼저 `dags_item`, `dags_trader`로 적재해야 합니다.
+  참조가 누락되면 임의의 행을 만들지 않고 전체 적재를 실패 처리합니다.
+- 세 모드의 응답 검증 및 시즌 전환 확인 후 하나의 트랜잭션으로 저장합니다.
+  상품별 비용·보상·퀘스트 조건은 교체하고, 같은 모드·시즌에서 사라진 상품만
+  `is_use=false`로 바꿉니다. 다른 시즌 이력은 유지합니다.
+- 교환의 source ID는 `barter:{원천 ID}`, 구매는 상인·결과 아이템·화폐 아이템·
+  우호도·해금 조건의 SHA-256 기반 `purchase:{해시}`입니다. 내부 ID에는 모드·시즌도
+  포함합니다. 가격·구매 제한·초기화 시각은 식별자에서 제외합니다.
+- `raw_buy_limit`는 원본 그대로 저장합니다. 양의 정수 제한만 `buy_limit`와
+  `is_unlimited=false`로 저장하고, 누락·0·음수의 의미는 추정하지 않습니다.
+  확인된 무제한 값이 없으므로 `is_unlimited=true`는 생성하지 않습니다.
+- `taskUnlock`은 현재 응답의 단일 퀘스트 ID 또는 null만 허용합니다.
+  알 수 없는 형태, 중복 식별자의 서로 다른 상품 내용은 오류로 처리합니다.
+- 초기화 시각은 `resetTime`의 절대 시각을 저장합니다. 시간당 수집이므로
+  갱신 직후 이전 시각이 남을 수 있으며, 화면은 만료 시각에 임의 주기를 더하지 않아야 합니다.
+- 현재 시즌 메타데이터는 등록하지만 `is_current` 전환은 기존 가격 수집 DAG가 담당합니다.
+- 재시도는 5분 간격 최대 2회이며 최종 실패 시 기존 DAG 실패 메일을 사용합니다.
+
+## DAG 이름 변경 배포
+
+DAG 파일명과 ID에서 `v3_` 접두사를 제거했습니다. 정기 DAG는 `dags_*`,
+초기 적재 DAG는 `initial_dags_*`입니다. 가격 JSON 트리거와 테스트 참조도 변경했습니다.
+백엔드 API의 `/v3`와 정적 JSON 배포 경로의 `/v3`, 공통 변환 함수 이름은 유지합니다.
+
+Airflow는 변경된 ID를 새 DAG로 인식하므로 기존 실행 이력과 일시정지 상태가 자동 이전되지 않습니다.
+배포 전 기존 `v3_*` DAG를 일시정지하고 실행 중인 작업이 끝난 뒤, 예전 DAG 파일을
+새 파일로 교체해야 합니다. 새 정기 DAG를 활성화하고 초기 적재 DAG는 수동 실행용으로 둡니다.
+외부에서 DAG ID로 호출하는 스크립트가 있다면 새 ID로 바꿉니다.
