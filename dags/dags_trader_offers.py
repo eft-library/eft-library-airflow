@@ -4,6 +4,7 @@ from datetime import timedelta
 import pendulum
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from custom_module.trader_offers import collect_trader_offers
 
@@ -25,5 +26,11 @@ with DAG(
         do_xcom_push=False,
         execution_timeout=timedelta(minutes=10),
     )
+
+    publish = TriggerDagRunOperator(
+        task_id='generate_trader_static_json',
+        trigger_dag_id='dags_trader_static_json',
+    )
+    collect >> publish
 
 add_failure_watcher(dag)

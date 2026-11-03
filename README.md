@@ -293,7 +293,7 @@ uv run --with requests --with pendulum python -m unittest discover -s tests -v
 
 `dags_trader_offers`는 매시간 한국 시간 **35분**에 `regular → pvp`, `pve`,
 `pvp-season`의 items·barters·traders를 수집합니다. 가격 수집의 `sellToTrader` 대신
-`buyFromTrader`를 사용하며, 별도 정적 JSON 생성은 포함하지 않습니다.
+`buyFromTrader`를 사용하며, 저장 성공 후 `dags_trader_static_json`을 실행합니다.
 
 - Connection: `platform_db`. 백엔드 `platform_db.sql`의 `trader_offers`,
   `trader_offer_costs`, `trader_offer_rewards`, `trader_offer_task_unlocks`,
@@ -326,3 +326,61 @@ Airflow는 변경된 ID를 새 DAG로 인식하므로 기존 실행 이력과 �
 배포 전 기존 `v3_*` DAG를 일시정지하고 실행 중인 작업이 끝난 뒤, 예전 DAG 파일을
 새 파일로 교체해야 합니다. 새 정기 DAG를 활성화하고 초기 적재 DAG는 수동 실행용으로 둡니다.
 외부에서 DAG ID로 호출하는 스크립트가 있다면 새 ID로 바꿉니다.
+
+
+## 상인 정적 JSON
+
+`dags_trader_static_json`은 별도 정기 일정 없이 `dags_trader_offers` 저장 성공 후
+실행합니다. 수동 실행도 가능합니다. 두 DAG를 모두 활성화하고 API 서버와
+`/opt/airflow/next-public` 쓰기 권한을 확인합니다. 수집 DAG의 성공은 JSON 생성 완료를
+기다리지 않으므로, 게시 실패는 JSON DAG의 상태와 실패 메일에서 확인합니다.
+
+원천 API는 `/api/trader/v3/list`, `/api/trader/v3/offers`이며 기존 공통 API 클라이언트의
+요청 간격 및 429 재시도 정책을 사용합니다. 세 모드별 전체 상품을 500개씩 페이지 조회하고
+상인별로 나눕니다. 목록에 상세 데이터가 있으므로 상품별 상세 API는 호출하지 않습니다.
+레벨·검색 조건을 원천 요청에 넣지 않아 모든 우호도와 구매·교환 상품이 포함됩니다.
+시즌 모드는 상인 목록에서 얻은 시즌 ID를 이후 페이지 요청에 고정합니다.
+
+공개 진입점은 `/static/trader/v3/index.json`입니다. 생성 시각과 아래 정보가 들어 있습니다.
+
+```json
+{
+  "status": 200,
+  "msg": "OK",
+  "generated_at": "2026-11-03T00:00:00+00:00",
+  "data": {
+    "generation": "생성별식별자",
+    "modes": {
+      "pvp": {
+        "season_id": null,
+        "list": "/static/trader/v3/snapshots/생성별식별자/pvp/list.json",
+        "offers": {
+          "상인ID": "/static/trader/v3/snapshots/생성별식별자/pvp/offers/상인ID.json"
+        },
+        "total": 3561
+      }
+    }
+  }
+}
+```
+
+위 예시는 한 모드만 표시했으며 실제 파일에는 `pvp`, `pve`, `pvp-season`이 포함됩니다.
+프론트는 index에서 선택한 모드의 `list`와 `offers[상인ID]` 경로를 읽습니다.
+상인 목록의 `data`는 API와 같은 `game_mode`, `season_id`, `traders` 구조입니다.
+상인 상품 파일은 `data.game_mode`, `season_id`, `trader_id`, `total`, `offers`를 제공합니다.
+상품이 없는 상인도 `offers: []` 파일을 생성합니다.
+
+`offers`의 각 항목은 API 상세 데이터를 유지하므로 비용·보상 아이템, 이미지·그리드 크기,
+구매 제한, 해금 조건을 그대로 사용할 수 있습니다. 상세 모달은 상품 ID로 해당 항목을 찾고,
+검색과 누적 우호도(`trader_level <= 선택 레벨`) 필터는 프론트에서 처리합니다.
+초기화 시각이 만료되면 갱신 대기로 표시하며 임의 주기를 더하지 않습니다.
+
+전체 페이지 수·상품 ID 중복·모드·시즌·상세 배열을 검증하고 상인 목록을 재확인합니다.
+상품 수나 초기화 메타데이터가 수집 중 바뀌면 재시도로 넘깁니다. 원천 API가 트랜잭션
+스냅샷을 제공하지 않으므로 완전한 동일 시점 조회를 보장하는 것은 아닙니다.
+
+새 파일은 생성별 디렉터리에 저장하고 모든 파일 저장 성공 후 index를 원자적으로 교체합니다.
+API/파일 저장 실패 시 기존 index가 유지됩니다. 이전 생성 디렉터리는 즉시 삭제하지 않아
+이미 받은 index의 경로도 계속 유효합니다. 자동 보존 기간 정리는 포함하지 않으므로
+운영 디스크 정책에 따라 오래된 생성 디렉터리를 정리해야 합니다.
+index는 짧게 캐시하거나 재검증하고 생성별 파일은 변경되지 않는 파일로 캐시할 수 있습니다.
