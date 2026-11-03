@@ -291,7 +291,7 @@ uv run --with requests --with pendulum python -m unittest discover -s tests -v
 
 ## 상인 판매·교환 상품 수집
 
-`dags_trader_offers`는 매시간 한국 시간 **35분**에 `regular → pvp`, `pve`,
+`dags_trader_offers`는 한국 시간 **5분마다** `regular → pvp`, `pve`,
 `pvp-season`의 items·barters·traders를 수집합니다. 가격 수집의 `sellToTrader` 대신
 `buyFromTrader`를 사용하며, 저장 성공 후 `dags_trader_static_json`을 실행합니다.
 
@@ -311,7 +311,7 @@ uv run --with requests --with pendulum python -m unittest discover -s tests -v
   확인된 무제한 값이 없으므로 `is_unlimited=true`는 생성하지 않습니다.
 - `taskUnlock`은 현재 응답의 단일 퀘스트 ID 또는 null만 허용합니다.
   알 수 없는 형태, 중복 식별자의 서로 다른 상품 내용은 오류로 처리합니다.
-- 초기화 시각은 `resetTime`의 절대 시각을 저장합니다. 시간당 수집이므로
+- 초기화 시각은 `resetTime`의 절대 시각을 저장합니다. 5분 주기 수집이므로
   갱신 직후 이전 시각이 남을 수 있으며, 화면은 만료 시각에 임의 주기를 더하지 않아야 합니다.
 - 현재 시즌 메타데이터는 등록하지만 `is_current` 전환은 기존 가격 수집 DAG가 담당합니다.
 - 재시도는 5분 간격 최대 2회이며 최종 실패 시 기존 DAG 실패 메일을 사용합니다.

@@ -10,7 +10,7 @@ from custom_module.trader_offers import collect_trader_offers
 
 with DAG(
     dag_id='dags_trader_offers',
-    schedule='35 * * * *',
+    schedule='*/5 * * * *',
     start_date=pendulum.datetime(2026, 11, 3, tz='Asia/Seoul'),
     catchup=False,
     max_active_runs=1,
