@@ -61,13 +61,12 @@ flowchart LR
 | `news` | 03:35 |
 | `boss` | 03:40 |
 | `map_of_tarkov` | 03:45 |
-| `progress` | 03:50 |
 | `hideout` | 03:55 |
 | `item` | 04:00 |
 
-가격 JSON은 별도 정기 일정 없이 매시간 가격 수집 DAG의 DB 저장 성공 후 실행합니다. 다른 JSON 생성은 원천 수집 완료를 기다리지 않으므로, 원천 수집이 지연되거나 실패하면 기존 데이터가 반영될 수 있습니다. 5분 간격은 시작 시각의 분산이며 이전 생성 작업의 완료를 보장하지 않습니다.
+가격·상인·진행 목록 JSON은 별도 정기 일정 없이 각 수집 DAG의 DB 저장 성공 후 실행합니다. 나머지 정기 JSON 생성은 원천 수집 완료를 기다리지 않으므로, 원천 수집이 지연되거나 실패하면 기존 데이터가 반영될 수 있습니다. 5분 간격은 시작 시각의 분산이며 이전 생성 작업의 완료를 보장하지 않습니다.
 
-예를 들어 아이템 가격은 **가격 수집과 DB 저장이 성공한 뒤** 가격 JSON 생성 작업을 이어서 실행합니다. 다른 JSON 생성 작업은 각 파일에 정의된 일정에 따라 실행됩니다.
+예를 들어 아이템 가격은 **가격 수집과 DB 저장이 성공한 뒤** 가격 JSON 생성 작업을 이어서 실행합니다. 진행 목록과 상인 JSON도 저장 성공 후 연결하며, 나머지 JSON 생성 작업은 각 파일에 정의된 일정에 따라 실행됩니다.
 
 ## 정의 되어 있는 작업들
 
@@ -399,3 +398,56 @@ index는 짧게 캐시하거나 재검증하고 생성별 파일은 변경되지
 적용 절차와 백업·검증 방법은
 [기존 데이터 이전 안내](sql/migrations/20261106_kord_breach_source_ids.md),
 실행 파일은 [ID 이전 SQL](sql/migrations/20261106_kord_breach_source_ids.sql)을 확인합니다.
+
+
+## Kappa·Rebirth 진행 아이템 자동 갱신
+
+`dags_progress_item`은 매일 한국 시간 **02:55**에 `regular/tasks` 원천을 조회해
+`progress_item`을 갱신합니다. 성공하면 `dags_progress_static_json`을 실행합니다.
+JSON DAG의 기존 03:50 정기 일정은 제거했으며 수동 실행은 가능합니다.
+연결은 JSON 생성 요청까지이므로 생성 완료·실패는 대상 DAG에서 확인합니다.
+
+목록의 정의는 다음과 같습니다.
+
+- `Kappa`: Collector(`5c51aac186f77432ea65c552`)의 필수 `giveItem` 목표 아이템.
+- `Rebirth`: 첫 프레스티지에서 완료를 요구하는 New Beginning
+  (`6761f28a022f60bb320f3e95`)의 필수 `giveItem` 목표에 있는 모든 아이템 후보.
+- Rebirth는 단계별 전체 준비물이나 루블 조건을 합친 목록이 아닙니다.
+  하나의 목표에 여러 아이템이 있으면 대체 가능한 후보들을 모두 표시합니다.
+  프론트가 이를 모든 후보의 필수 수집 수량으로 해석해서는 안 됩니다.
+- 2026-11-06 비교 기준: Kappa는 기존 44개와 동일, Rebirth는 기존 10개에서
+  30개로 확장됩니다(추가 20개, 삭제 없음). 두 종류의 현시점 중복은 없지만
+  이후 같은 아이템이 겹쳐도 복합 키로 저장할 수 있습니다.
+
+사용자 체크 기록인 `user_progress_item`은 수정하지 않습니다. `progress_item`의
+Kappa/Rebirth만 새 목록으로 동기화하고, 다른 종류의 수동 목록은 유지합니다.
+원천 목표·첫 프레스티지 연결·후보 목록이 없거나 아이템이 DB에 없으면 전체 적재를
+중단하고 기존 목록을 유지합니다. 아이템은 먼저 `dags_item`으로 적재해야 합니다.
+
+### 운영 PK 변경
+
+새 설치용 정의는 백엔드 `platform_db.sql`에 반영했습니다. 기존 DB는
+백엔드 `sql/migrations/20261106_progress_item_composite_key.sql`을 한 번 실행합니다.
+기존 제약 이름이 기본 이름 `progress_item_pkey`인 경우의 쿼리입니다.
+`progress_type`에 NULL이 있다면 기존 값을 검토해야 하며 임의로 분류하지 않습니다.
+
+```sql
+BEGIN;
+SET LOCAL lock_timeout = '10s';
+SET LOCAL statement_timeout = '60s';
+ALTER TABLE progress_item
+    DROP CONSTRAINT progress_item_pkey,
+    ALTER COLUMN progress_type SET NOT NULL,
+    ADD CONSTRAINT progress_item_pkey PRIMARY KEY (id, progress_type);
+COMMIT;
+```
+
+순서는 PK 변경 → DAG·플러그인 배포 → `dags_progress_item` 수동 실행 →
+JSON 생성과 화면 목록 확인 → 두 DAG 활성화입니다. 기존 사용자 아이템 ID를
+변환하거나 체크 기록을 초기화할 필요는 없습니다. 백엔드 ORM은 이미 복합 키입니다.
+
+### KORD BREACH 스키마 확인
+
+특성·충돌·프리셋의 ID 필드는 모두 `text`이므로 원천 ID 전환을 위한
+추가 DDL 변경은 필요하지 않습니다. 앞서 준비한 ID 이전 SQL은 데이터 마이그레이션이며
+백엔드 `platform_db.sql`의 KORD BREACH 테이블 정의는 그대로 사용할 수 있습니다.

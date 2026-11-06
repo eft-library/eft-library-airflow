@@ -91,9 +91,10 @@ with DAG(
     dag_id="dags_progress_static_json",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 6, 22, tz="Asia/Seoul"),
-    schedule="50 3 * * *",
+    schedule=None,
     tags=["progress", "static-json", "next-public"],
     catchup=False,
+    max_active_runs=1,
 ) as dag:
     generate_progress_static_json_task = PythonOperator(
         task_id="generate_progress_static_json",
