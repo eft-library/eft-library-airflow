@@ -1,0 +1,285 @@
+{
+  "season_id": "69e232a764dfe95549003f0f",
+  "modifiers": [
+    {
+      "source_id": "69c41a19cd28c936320a7523",
+      "legacy_id": "no-insurance",
+      "name_en": "No Insurance",
+      "category": "global",
+      "sort_order": 1
+    },
+    {
+      "source_id": "69c41a86383fc5c9ad03f3d5",
+      "legacy_id": "handyman",
+      "name_en": "Handyman",
+      "category": "global",
+      "sort_order": 5
+    },
+    {
+      "source_id": "69c41adf883efd5e3b09ccae",
+      "legacy_id": "seasoned-pmcs",
+      "name_en": "Seasoned PMCs",
+      "category": "global",
+      "sort_order": 6
+    },
+    {
+      "source_id": "69ce5d9296f3b267fa08f137",
+      "legacy_id": "armor-shortage",
+      "name_en": "Armor Shortage",
+      "category": "global",
+      "sort_order": 4
+    },
+    {
+      "source_id": "69ce5e104e0a1c7ca20781c9",
+      "legacy_id": "black-division",
+      "name_en": "Black Division",
+      "category": "global",
+      "sort_order": 2
+    },
+    {
+      "source_id": "69ce5eb3e4b79de94a0d78c8",
+      "legacy_id": "no-fir-for-hideout",
+      "name_en": "No FIR for Hideout",
+      "category": "global",
+      "sort_order": 3
+    },
+    {
+      "source_id": "69c3cd003ffdba4e68086bd7",
+      "legacy_id": "hemophilia",
+      "name_en": "Hemophilia",
+      "category": "negative",
+      "sort_order": 24
+    },
+    {
+      "source_id": "69c3cddcfb79911cf20022d6",
+      "legacy_id": "osteoporosis",
+      "name_en": "Osteoporosis",
+      "category": "negative",
+      "sort_order": 25
+    },
+    {
+      "source_id": "69c3d036042c81ad9209eeae",
+      "legacy_id": "well-that-hurt",
+      "name_en": "Well That Hurt!",
+      "category": "negative",
+      "sort_order": 27
+    },
+    {
+      "source_id": "69c3d21749d7d7c520026425",
+      "legacy_id": "incompetent",
+      "name_en": "Incompetent",
+      "category": "negative",
+      "sort_order": 28
+    },
+    {
+      "source_id": "69c3d2acfe3c5632e4045fe8",
+      "legacy_id": "polydipsia",
+      "name_en": "Polydipsia",
+      "category": "negative",
+      "sort_order": 29
+    },
+    {
+      "source_id": "69c3d35feaf97663fb0bb367",
+      "legacy_id": "chronic-fatigue-syndrome",
+      "name_en": "Chronic Fatigue Syndrome",
+      "category": "negative",
+      "sort_order": 30
+    },
+    {
+      "source_id": "69c3d43030f896ebef0ed357",
+      "legacy_id": "personality-vacuum",
+      "name_en": "Personality Vacuum",
+      "category": "negative",
+      "sort_order": 31
+    },
+    {
+      "source_id": "69c3d4e949d7d7c52002642a",
+      "legacy_id": "dr-jekyll",
+      "name_en": "Dr. Jekyll",
+      "category": "negative",
+      "sort_order": 32
+    },
+    {
+      "source_id": "69c3d6a9af28f094100fe128",
+      "legacy_id": "allergic",
+      "name_en": "Allergic",
+      "category": "negative",
+      "sort_order": 33
+    },
+    {
+      "source_id": "69c3da8fc0e4deb02605f3c9",
+      "legacy_id": "no-flea-market",
+      "name_en": "No Flea Market",
+      "category": "negative",
+      "sort_order": 35
+    },
+    {
+      "source_id": "69c3e8d8af28f094100fe130",
+      "legacy_id": "marathon-runner",
+      "name_en": "Marathon Runner",
+      "category": "positive",
+      "sort_order": 7
+    },
+    {
+      "source_id": "69c405a9d7a7b2ca660e0c56",
+      "legacy_id": "bushborne",
+      "name_en": "Bushborne",
+      "category": "positive",
+      "sort_order": 9
+    },
+    {
+      "source_id": "69c406731d8aec4a2b0551bd",
+      "legacy_id": "juice-time",
+      "name_en": "Juice Time",
+      "category": "positive",
+      "sort_order": 10
+    },
+    {
+      "source_id": "69c40cb782362c4aff041510",
+      "legacy_id": "street-tax",
+      "name_en": "Street Tax",
+      "category": "positive",
+      "sort_order": 13
+    },
+    {
+      "source_id": "69c40e131f8903ce7a06984c",
+      "legacy_id": "the-tarkov-shooter",
+      "name_en": "The Tarkov Shooter",
+      "category": "positive",
+      "sort_order": 14
+    },
+    {
+      "source_id": "69c40f9f9b5263783d0fe51d",
+      "legacy_id": "diet",
+      "name_en": "Diet",
+      "category": "positive",
+      "sort_order": 15
+    },
+    {
+      "source_id": "69c4116a383fc5c9ad03f3d1",
+      "legacy_id": "thrombophilia",
+      "name_en": "Thrombophilia",
+      "category": "positive",
+      "sort_order": 18
+    },
+    {
+      "source_id": "69c411d8883efd5e3b09ccab",
+      "legacy_id": "hypodipsia",
+      "name_en": "Hypodipsia",
+      "category": "positive",
+      "sort_order": 19
+    },
+    {
+      "source_id": "69c412519b5263783d0fe520",
+      "legacy_id": "polyphagia",
+      "name_en": "Polyphagia",
+      "category": "positive",
+      "sort_order": 20
+    },
+    {
+      "source_id": "69c41632d7a7b2ca660e0c59",
+      "legacy_id": "sturdy-bones",
+      "name_en": "Sturdy Bones",
+      "category": "positive",
+      "sort_order": 21
+    },
+    {
+      "source_id": "69ce62886e199f4bbe0ab19b",
+      "legacy_id": "third-leg",
+      "name_en": "Third Leg",
+      "category": "negative",
+      "sort_order": 36
+    },
+    {
+      "source_id": "69ce64fe6e199f4bbe0ab1a1",
+      "legacy_id": "kappa-protocol",
+      "name_en": "Kappa Protocol",
+      "category": "positive",
+      "sort_order": 23
+    },
+    {
+      "source_id": "6a578102e7737aa469066518",
+      "legacy_id": "prodigy",
+      "name_en": "PRODIGY",
+      "category": "positive",
+      "sort_order": 37
+    },
+    {
+      "source_id": "6a5789f713792e2c7c0d2a5b",
+      "legacy_id": "lucky",
+      "name_en": "LUCKY",
+      "category": "positive",
+      "sort_order": 38
+    },
+    {
+      "source_id": "6a578ac032cea863f505beed",
+      "legacy_id": "unlucky",
+      "name_en": "UNLUCKY",
+      "category": "negative",
+      "sort_order": 39
+    },
+    {
+      "source_id": "69c3ce913ffdba4e68086bdb",
+      "legacy_id": "exhaustion",
+      "name_en": "Exhaustion",
+      "category": "negative",
+      "sort_order": 26
+    },
+    {
+      "source_id": "69c405332f253132020be099",
+      "legacy_id": "safecracker",
+      "name_en": "Safecracker",
+      "category": "positive",
+      "sort_order": 8
+    },
+    {
+      "source_id": "69c40ae21d8aec4a2b0551c2",
+      "legacy_id": "sailors-nostalgia",
+      "name_en": "Sailor's Nostalgia",
+      "category": "positive",
+      "sort_order": 11
+    },
+    {
+      "source_id": "69c40c0f5e9ce5a8970f6be9",
+      "legacy_id": "youth",
+      "name_en": "Youth",
+      "category": "positive",
+      "sort_order": 12
+    },
+    {
+      "source_id": "69c410831f8903ce7a06984f",
+      "legacy_id": "hercules",
+      "name_en": "Hercules",
+      "category": "positive",
+      "sort_order": 16
+    },
+    {
+      "source_id": "69c41111cd28c936320a7520",
+      "legacy_id": "sprinter",
+      "name_en": "Sprinter",
+      "category": "positive",
+      "sort_order": 17
+    },
+    {
+      "source_id": "69ce64064e0a1c7ca20781d3",
+      "legacy_id": "average",
+      "name_en": "Average",
+      "category": "positive",
+      "sort_order": 22
+    },
+    {
+      "source_id": "6a578b8c5372fb646802e5fa",
+      "legacy_id": "underdog",
+      "name_en": "Underdog",
+      "category": "negative",
+      "sort_order": 40
+    },
+    {
+      "source_id": "69c3da13eaf97663fb0bb36d",
+      "legacy_id": "broken-secure-container",
+      "name_en": "Broken Secure Container",
+      "category": "negative",
+      "sort_order": 34
+    }
+  ]
+}
