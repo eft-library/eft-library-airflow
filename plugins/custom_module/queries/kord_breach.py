@@ -5,13 +5,15 @@ INSERT INTO kord_breach_modifier
   score, icon_url, sort_order)
 VALUES %s
 ON CONFLICT (id) DO UPDATE SET
+ modifier_category=excluded.modifier_category,
  name_en=excluded.name_en,
  name_ko=coalesce(excluded.name_ko, kord_breach_modifier.name_ko),
  name_ja=coalesce(excluded.name_ja, kord_breach_modifier.name_ja),
  effect_en=excluded.effect_en,
  effect_ko=coalesce(excluded.effect_ko, kord_breach_modifier.effect_ko),
  effect_ja=coalesce(excluded.effect_ja, kord_breach_modifier.effect_ja),
- score=excluded.score, icon_url=excluded.icon_url, update_time=now()
+ score=excluded.score, icon_url=excluded.icon_url, sort_order=excluded.sort_order,
+ is_active=true, update_time=now()
 """
 
 INSERT_CONFLICTS = """
@@ -32,4 +34,9 @@ FROM (
 ) totals
 WHERE p.email=totals.email AND p.slot_no=totals.slot_no
  AND p.total_score IS DISTINCT FROM totals.score
+"""
+
+DEACTIVATE_MISSING = """
+UPDATE kord_breach_modifier SET is_active=false, update_time=now()
+WHERE NOT (id = ANY(%s)) AND is_active IS DISTINCT FROM false
 """

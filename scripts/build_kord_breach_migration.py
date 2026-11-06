@@ -13,7 +13,7 @@ def build_sql(mapping):
         return "'" + value.replace("'", "''") + "'"
     values = ',\n'.join('(' + ', '.join(literal(row[key]) for key in ('legacy_id', 'source_id', 'name_en')) + ')'
                         for row in mapping['modifiers'])
-    return """-- Generated from plugins/custom_module/kord_breach_mapping.json.
+    return """-- Generated from scripts/data/kord_breach_legacy_mapping.json.
 -- Back up all four KORD BREACH tables before executing. Metadata sync is a separate DAG.
 -- Run with psql -v ON_ERROR_STOP=1 -f this_file.sql against platform_db.
 BEGIN;
@@ -67,7 +67,8 @@ COMMIT;
 
 
 if __name__ == '__main__':
-    mapping = json.loads((ROOT / 'plugins/custom_module/kord_breach_mapping.json').read_text())
+    mapping = json.loads((ROOT / 'scripts/data/kord_breach_legacy_mapping.json').read_text())
     path = ROOT / 'sql/migrations/20261106_kord_breach_source_ids.sql'
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(build_sql(mapping))
     print(path)

@@ -1,7 +1,6 @@
-"""Maintain item checklists from reviewed quest objectives, preserving user progress."""
+"""Build item checklists from quest objectives, preserving user progress."""
 from contextlib import closing
 
-from custom_module.tarkov_json_api import get_json_data
 
 # Rebirth intentionally tracks the first prestige's figurine candidates, not every
 # prestige condition, currency requirement, or later-level Collector requirement.
@@ -85,11 +84,11 @@ def persist_progress_items(cursor, groups, execute_values):
     # user_progress_item is deliberately not written or pruned.
 
 
-def sync_progress_items(postgres_conn_id='platform_db'):
+def upsert_progress_items(data, postgres_conn_id='platform_db'):
     from airflow.providers.postgres.hooks.postgres import PostgresHook
     from psycopg2.extras import execute_values
 
-    groups = normalize_progress_items(get_json_data('tasks', None, 'regular'))
+    groups = normalize_progress_items(data)
     with closing(PostgresHook(postgres_conn_id).get_conn()) as connection:
         with connection, closing(connection.cursor()) as cursor:
             persist_progress_items(cursor, groups, execute_values)

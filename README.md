@@ -386,25 +386,55 @@ index는 짧게 캐시하거나 재검증하고 생성별 파일은 변경되지
 
 ## KORD BREACH 특성 유지보수
 
-`dags_kord_breach`는 매일 한국 시간 **02:45**에 시즌 API의 특성 40개를
-`kord_breach_modifier`에 동기화합니다. 이름·효과는 영어·한국어·일본어로 수집하고,
-점수·아이콘·충돌 관계도 갱신합니다. 사용자 프리셋 선택은 보존하고 총점만 재계산합니다.
-기존 분류·정렬·활성 상태는 유지하며, 다른 시즌 또는 미검토 특성 추가·누락은 실패 처리합니다.
+`dags_kord_breach`는 매일 한국 시간 **02:45**에 `pvp-season/season`의 현재 특성을
+원천 ID로 동기화합니다. 이름·효과는 영어·한국어·일본어로 수집하고,
+점수·아이콘·충돌 관계·분류·정렬·활성 상태도 원천에 맞춰 갱신합니다.
 
-**처음에는 ID 이전 SQL을 먼저 실행해야 합니다.** 운영 API의 기존 문자열 ID와 원천 ID를
-대조한 매핑으로 특성·충돌·프리셋 참조를 함께 변경합니다. 기존 ID가 남아 있으면 DAG는
-적재를 중단합니다. 운영 DB에는 자동으로 마이그레이션하지 않습니다.
+태스크는 기존 수집 DAG와 같은 방식으로 나눕니다.
 
-적용 절차와 백업·검증 방법은
-[기존 데이터 이전 안내](sql/migrations/20261106_kord_breach_source_ids.md),
-실행 파일은 [ID 이전 SQL](sql/migrations/20261106_kord_breach_source_ids.sql)을 확인합니다.
+`fetch_kord_breach → upsert_kord_breach → remove_json_files`
 
+수집 태스크는 영어·한국어·일본어 응답과 마지막 시즌 확인 응답을
+`/opt/airflow/tmp/kord_breach_season.json`에 저장하고 파일 경로만 XCom으로 넘깁니다.
+upsert 태스크에서 파일을 읽어 검증·가공·DB 저장을 수행합니다.
+DB 재시도 중에는 원천 API를 다시 호출하지 않습니다.
+
+- 새로운 원천 ID는 자동 등록하며 즉시 `is_active=true`로 노출합니다.
+- `common`은 `global`, `personal`의 점수가 음수이면 `positive`,
+  0 이상이면 `negative`로 분류합니다. 기존 서비스의 점수 소비/획득 규칙입니다.
+- 정렬은 원천의 common → personal 배열 순서입니다. 점수와 순서가 바뀌면 함께 반영합니다.
+- 원천에서 사라진 항목은 비활성화하고 행은 보존합니다. 재등장하면 자동 활성화합니다.
+- 충돌 관계는 매번 원천 기준으로 교체하며 유지되는 관계의 기존 reason은 보존합니다.
+- 사용자 프리셋 선택을 삭제하지 않고, 저장된 특성 행의 점수로 총점을 재계산합니다.
+  원천에서 빠져 비활성화된 선택도 프리셋 참조는 남습니다.
+- 원천의 현재 시즌을 따릅니다. 시즌 ID나 항목 개수를 고정하지 않으며,
+  새 항목을 수동 매핑에 추가하거나 승인할 필요가 없습니다.
+- 수집 도중 언어별 응답의 시즌/특성 구조가 달라지거나 필수 데이터가 잘못된 경우에만
+  적재를 중단하고 다음 시도에서 다시 수집합니다. 정상적인 추가·삭제는 실패 사유가 아닙니다.
+- 영어 원문이 없으면 실패하며, 누락된 한국어·일본어 번역은 기존 값을 유지합니다.
+- 전체 변경은 하나의 DB 트랜잭션입니다. HTTP/검증/DB 실패 시 부분 결과를 게시하지 않습니다.
+
+**정기 DAG는 매핑 JSON과 마이그레이션 SQL을 읽지 않습니다.**
+이전 문자열 ID를 원천 ID로 바꿨던 초기 이전 자료는
+`scripts/data/kord_breach_legacy_mapping.json`에 분리했습니다.
+초기 SQL을 재생성할 때만 `python3 scripts/build_kord_breach_migration.py`로 사용합니다.
+이 자료를 정기 실행 서버에 배포할 필요는 없습니다.
+아직 문자열 ID를 쓰는 기존 DB라면 사용자 프리셋 ID를 보존하기 위한 최초 이전은 필요합니다.
+원천 ID로 이전된 DB에서는 이후 항목 변경을 자동으로 따라갑니다.
 
 ## Kappa·Rebirth 진행 아이템 자동 갱신
 
 `dags_progress_item`은 매일 한국 시간 **02:55**에 `regular/tasks` 원천을 조회해
 `progress_item`을 갱신합니다. 성공하면 `dags_progress_static_json`을 실행합니다.
 JSON DAG의 기존 03:50 정기 일정은 제거했으며 수동 실행은 가능합니다.
+
+`fetch_progress_item → upsert_progress_item → generate_progress_static_json → remove_json_files`
+
+수집 태스크는 원천 응답을 `/opt/airflow/tmp/progress_item_tasks.json`에 저장합니다.
+upsert 태스크에서 그 파일을 읽어 Kappa/Rebirth 후보를 가공하고 DB에 저장합니다.
+XCom에는 파일 경로만 전달합니다. 정리는 `ALL_DONE`, 최종 실패 노출은 기존
+실패 감시 태스크가 담당합니다. KORD BREACH도 같은 정리·감시 방식을 사용합니다.
+정리가 끝난 실행의 upsert를 다시 실행하려면 fetch부터 다시 실행해야 합니다.
 연결은 JSON 생성 요청까지이므로 생성 완료·실패는 대상 DAG에서 확인합니다.
 
 목록의 정의는 다음과 같습니다.
