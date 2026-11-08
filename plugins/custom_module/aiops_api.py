@@ -247,6 +247,18 @@ def daily_dependency_date(logical_date, report_type, **context):
     return end.subtract(days=1).replace(hour=1)
 
 
+
+def weekly_dependency_date(logical_date, **context):
+    """Weekly run ending at 02:00 on a Monday month boundary; otherwise no wait."""
+    import pendulum
+
+    target = pendulum.parse(report_date('monthly', context), tz='Asia/Seoul')
+    boundary = target.start_of('month').add(months=1)
+    if boundary.day_of_week != pendulum.MONDAY:
+        return None
+    # CronDataIntervalTimetable uses the PREVIOUS Monday 02:00 as logical_date.
+    return boundary.subtract(weeks=1).replace(hour=2)
+
 def run_until_completed(**context):
     from airflow.exceptions import AirflowFailException
 

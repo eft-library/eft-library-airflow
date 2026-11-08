@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plugins"))
-from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, AIOpsStreamInterrupted, submit_daily, submit_report, report_date, daily_dependency_date, collect
+from custom_module.aiops_api import AIOpsClient, AIOpsAPIError, AIOpsStreamInterrupted, submit_daily, submit_report, report_date, daily_dependency_date, weekly_dependency_date, collect
 
 
 class AIOpsTests(unittest.TestCase):
@@ -36,10 +36,10 @@ class AIOpsTests(unittest.TestCase):
         import pendulum
 
         for kind, boundary, target, dependency in [
-            ("weekly", "2026-11-02T01:00:00+09:00", "2026-10-26", "2026-11-01T01:00:00+09:00"),
-            ("monthly", "2026-11-01T01:00:00+09:00", "2026-10-01", "2026-10-31T01:00:00+09:00"),
-            ("monthly", "2027-01-01T01:00:00+09:00", "2026-12-01", "2026-12-31T01:00:00+09:00"),
-            ("monthly", "2028-03-01T01:00:00+09:00", "2028-02-01", "2028-02-29T01:00:00+09:00"),
+            ("weekly", "2026-11-02T02:00:00+09:00", "2026-10-26", "2026-11-01T01:00:00+09:00"),
+            ("monthly", "2026-11-01T03:00:00+09:00", "2026-10-01", "2026-10-31T01:00:00+09:00"),
+            ("monthly", "2027-01-01T03:00:00+09:00", "2026-12-01", "2026-12-31T01:00:00+09:00"),
+            ("monthly", "2028-03-01T03:00:00+09:00", "2028-02-01", "2028-02-29T01:00:00+09:00"),
         ]:
             with self.subTest(kind=kind, boundary=boundary):
                 run = Mock(conf={}, run_type="scheduled")
@@ -246,6 +246,87 @@ class AIOpsTests(unittest.TestCase):
         self.client.request = Mock(side_effect=AIOpsAPIError(401))
         with self.assertRaises(AIOpsAPIError):
             self.client.advance("target")
+
+
+class AggregateDAGDependencyTests(unittest.TestCase):
+    def test_aggregates_wait_for_completed_daily_investigation(self):
+        import ast
+        root = Path(__file__).resolve().parents[1]
+        for kind in ('weekly', 'monthly'):
+            with self.subTest(kind=kind):
+                tree = ast.parse((root / 'dags' / f'dags_aiops_{kind}.py').read_text())
+                sensors = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                           and isinstance(node.func, ast.Name) and node.func.id == 'ExternalTaskSensor']
+                self.assertEqual(len(sensors), 1)
+                values = {arg.arg: ast.literal_eval(arg.value) for arg in sensors[0].keywords
+                          if arg.arg in ('external_dag_id', 'external_task_id', 'mode', 'allowed_states', 'failed_states')}
+                self.assertEqual(values['external_dag_id'], 'dags_aiops_daily')
+                self.assertEqual(values['external_task_id'], 'run_investigation_until_completed')
+                self.assertEqual(values['mode'], 'reschedule')
+                self.assertEqual(values['allowed_states'], ['success'])
+                self.assertIn('failed', values['failed_states'])
+
+
+class StaggeredReportTests(unittest.TestCase):
+    def test_monday_month_boundary_waits_for_previous_week_logical_date(self):
+        import pendulum
+        for boundary, target, weekly_date, daily_date in [
+            ('2027-02-01T03:00:00+09:00', '2027-01-01', '2027-01-25T02:00:00+09:00', '2027-01-31T01:00:00+09:00'),
+            ('2027-03-01T03:00:00+09:00', '2027-02-01', '2027-02-22T02:00:00+09:00', '2027-02-28T01:00:00+09:00'),
+            ('2029-01-01T03:00:00+09:00', '2028-12-01', '2028-12-25T02:00:00+09:00', '2028-12-31T01:00:00+09:00'),
+        ]:
+            with self.subTest(boundary=boundary):
+                run = Mock(conf={}, run_type='scheduled', start_date=pendulum.parse(boundary).add(days=10))
+                ctx = {'dag_run': run, 'data_interval_end': pendulum.parse(boundary)}
+                self.assertEqual(report_date('monthly', ctx), target)
+                self.assertEqual(weekly_dependency_date(None, **ctx), pendulum.parse(weekly_date))
+                self.assertEqual(daily_dependency_date(None, 'monthly', **ctx), pendulum.parse(daily_date))
+
+    def test_non_monday_month_boundary_has_no_weekly_dependency(self):
+        import pendulum
+        for boundary in ['2026-12-01T03:00:00+09:00', '2028-03-01T03:00:00+09:00']:
+            run = Mock(conf={}, run_type='scheduled')
+            ctx = {'dag_run': run, 'data_interval_end': pendulum.parse(boundary)}
+            self.assertIsNone(weekly_dependency_date(None, **ctx))
+
+    def test_manual_report_date_controls_overlap_instead_of_actual_run_day(self):
+        import pendulum
+        run = Mock(conf={'date': '2027-01-15'}, run_type='manual',
+                   start_date=pendulum.datetime(2027, 6, 8, 3, tz='Asia/Seoul'))
+        self.assertEqual(weekly_dependency_date(None, dag_run=run), pendulum.datetime(2027, 1, 25, 2, tz='Asia/Seoul'))
+        run.conf = {'date': '2026-11-15'}
+        self.assertIsNone(weekly_dependency_date(None, dag_run=run))
+
+    def test_conditional_sensor_bypasses_only_non_collision_days(self):
+        import ast
+        import pendulum
+        class ExternalSensor:
+            def __init__(self):
+                self.log = Mock()
+                self.calls = 0
+                self.result = False
+            def poke(self, context):
+                self.calls += 1
+                if isinstance(self.result, Exception):
+                    raise self.result
+                return self.result
+        path = Path(__file__).resolve().parents[1] / 'plugins/custom_module/aiops_sensors.py'
+        tree = ast.parse(path.read_text())
+        node = next(n for n in tree.body if isinstance(n, ast.ClassDef))
+        ns = {'ExternalTaskSensor': ExternalSensor, 'weekly_dependency_date': weekly_dependency_date}
+        exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), 'exec'), ns)
+        sensor = ns['MonthlyWeeklyReportSensor']()
+        ctx = {'dag_run': Mock(conf={}, run_type='scheduled'),
+               'data_interval_end': pendulum.parse('2026-12-01T03:00:00+09:00')}
+        self.assertTrue(sensor.poke(ctx))
+        self.assertEqual(sensor.calls, 0)
+        ctx['data_interval_end'] = pendulum.parse('2027-02-01T03:00:00+09:00')
+        self.assertFalse(sensor.poke(ctx))
+        sensor.result = True
+        self.assertTrue(sensor.poke(ctx))
+        sensor.result = RuntimeError('weekly failed')
+        with self.assertRaisesRegex(RuntimeError, 'weekly failed'):
+            sensor.poke(ctx)
 
 
 if __name__ == "__main__":
