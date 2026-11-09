@@ -492,3 +492,35 @@ JSON 생성과 화면 목록 확인 → 두 DAG 활성화입니다. 기존 사�
 특성·충돌·프리셋의 ID 필드는 모두 `text`이므로 원천 ID 전환을 위한
 추가 DDL 변경은 필요하지 않습니다. 앞서 준비한 ID 이전 SQL은 데이터 마이그레이션이며
 백엔드 `platform_db.sql`의 KORD BREACH 테이블 정의는 그대로 사용할 수 있습니다.
+
+### 상인 스냅샷 보존·정리
+
+`dags_trader_static_json`은 새 JSON과 `index.json` 게시가 성공한 다음
+`cleanup_trader_snapshots` 태스크를 실행합니다. 생성 실패 시에는 정리하지 않습니다.
+
+- 기본 보존 기간: 24시간(정상적인 5분 생성 주기에서 약 288세대).
+- 현재 인덱스의 `generation`과 모드별 파일 경로가 참조하는 세대는 항상 보존합니다.
+- 나이와 무관하게 최근 12세대도 보존합니다. 오래 열린 탭은 삭제된 세대를 요청하면 기존 프론트의 API 대체 조회를 사용합니다.
+- 32자리 소문자 16진수 이름의 실제 디렉토리만 정리합니다. 다른 이름, 파일, 세대 심볼릭 링크는 건드리지 않습니다.
+- 인덱스가 없거나 잘못되었거나 활성 세대가 누락되어 있으면 삭제를 중단합니다. 각 삭제 직전에 인덱스를 다시 읽습니다.
+- 성공한 게시의 스냅샷뿐 아니라 실패 중 생긴 미참조 폴더도 보존 기간이 지나면 정리합니다.
+
+Airflow 워커 환경변수로 조정할 수 있습니다.
+
+```text
+TRADER_SNAPSHOT_RETENTION_HOURS=24
+TRADER_SNAPSHOT_MIN_GENERATIONS=12
+```
+
+보존 기간은 최소 1시간, 보존 세대 수는 최소 2개입니다. 배포 후 다음 정상
+게시부터 기존에 쌓인 폴더도 같은 기준으로 정리되며, 삭제·보존 개수는 태스크 로그에 남습니다.
+수동 실행 전에는 Airflow 환경에서 삭제 예정 개수만 확인할 수 있습니다.
+
+```python
+from custom_module.trader_snapshot_cleanup import cleanup_trader_snapshots
+cleanup_trader_snapshots(dry_run=True)
+```
+
+기본 출력 경로는 `/opt/airflow/next-public`입니다. 다른 경로를 검사하려면
+`output_dir` 인자를 지정합니다. 이 변경은 정리 DAG/플러그인 배포가 필요하며
+실행 중인 서버의 기존 파일을 코드 수정 시점에 직접 삭제하지는 않습니다.
