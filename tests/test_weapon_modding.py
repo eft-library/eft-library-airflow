@@ -19,6 +19,21 @@ SAMPLE = ROOT / 'tests/item.json'
 
 
 class SnapshotContractTests(unittest.TestCase):
+    def test_live_collector_does_not_require_new_entry_point_in_legacy_api(self):
+        from custom_module.item_snapshot import get_item_snapshot
+        item = {'id': 'i', 'name': 'item-name', 'properties': None, 'categories': ['c'],
+                'conflictingItems': [], 'conflictingSlotIds': [], 'conflictingCategories': []}
+        data = {'items': {'i': item}, 'itemCategories': {'c': {'id': 'c', 'parent': '', 'name': 'category-name'}}}
+        with patch.object(api, 'get_item_snapshot', None), patch.object(api, '_request_json', side_effect=[
+            {'data': data}, {'data': {'item-name': 'English'}},
+            {'data': {'item-name': '한국어'}}, {'data': {'item-name': '日本語'}},
+        ]) as request:
+            snapshot = get_item_snapshot()
+        self.assertEqual([call.args[0] for call in request.call_args_list],
+                         ['regular/items', 'regular/items_en', 'regular/items_ko', 'regular/items_ja'])
+        self.assertEqual(snapshot['items'][0]['name'], 'English')
+        self.assertEqual(snapshot['names']['ko']['i']['name'], '한국어')
+
     def test_empty_and_partial_snapshots_are_rejected(self):
         for data in ({}, {'items': {}, 'itemCategories': {}},
                      {'items': {'x': {'id': 'x'}}, 'itemCategories': {'c': {'id': 'c', 'parent': ''}}}):

@@ -13,7 +13,7 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.tarkov_json_api import get_item_snapshot
+from custom_module.item_snapshot import get_item_snapshot
 from custom_module.weapon_modding import build_modding_rows, sync_modding_rows
 from custom_module.item_task_func import (
     v3_item_row_process,
