@@ -38,7 +38,8 @@ class TraderSnapshotCleanupTests(unittest.TestCase):
 
     def run_cleanup(self, **options):
         return module.cleanup_trader_snapshots(self.root, now=self.now,
-                                               min_generations=options.pop('min_generations', 2), **options)
+                                               min_generations=options.pop('min_generations', 2),
+                                               retention_hours=options.pop('retention_hours', 24), **options)
 
     def test_deletes_only_expired_unreferenced_folders(self):
         active = self.folder(1, 100)
@@ -132,15 +133,32 @@ class TraderSnapshotCleanupTests(unittest.TestCase):
         self.assertTrue(linked_generation.is_symlink())
         self.assertTrue(foreign.exists())
 
-    def test_environment_settings_and_invalid_retention(self):
+    def test_defaults_keep_only_three_recent_and_active_references(self):
+        folders = [self.folder(i, (10 - i) / 60) for i in range(1, 9)]
+        self.manifest(folders[0])
+        result = module.cleanup_trader_snapshots(self.root, now=self.now)
+        self.assertEqual(result['retention_hours'], 0)
+        self.assertEqual(result['min_generations'], 3)
+        self.assertEqual(result['deleted'], 4)
+        self.assertTrue(folders[0].exists())
+        self.assertTrue(all(folder.exists() for folder in folders[-3:]))
+
+    def test_zero_grace_deletes_recent_unreferenced_generations(self):
+        folders = [self.folder(i, (10 - i) / 60) for i in range(1, 9)]
+        self.manifest(folders[-1])
+        result = self.run_cleanup(retention_hours=0, min_generations=3)
+        self.assertEqual(result['retained'], 3)
+        self.assertEqual(result['deleted'], 5)
+        self.assertTrue(all(folder.exists() for folder in folders[-3:]))
+
+    def test_explicit_settings_and_invalid_retention(self):
         folders = [self.folder(i, 12 - i) for i in range(1, 6)]
         self.manifest(folders[0])
-        with patch.dict(os.environ, {'TRADER_SNAPSHOT_RETENTION_HOURS': '6',
-                                    'TRADER_SNAPSHOT_MIN_GENERATIONS': '2'}):
-            result = module.cleanup_trader_snapshots(self.root, now=self.now)
+        result = module.cleanup_trader_snapshots(
+            self.root, now=self.now, retention_hours=6, min_generations=2)
         self.assertEqual(result['retention_hours'], 6)
         self.assertEqual(result['deleted'], 2)
-        for hours in (0, -1, float('nan'), float('inf')):
+        for hours in (-1, float('nan'), float('inf')):
             with self.assertRaises(ValueError):
                 self.run_cleanup(retention_hours=hours)
 

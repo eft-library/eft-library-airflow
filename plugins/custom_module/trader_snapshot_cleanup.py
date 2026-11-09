@@ -1,7 +1,6 @@
 """Bound trader snapshot storage after a successful manifest publication."""
 import json
 import math
-import os
 from pathlib import Path
 import re
 import shutil
@@ -36,20 +35,18 @@ def referenced_generations(base):
     return protected
 
 
-def cleanup_trader_snapshots(output_dir=None, *, retention_hours=None,
-                             min_generations=None, now=None, dry_run=False):
+def cleanup_trader_snapshots(output_dir=None, *, retention_hours=0,
+                             min_generations=3, now=None, dry_run=False):
     """Keep active references, at least N recent folders, and the age grace period.
 
     Only UUID-named real directories are candidates. This function does not
     remove arbitrary files, follow generation symlinks, or publish the index.
     The owning DAG serializes generation/cleanup with max_active_runs=1.
     """
-    retention_hours = float(os.getenv('TRADER_SNAPSHOT_RETENTION_HOURS', '24')
-                            if retention_hours is None else retention_hours)
-    min_generations = int(os.getenv('TRADER_SNAPSHOT_MIN_GENERATIONS', '12')
-                          if min_generations is None else min_generations)
-    if not math.isfinite(retention_hours) or retention_hours < 1 or min_generations < 2:
-        raise ValueError('Snapshot retention must be >= 1 hour and >= 2 generations')
+    retention_hours = float(retention_hours)
+    min_generations = int(min_generations)
+    if not math.isfinite(retention_hours) or retention_hours < 0 or min_generations < 2:
+        raise ValueError('Snapshot retention must be >= 0 hours and >= 2 generations')
     root = Path(output_dir) if output_dir is not None else DEFAULT_OUTPUT_DIR
     base = root / 'static/trader/v3'
     referenced_generations(base)  # Validate before touching any stored data.
