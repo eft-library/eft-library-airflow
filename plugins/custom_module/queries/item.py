@@ -7,7 +7,6 @@ SELECT_ITEMS = "select id, normalized_name from items where normalized_name is n
 TRUNCATE_ITEM_PENALTIES = """
                 truncate table
                     item_penalties,
-                    weapon_items,
                     weapon_allowed_ammo,
                     ammo_items,
                     melee_items,

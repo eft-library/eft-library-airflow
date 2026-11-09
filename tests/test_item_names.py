@@ -35,7 +35,7 @@ class ItemNameTests(unittest.TestCase):
         path = Path(__file__).resolve().parents[1] / 'dags/dags_item.py'
         tree = ast.parse(path.read_text())
         fn = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == 'fetch_item')
-        namespace = {'get_items': Mock(return_value=[]), 'get_item_names': Mock(side_effect=RuntimeError('unavailable')), 'open': Mock()}
+        namespace = {'get_item_snapshot': Mock(side_effect=RuntimeError('unavailable')), 'open': Mock()}
         exec(compile(ast.Module(body=[fn], type_ignores=[]), str(path), 'exec'), namespace)
         with self.assertRaises(RuntimeError):
             namespace['fetch_item']()

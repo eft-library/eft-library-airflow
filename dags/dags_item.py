@@ -13,7 +13,8 @@ from contextlib import closing
 from psycopg2.extras import execute_values
 from airflow.task.trigger_rule import TriggerRule
 
-from custom_module.tarkov_json_api import get_items, get_item_names
+from custom_module.tarkov_json_api import get_item_snapshot
+from custom_module.weapon_modding import build_modding_rows, sync_modding_rows
 from custom_module.item_task_func import (
     v3_item_row_process,
     assign_unique_normalized_names,
@@ -38,6 +39,7 @@ default_args = {
 
 en_path = "/opt/airflow/tmp/v3_item_en_list.json"
 names_path = "/opt/airflow/tmp/v3_item_localized_names.json"
+snapshot_path = "/opt/airflow/tmp/v3_item_snapshot.json"
 
 with DAG(
     on_failure_callback=send_dag_failure_email,
@@ -47,19 +49,19 @@ with DAG(
     schedule="11 0 * * *",
     tags=["postgresql", "tarkov-dev-api"],
     catchup=False,
+    max_active_runs=1,
 ) as dag:
 
     def fetch_item():
-        item_list_en = get_items("en")
-        localized_names = get_item_names()
+        snapshot = get_item_snapshot("regular")
+        # All network requests and validation finish before any task files are published.
+        for path, value in ((en_path, snapshot["items"]), (names_path, snapshot["names"]),
+                            (snapshot_path, {key: snapshot[key] for key in ("data", "translations", "game_mode")})):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as f:
+                json.dump(value, f)
 
-        with open(en_path, "w") as f:
-            json.dump(item_list_en, f)
-
-        with open(names_path, "w") as f:
-            json.dump(localized_names, f)
-
-        return {"en": en_path, "names": names_path}
+        return {"en": en_path, "names": names_path, "snapshot": snapshot_path}
 
     def upsert_item(postgres_conn_id):
         context = get_current_context()
@@ -71,6 +73,12 @@ with DAG(
 
         with open(item_paths["names"], "r") as f:
             localized_names = json.load(f)
+
+        with open(item_paths["snapshot"], "r") as f:
+            snapshot = json.load(f)
+        if snapshot["game_mode"] != "regular":
+            raise ValueError("Item synchronization requires the regular snapshot")
+        modding_rows = build_modding_rows(snapshot["data"], snapshot["translations"])
 
         item_en_dict = {item["id"]: item for item in item_en_list}
 
@@ -178,6 +186,8 @@ with DAG(
 
         hook = PostgresHook(postgres_conn_id)
         with closing(hook.get_conn()) as conn, conn.cursor() as cur:
+            # Serialize item synchronization writers using the same transaction lock.
+            cur.execute("SELECT pg_advisory_xact_lock(724106110)")
             cur.execute(sql_queries.SELECT_ITEMS)
             existing_normalized_names_by_id = dict(cur.fetchall())
             item_rows = assign_unique_normalized_names(
@@ -305,10 +315,15 @@ with DAG(
                     usage_rows,
                 )
 
+            sync_modding_rows(cur, modding_rows)
+            print("[item-modding] synchronized rows:", {table: len(rows) for table, rows in modding_rows.items()})
+            # Keep historical items for quest/trade references; remove obsolete weapon details only.
+            cur.execute("DELETE FROM weapon_items WHERE NOT (item_id = ANY(%s::text[]))",
+                        ([row[0] for row in weapon_rows],))
             conn.commit()
 
     def remove_json_files():
-        files = [en_path, names_path]
+        files = [en_path, names_path, snapshot_path]
 
         for path in files:
             try:
