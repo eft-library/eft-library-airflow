@@ -7,6 +7,7 @@ import os
 from airflow import DAG
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from airflow.providers.standard.operators.python import PythonOperator
+from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from contextlib import closing
@@ -353,6 +354,13 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
+    publish_modding_task = TriggerDagRunOperator(
+        task_id="publish_weapon_modding_static_json",
+        trigger_dag_id="dags_weapon_modding_static_json",
+        wait_for_completion=False,
+    )
+
     fetch_item_task >> upsert_item_task >> remove_json_files_task
+    upsert_item_task >> publish_modding_task
 
 add_failure_watcher(dag)
