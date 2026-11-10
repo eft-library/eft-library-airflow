@@ -23,15 +23,6 @@ INSERT_MAPS = """
         """
 
 
-SELECT_STATIC_MAP_TARGETS = """
-                select normalized_name
-                from maps
-                where is_use is true
-                  and normalized_name is not null
-                order by sort_order, name_en, normalized_name;
-                """
-
-
 INITIAL_INSERT_MAPS = """
             INSERT INTO maps (
                 id,

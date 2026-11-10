@@ -337,23 +337,6 @@ INSERT_ROADMAP_NODE = """
                     """
 
 
-SELECT_STATIC_QUEST_TARGETS = """
-                select normalized_name
-                from quests
-                where is_use is true
-                  and normalized_name is not null
-                order by sort_order, name_en, normalized_name;
-                """
-
-
-SELECT_STATIC_TRADER_TARGETS = """
-                select normalized_name
-                from traders
-                where normalized_name is not null
-                order by name_en, normalized_name;
-                """
-
-
 INITIAL_QUEST_SQL = """
             INSERT INTO quests (
                 id,

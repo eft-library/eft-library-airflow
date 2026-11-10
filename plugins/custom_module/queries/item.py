@@ -243,14 +243,6 @@ INSERT_USAGE_ITEMS = """
                 """
 
 
-SELECT_STATIC_ITEM_TARGETS = """
-                select normalized_name
-                from items
-                where normalized_name is not null
-                order by name_en, normalized_name;
-                """
-
-
 INITIAL_INSERT_ITEMS = """
                 insert into items (
                     id, parent_category, category, name_en, name_ko, name_ja, normalized_name, weight, width, height, image

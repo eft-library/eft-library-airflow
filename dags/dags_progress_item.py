@@ -8,7 +8,6 @@ from airflow import DAG
 from airflow.sdk import get_current_context
 from airflow.task.trigger_rule import TriggerRule
 from airflow.providers.standard.operators.python import PythonOperator
-from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
 from custom_module.tarkov_json_api import get_json_data
 from custom_module.progress_items import upsert_progress_items
@@ -55,15 +54,11 @@ with DAG(
         execution_timeout=timedelta(minutes=5),
         do_xcom_push=False,
     )
-    publish_task = TriggerDagRunOperator(
-        task_id='generate_progress_static_json',
-        trigger_dag_id='dags_progress_static_json',
-    )
     cleanup_task = PythonOperator(
         task_id='remove_json_files',
         python_callable=remove_json_files,
         trigger_rule=TriggerRule.ALL_DONE,
     )
-    fetch_task >> upsert_task >> publish_task >> cleanup_task
+    fetch_task >> upsert_task >> cleanup_task
 
 add_failure_watcher(dag)

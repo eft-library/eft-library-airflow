@@ -354,6 +354,7 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
+
     publish_modding_task = TriggerDagRunOperator(
         task_id="publish_weapon_modding_static_json",
         trigger_dag_id="dags_weapon_modding_static_json",

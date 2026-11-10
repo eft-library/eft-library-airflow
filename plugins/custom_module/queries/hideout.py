@@ -238,14 +238,6 @@ TRUNCATE_HIDEOUT_LEVELS = """
                 """
 
 
-SELECT_STATIC_HIDEOUT_TARGETS = """
-                select normalized_name
-                from hideout_master
-                where normalized_name is not null
-                order by name_en, normalized_name;
-                """
-
-
 INITIAL_MASTER_SQL = """
             insert into hideout_master (
                 id,

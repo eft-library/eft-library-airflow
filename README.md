@@ -47,26 +47,22 @@ flowchart LR
 
 `*_static_json.py` 파일은 백엔드 API나 DB에서 데이터를 읽어 화면에 필요한 형태의 JSON 파일을 만듭니다. 생성한 파일은 웹사이트에서 사용할 수 있도록 `/opt/airflow/next-public` 아래에 저장합니다.
 
-정기 JSON 생성은 한국 시간 03:00~04:00에 5분 간격으로 실행합니다. 아래 이름은 `dags_{이름}_static_json`의 이름 부분입니다.
+현재 static JSON 생성 DAG는 다음 네 개입니다.
 
-| JSON | 실행 시각 (Asia/Seoul) |
+| JSON | 실행 방식 |
 | --- | --- |
-| `live_map` | 03:00 |
-| `quest` | 03:05 |
-| `roadmap` | 03:10 |
-| `map` | 03:15 |
-| `story` | 03:20 |
-| `home` | 03:25 |
-| `search` | 03:30 |
-| `news` | 03:35 |
-| `boss` | 03:40 |
-| `map_of_tarkov` | 03:45 |
-| `hideout` | 03:55 |
-| `item` | 04:00 |
+| `live_map` | 매일 03:00 (Asia/Seoul) |
+| `price` | 가격 수집 DAG의 DB 저장 성공 후 실행 |
+| `trader` | 상인 수집 DAG의 DB 저장 성공 후 실행 |
+| `weapon_modding` | 아이템 수집 DAG의 DB 저장 성공 후 실행 |
 
-가격·상인·진행 목록 JSON은 별도 정기 일정 없이 각 수집 DAG의 DB 저장 성공 후 실행합니다. 나머지 정기 JSON 생성은 원천 수집 완료를 기다리지 않으므로, 원천 수집이 지연되거나 실패하면 기존 데이터가 반영될 수 있습니다. 5분 간격은 시작 시각의 분산이며 이전 생성 작업의 완료를 보장하지 않습니다.
+그 외 화면 데이터는 API로 조회합니다. 일반 지도·검색·진행 목록의 static 생성은 제거했습니다.
+원본 지도·진행 아이템·총기 모딩 데이터의 DB 수집은 계속 수행합니다.
 
-예를 들어 아이템 가격은 **가격 수집과 DB 저장이 성공한 뒤** 가격 JSON 생성 작업을 이어서 실행합니다. 진행 목록과 상인 JSON도 저장 성공 후 연결하며, 나머지 JSON 생성 작업은 각 파일에 정의된 일정에 따라 실행됩니다.
+`dags_live_map_static_point`는 지도 고정 지점을 DB에 수집하는 작업으로, 화면용 static JSON 생성과 별개입니다.
+
+실시간 지도 JSON은 원천 수집 완료를 기다리지 않으므로, 수집이 지연되거나 실패하면 기존 데이터가 반영될 수 있습니다.
+가격·상인·총기 모딩 JSON 생성 완료·실패는 각 생성 DAG에서 확인합니다.
 
 ## 정의 되어 있는 작업들
 
@@ -77,7 +73,7 @@ flowchart LR
 | 지도 위치 정보 갱신  | `dags_live_map_point.py`, `dags_live_map_static_point.py` | 퀘스트 관련 위치와 고정 지점 정보 갱신               |
 | 프레스티지 정보 갱신 | `dags_prestige.py`                                           | 조건·보상 등 프레스티지 정보 갱신                    |
 | 검색 자동완성 갱신   | `dags_autocomplete.py`                                       | 검색에 사용하는 자동완성 데이터 갱신                 |
-| 화면용 JSON 생성     | `dags_*_static_json.py`                                      | 아이템·지도·홈·검색 등 화면별 JSON 생성              |
+| 화면용 JSON 생성     | `dags_*_static_json.py`                                      | 실시간 지도·시세·상인·총기 모딩 JSON 생성              |
 | DB 백업              | `dags_data_dump.py`                                             | 선택한 테이블을 SQL 파일로 백업하고 압축             |
 | 서비스 상태 확인     | `dags_health_check.py`                                          | 서비스 상태와 응답 시간을 확인하고 기록              |
 
@@ -436,17 +432,15 @@ DB 재시도 중에는 원천 API를 다시 호출하지 않습니다.
 ## Kappa·Rebirth 진행 아이템 자동 갱신
 
 `dags_progress_item`은 매일 한국 시간 **02:55**에 `regular/tasks` 원천을 조회해
-`progress_item`을 갱신합니다. 성공하면 `dags_progress_static_json`을 실행합니다.
-JSON DAG의 기존 03:50 정기 일정은 제거했으며 수동 실행은 가능합니다.
+`progress_item`을 갱신합니다. 진행 목록은 API로 조회하며 static JSON 생성은 수행하지 않습니다.
 
-`fetch_progress_item → upsert_progress_item → generate_progress_static_json → remove_json_files`
+`fetch_progress_item → upsert_progress_item → remove_json_files`
 
 수집 태스크는 원천 응답을 `/opt/airflow/tmp/progress_item_tasks.json`에 저장합니다.
 upsert 태스크에서 그 파일을 읽어 Kappa/Rebirth 후보를 가공하고 DB에 저장합니다.
 XCom에는 파일 경로만 전달합니다. 정리는 `ALL_DONE`, 최종 실패 노출은 기존
 실패 감시 태스크가 담당합니다. KORD BREACH도 같은 정리·감시 방식을 사용합니다.
 정리가 끝난 실행의 upsert를 다시 실행하려면 fetch부터 다시 실행해야 합니다.
-연결은 JSON 생성 요청까지이므로 생성 완료·실패는 대상 DAG에서 확인합니다.
 
 목록의 정의는 다음과 같습니다.
 

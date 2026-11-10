@@ -69,14 +69,6 @@ TRUNCATE_BOSS_SPAWN = """
                     """
 
 
-SELECT_STATIC_BOSS_TARGETS = """
-                select normalized_name
-                from bosses
-                where normalized_name is not null
-                order by name_en, normalized_name;
-                """
-
-
 INITIAL_BOSS_SQL = """
             insert into bosses (
                 id, name_en, name_ko, name_ja, image, normalized_name,
