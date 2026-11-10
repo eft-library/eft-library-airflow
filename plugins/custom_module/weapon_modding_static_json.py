@@ -7,6 +7,7 @@ from urllib.parse import quote, urlencode
 from uuid import uuid4
 
 from custom_module.static_api_client import get_api_response
+from custom_module.preset_reconstruction_contract import validate_preset_reconstruction
 from custom_module.trader_static_json import write_atomic
 
 API_BASE_URL = 'https://back.eftlibrary.com/api/modding/v3'
@@ -108,6 +109,16 @@ def collect_snapshot(fetch=fetch_data):
                               {'weapon_item_id': wid})
         if weapon.get('preset_count') != links['total']:
             raise ValueError('Weapon preset count changed')
+        if 'default_preset' not in weapon:
+            raise ValueError('Missing default_preset summary; deploy the new modding API first')
+        defaults = [entry for entry in links['presets'] if entry['link']['is_default_reference']]
+        if len(defaults)>1:
+            raise ValueError('Multiple default preset references')
+        expected_default = ({field: defaults[0]['item'].get(field)
+                             for field in ('id','name_en','name_ko','name_ja','image')}
+                            if defaults else None)
+        if weapon['default_preset'] != expected_default:
+            raise ValueError('Default preset summary/reference mismatch')
         references[wid] = links
         seeds[wid] = {wid}
         for entry in links['presets']:
@@ -122,6 +133,7 @@ def collect_snapshot(fetch=fetch_data):
                     if type(component['quantity']) is not int or component['quantity'] <= 0:
                         raise ValueError('Invalid preset component quantity')
                     enqueue(component['item'])
+                validate_preset_reconstruction(detail)
                 presets[pid] = detail
             # Link flags are separate from the preset's own is_default value.
             if {k: v for k, v in entry.items() if k != 'link'} != presets[pid]['preset']:
@@ -176,6 +188,7 @@ def collect_snapshot(fetch=fetch_data):
             'presets': {item_id(entry): presets[item_id(entry)] for entry in references[wid]['presets']},
             'validation_scope': 'slot_filters_only',
             'composition_type': 'flat_source_list',
+            'preset_reconstruction_version': 1,
         }
     return listing, bundles
 
@@ -201,7 +214,7 @@ def generate_weapon_modding_static_json(output_dir=None, fetch=fetch_data):
         paths[key] = f'{public}/weapons/{filename}'
     manifest = {'generation': generation, 'schema_version': 1,
                 'weapons_list': f'{public}/weapons.json', 'weapons': paths,
-                'total': len(paths)}
+                'total': len(paths), 'preset_reconstruction_version': 1}
     write_atomic(base / 'index.json', envelope(manifest))
     print('Weapon modding static JSON published:', {'generation': generation, 'weapons': len(paths)})
     return manifest

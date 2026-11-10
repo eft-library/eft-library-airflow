@@ -36,15 +36,26 @@ class ModdingStaticTests(unittest.TestCase):
         parts = endpoint.split('/')
         if endpoint == 'weapons':
             return self.page('weapons', [{'item': self.summaries[k], 'weapon_properties': {},
-                                         'preset_count': int(k == 'g1')} for k in ('g1', 'g2')], params)
+                                         'preset_count': int(k == 'g1'),
+                                         'default_preset': ({field:self.summaries['p'].get(field) for field in
+                                             ('id','name_en','name_ko','name_ja','image')} if k=='g1' else None)} for k in ('g1', 'g2')], params)
         if parts[0] == 'weapons':
             return self.page('presets', [{**self.preset, 'link': self.link}] if parts[1] == 'g1' else [], params,
                              weapon_item_id=parts[1])
         if parts[0] == 'presets':
-            return copy.deepcopy({'preset': self.preset, 'components': [
+            components = [
                 {'component_index': i, 'quantity': 1, 'attributes': {'x': [1, {'v': None}]},
-                 'item': self.summaries['c']} for i in range(2)],
-                 'weapon_links': [{'weapon_item_id': 'g1', **self.link}], 'composition_type': 'flat_source_list'})
+                 'item': self.summaries['c']} for i in range(2)]
+            return copy.deepcopy({'preset': self.preset, 'components': components,
+                 'weapon_links': [{'weapon_item_id': 'g1', **self.link}], 'composition_type': 'flat_source_list',
+                 'reconstruction': {
+                     'method':'inferred','algorithm_version':1,'is_source_tree':False,
+                     'requires_confirmation':True,'validation_scope':'stored_slot_constraints',
+                     'status':'unavailable','can_import':False,'is_unique':None,'search_complete':True,
+                     'solution_count_lower_bound':0,'states_examined':0,'candidate_trees':[],
+                     'partial_tree':None,'issues':[{'code':'ROOT_COMPONENT_COUNT'}],'issues_truncated':False,
+                     'unplaced_components':[{k:v for k,v in c.items() if k!='item'} | {'item_id':c['item']['id']} for c in components],
+                 }})
         key = parts[1]
         if len(parts) > 2:
             keys = ['r', 'l'] if key == 'r' else ['r']  # Shared part plus a cycle to itself.
@@ -67,8 +78,46 @@ class ModdingStaticTests(unittest.TestCase):
         self.assertEqual(bundles['g1']['presets']['p']['components'][1]['component_index'], 1)
         self.assertEqual(bundles['g1']['presets']['p']['components'][0]['attributes'], {'x': [1, {'v': None}]})
         self.assertFalse(bundles['g1']['presets']['p']['preset']['is_default'])
+        self.assertFalse(bundles['g1']['presets']['p']['reconstruction']['is_source_tree'])
+        self.assertEqual(bundles['g1']['preset_reconstruction_version'],1)
         self.assertTrue(bundles['g1']['preset_references']['presets'][0]['link']['is_default_reference'])
         self.assertEqual(bundles['g1']['slot_candidates']['r']['s']['validation_scope'], 'slot_filters_only')
+
+    def test_missing_reconstruction_keeps_previous_static_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            module.generate_weapon_modding_static_json(tmp,self.fetch)
+            path=Path(tmp)/'static/modding/v3/index.json';before=path.read_bytes()
+            def missing(endpoint,**params):
+                data=self.fetch(endpoint,**params)
+                if endpoint.startswith('presets/'):
+                    data.pop('reconstruction')
+                return data
+            with self.assertRaisesRegex(ValueError,'Missing preset reconstruction'):
+                module.generate_weapon_modding_static_json(tmp,missing)
+            self.assertEqual(path.read_bytes(),before)
+
+    def test_default_preset_summary_is_in_list_and_written_static_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest=module.generate_weapon_modding_static_json(tmp,self.fetch)
+            root=Path(tmp)
+            listing=json.loads((root/manifest['weapons_list'].lstrip('/')).read_text())['data']
+            summary=listing['weapons'][0]['default_preset']
+            self.assertEqual(summary['id'],'p')
+            self.assertEqual(set(summary),{'id','name_en','name_ko','name_ja','image'})
+            self.assertIsNone(listing['weapons'][1]['default_preset'])
+            bundle=json.loads((root/manifest['weapons']['g1'].lstrip('/')).read_text())['data']
+            self.assertEqual(bundle['weapon']['default_preset'],summary)
+
+    def test_missing_or_wrong_default_summary_does_not_publish(self):
+        for missing in (True,False):
+            def invalid(endpoint,**params):
+                data=self.fetch(endpoint,**params)
+                if endpoint=='weapons':
+                    if missing:data['weapons'][0].pop('default_preset')
+                    else:data['weapons'][0]['default_preset']=None
+                return data
+            with self.subTest(missing=missing),self.assertRaises(ValueError):
+                module.collect_snapshot(invalid)
 
     def test_pagination_duplicates_truncation_and_owner_mismatch_rejected(self):
         for change in ({'candidates': []}, {'item_id': 'other'}, {'slot_id': 'other'},
