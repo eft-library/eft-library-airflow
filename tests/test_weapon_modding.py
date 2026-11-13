@@ -118,6 +118,7 @@ class DatabaseTests(unittest.TestCase):
                     with conn.cursor() as cur:
                         cur.execute('CREATE TABLE items (id text PRIMARY KEY); CREATE TABLE weapon_items (item_id text PRIMARY KEY)')
                         cur.execute((BACK / 'sql/migrations/20261110_weapon_modding.sql').read_text())
+                        cur.execute((BACK / 'sql/migrations/20261113_rewards_and_modding_stats.sql').read_text())
                         execute_values(cur, 'INSERT INTO items VALUES %s', [(k,) for k in data['items']])
                         weapons = [(k,) for k, x in data['items'].items() if (x['properties'] or {}).get('propertiesType') == 'ItemPropertiesWeapon']
                         execute_values(cur, 'INSERT INTO weapon_items VALUES %s', weapons)

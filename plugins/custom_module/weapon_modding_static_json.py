@@ -153,6 +153,8 @@ def collect_snapshot(fetch=fetch_data):
         array(detail, 'allowed_ammo')
         for field in ('items', 'categories', 'slots'):
             array(detail['conflicts'], field)
+        if 'ballistics' not in detail:
+            raise ValueError('Missing ballistics field; deploy the new modding API first')
         items[key] = detail
         candidates[key], edges[key] = {}, set()
         for slot in slots:

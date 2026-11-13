@@ -7,6 +7,7 @@ MOD_TYPES = {
 
 # Fixed identifiers only: no source values are interpolated into SQL identifiers.
 COLUMNS = {
+    'item_ballistics': 'item_id,properties_type,center_of_impact,deviation_curve,deviation_max,velocity_raw,initial_speed_mps',
     'item_categories': 'id,parent_id,name_key,name_en,name_ko,name_ja,normalized_name',
     'item_category_memberships': 'item_id,category_id,sort_order',
     'item_slots': 'item_id,slot_id,name_id,name_key,name_en,name_ko,name_ja,required,sort_order',
@@ -21,7 +22,7 @@ COLUMNS = {
     'item_preset_components': 'preset_item_id,component_index,item_id,quantity,attributes',
 }
 MASTERS = {
-    'item_categories': 'id', 'item_mod_properties': 'item_id',
+    'item_ballistics': 'item_id', 'item_categories': 'id', 'item_mod_properties': 'item_id',
     'item_presets': 'preset_item_id',
 }
 
@@ -69,6 +70,9 @@ def build_modding_rows(data, translations=None):
             raise ValueError(f'Invalid properties: {key}')
         props = props or {}
         kind = props.get('propertiesType')
+        if kind:
+            rows['item_ballistics'].append((key, kind, props.get('centerOfImpact'),
+                props.get('deviationCurve'), props.get('deviationMax'), item.get('velocity'), props.get('initialSpeed')))
         for index, category in enumerate(_array(item, 'categories')):
             rows['item_category_memberships'].append((key, _ref(category, categories, 'category'), index))
         if kind in MOD_TYPES or kind == 'ItemPropertiesWeapon':
@@ -163,7 +167,7 @@ def sync_modding_rows(cursor, rows):
         execute_values(cursor, f'INSERT INTO {table} ({COLUMNS[table]}) VALUES %s{suffix}', values, page_size=1000)
 
     # Links/components have already been replaced, so obsolete masters can now be removed.
-    for table in ('item_mod_properties', 'item_presets', 'item_categories'):
+    for table in ('item_ballistics', 'item_mod_properties', 'item_presets', 'item_categories'):
         pk = MASTERS[table]
         ids = [row[0] for row in rows[table]]
         cursor.execute(f'DELETE FROM {table} WHERE NOT ({pk} = ANY(%s::text[]))', (ids,))

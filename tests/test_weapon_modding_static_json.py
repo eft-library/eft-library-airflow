@@ -64,8 +64,24 @@ class ModdingStaticTests(unittest.TestCase):
         slot = {'item_id': key, 'slot_id': 's', 'filters': {k: [] for k in
                 ('allowed_items', 'excluded_items', 'allowed_categories', 'excluded_categories')}}
         return copy.deepcopy({'item': self.summaries[key], 'slots': [slot] if key in ('g1', 'g2', 'r') else [],
-                              'categories': [], 'allowed_ammo': [], 'weapon_properties': None,
+                              'categories': [], 'allowed_ammo': [], 'weapon_properties': None, 'ballistics': None,
                               'conflicts': {'items': [], 'categories': [], 'slots': []}})
+
+    def test_ballistics_preserved_and_old_api_rejected(self):
+        source = {'properties_type':'ItemPropertiesBarrel', 'center_of_impact':0.02,
+                  'deviation_curve':None,'deviation_max':5,'velocity_raw':0,'initial_speed_mps':None}
+        def fetch(endpoint, **params):
+            value=self.fetch(endpoint, **params)
+            if endpoint=='items/r':value['ballistics']=source
+            return value
+        _,bundles=module.collect_snapshot(fetch)
+        self.assertEqual(bundles['g1']['items']['r']['ballistics'],source)
+        def old_fetch(endpoint, **params):
+            value=fetch(endpoint, **params)
+            if endpoint=='items/r':value.pop('ballistics')
+            return value
+        with self.assertRaisesRegex(ValueError,'Missing ballistics'):
+            module.collect_snapshot(old_fetch)
 
     def test_all_pages_recursive_candidates_and_flat_preset_components(self):
         with patch.object(module, 'PAGE_SIZE', 1):
