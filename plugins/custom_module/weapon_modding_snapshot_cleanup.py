@@ -45,6 +45,7 @@ def cleanup_weapon_modding_snapshots(output_dir=None, *, min_generations=3,
         raise ValueError('Retention requires >= 3 generations and >= 0 hours')
     root = Path(output_dir) if output_dir is not None else OUTPUT_DIR
     base = root / 'static/modding/v3'
+    print(f'[modding-static] cleanup start: output={base} keep={min_generations} dry_run={dry_run}', flush=True)
     referenced_generations(base)  # No deletion if the manifest is missing/corrupt.
     cutoff = (time.time() if now is None else now) - retention_hours * 3600
     folders = sorted(
@@ -56,11 +57,12 @@ def cleanup_weapon_modding_snapshots(output_dir=None, *, min_generations=3,
     for modified, folder in folders[min_generations:]:
         if modified >= cutoff or folder.name in referenced_generations(base) or folder.is_symlink():
             continue
+        print(f'[modding-static] cleanup {"would delete" if dry_run else "deleting"}: {folder.name}', flush=True)
         if not dry_run:
             shutil.rmtree(folder)
         eligible += 1
     result = {'scanned': len(folders), 'deleted': 0 if dry_run else eligible,
               'would_delete': eligible if dry_run else 0,
               'retained': len(folders) - (0 if dry_run else eligible)}
-    print('Weapon modding snapshot cleanup:', result)
+    print('[modding-static] cleanup done:', result, flush=True)
     return result
