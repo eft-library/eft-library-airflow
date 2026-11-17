@@ -24,14 +24,6 @@ FROM (SELECT autocomplete_text_en,
                    sort_order
             FROM maps
             UNION ALL
-            SELECT 'Interactive Maps: ' || name_en        AS autocomplete_text_en,
-                   '타르코프 지도: ' || name_ko                 AS autocomplete_text_ko,
-                   'インタラクティブ マップ: ' || name_ja AS autocomplete_text_ja,
-                   '/map/' || normalized_name             AS url,
-                   'MAP'                                  AS category,
-                   sort_order
-            FROM maps
-            UNION ALL
             SELECT 'Boss: ' || name_en         AS autocomplete_text_en,
                    '보스: ' || name_ko           AS autocomplete_text_ko,
                    'ボス: ' || name_ja         AS autocomplete_text_ja,
