@@ -2,7 +2,9 @@ from custom_module.queries import item as sql_queries
 
 import json
 import pendulum
-import os
+from hashlib import sha256
+from pathlib import Path
+from shutil import rmtree
 
 from airflow import DAG
 from custom_module.dag_failure_alert import add_failure_watcher, send_dag_failure_email
@@ -38,9 +40,24 @@ default_args = {
     "retry_delay": pendulum.duration(minutes=5),
 }
 
-en_path = "/opt/airflow/tmp/v3_item_en_list.json"
-names_path = "/opt/airflow/tmp/v3_item_localized_names.json"
-snapshot_path = "/opt/airflow/tmp/v3_item_snapshot.json"
+ITEM_TMP_ROOT = Path("/opt/airflow/tmp/dags_item")
+
+
+def item_run_directory():
+    run_id = get_current_context()["run_id"]
+    return ITEM_TMP_ROOT / sha256(run_id.encode("utf-8")).hexdigest()
+
+
+def write_json(path, value):
+    with path.open("w") as f:
+        json.dump(value, f)
+    return str(path)
+
+
+def read_json(path):
+    with Path(path).open("r") as f:
+        return json.load(f)
+
 
 with DAG(
     on_failure_callback=send_dag_failure_email,
@@ -55,49 +72,27 @@ with DAG(
 
     def fetch_item():
         snapshot = get_item_snapshot("regular")
-        # All network requests and validation finish before any task files are published.
-        for path, value in ((en_path, snapshot["items"]), (names_path, snapshot["names"]),
-                            (snapshot_path, {key: snapshot[key] for key in ("data", "translations", "game_mode")})):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, "w") as f:
-                json.dump(value, f)
+        directory = item_run_directory()
+        directory.mkdir(parents=True, exist_ok=True)
+        return {
+            "en": write_json(directory / "items.json", snapshot["items"]),
+            "names": write_json(directory / "names.json", snapshot["names"]),
+            "snapshot": write_json(
+                directory / "snapshot.json",
+                {key: snapshot[key] for key in ("data", "translations", "game_mode")},
+            ),
+        }
 
-        return {"en": en_path, "names": names_path, "snapshot": snapshot_path}
+    def fetched_items_by_id(item_paths):
+        return {item["id"]: item for item in read_json(item_paths["en"])}
 
-    def upsert_item(postgres_conn_id):
-        context = get_current_context()
-        ti = context["ti"]
+    def transform_item_core_rows():
+        ti = get_current_context()["ti"]
         item_paths = ti.xcom_pull(task_ids="fetch_item")
-
-        with open(item_paths["en"], "r") as f:
-            item_en_list = json.load(f)
-
-        with open(item_paths["names"], "r") as f:
-            localized_names = json.load(f)
-
-        with open(item_paths["snapshot"], "r") as f:
-            snapshot = json.load(f)
-        if snapshot["game_mode"] != "regular":
-            raise ValueError("Item synchronization requires the regular snapshot")
-        modding_rows = build_modding_rows(snapshot["data"], snapshot["translations"])
-
-        item_en_dict = {item["id"]: item for item in item_en_list}
-
+        item_en_dict = fetched_items_by_id(item_paths)
         item_ids = set(item_en_dict)
+        localized_names = read_json(item_paths["names"])
 
-        # ammo_efficiency
-        ammo_efficiency_rows = []
-        for iid in item_ids:
-            item = item_en_dict[iid]
-            props = item.get("properties")
-            if not isinstance(props, dict):
-                continue
-            # ammo_items에 들어가는 아이템만 처리
-            if not ("damage" in props or "penetrationPower" in props):
-                continue
-            eff = get_efficiency(item.get("name"))
-            if eff and len(eff) == 6:
-                ammo_efficiency_rows.append((iid, *eff))
         # items
         item_rows = [
             v3_item_row_process(
@@ -116,6 +111,42 @@ with DAG(
             for iid in item_ids
             if has_any_penalty(r := v3_item_penalties_row(item_en_dict[iid]))
         ]
+
+        # usage_items
+        usage_rows = [
+            v3_usage_items_row(item_en_dict[iid])
+            for iid in item_ids
+            if v3_usage_items_row(item_en_dict[iid])
+        ]
+
+        return write_json(
+            item_run_directory() / "item_core_rows.json",
+            {
+                "items": item_rows,
+                "item_penalties": penalties_rows,
+                "usage_items": usage_rows,
+            },
+        )
+
+    def transform_equipment_rows():
+        ti = get_current_context()["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item")
+        item_en_dict = fetched_items_by_id(item_paths)
+        item_ids = set(item_en_dict)
+
+        # ammo_efficiency
+        ammo_efficiency_rows = []
+        for iid in item_ids:
+            item = item_en_dict[iid]
+            props = item.get("properties")
+            if not isinstance(props, dict):
+                continue
+            # ammo_items에 들어가는 아이템만 처리
+            if not ("damage" in props or "penetrationPower" in props):
+                continue
+            eff = get_efficiency(item.get("name"))
+            if eff and len(eff) == 6:
+                ammo_efficiency_rows.append((iid, *eff))
 
         # weapon_items
         weapon_rows = [
@@ -150,6 +181,32 @@ with DAG(
             if v3_throwable_items_row(item_en_dict[iid])
         ]
 
+        # protection_items
+        protection_rows = [
+            v3_protection_items_row(item_en_dict[iid])
+            for iid in item_ids
+            if v3_protection_items_row(item_en_dict[iid])
+        ]
+
+        return write_json(
+            item_run_directory() / "equipment_rows.json",
+            {
+                "ammo_efficiency": ammo_efficiency_rows,
+                "weapon_items": weapon_rows,
+                "weapon_allowed_ammo": allowed_ammo_rows,
+                "ammo_items": ammo_rows,
+                "melee_items": melee_rows,
+                "throwable_items": throwable_rows,
+                "protection_items": protection_rows,
+            },
+        )
+
+    def transform_storage_and_consumable_rows():
+        ti = get_current_context()["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item")
+        item_en_dict = fetched_items_by_id(item_paths)
+        item_ids = set(item_en_dict)
+
         # storage_items, storage_grids
         storage_rows, grid_rows = [], []
         for iid in item_ids:
@@ -162,13 +219,6 @@ with DAG(
                 storage_rows.append(srow)
             grid_rows.extend(grows)
 
-        # protection_items
-        protection_rows = [
-            v3_protection_items_row(item_en_dict[iid])
-            for iid in item_ids
-            if v3_protection_items_row(item_en_dict[iid])
-        ]
-
         # consumable_items, consumable_cures, consumable_stim_effects
         consumable_rows, cure_rows, stim_rows = [], [], []
         for iid in item_ids:
@@ -178,12 +228,36 @@ with DAG(
             cure_rows.extend(crows)
             stim_rows.extend(srows)
 
-        # usage_items
-        usage_rows = [
-            v3_usage_items_row(item_en_dict[iid])
-            for iid in item_ids
-            if v3_usage_items_row(item_en_dict[iid])
-        ]
+        return write_json(
+            item_run_directory() / "storage_and_consumable_rows.json",
+            {
+                "storage_items": storage_rows,
+                "storage_grids": grid_rows,
+                "consumable_items": consumable_rows,
+                "consumable_cures": cure_rows,
+                "consumable_stim_effects": stim_rows,
+            },
+        )
+
+    def transform_modding_rows():
+        ti = get_current_context()["ti"]
+        item_paths = ti.xcom_pull(task_ids="fetch_item")
+        snapshot = read_json(item_paths["snapshot"])
+        if snapshot["game_mode"] != "regular":
+            raise ValueError("Item synchronization requires the regular snapshot")
+        rows = build_modding_rows(snapshot["data"], snapshot["translations"])
+        return write_json(item_run_directory() / "modding_rows.json", rows)
+
+    def upsert_item(postgres_conn_id):
+        ti = get_current_context()["ti"]
+        rows = {}
+        for task_id in (
+            "transform_item_core_rows",
+            "transform_equipment_rows",
+            "transform_storage_and_consumable_rows",
+        ):
+            rows.update(read_json(ti.xcom_pull(task_ids=task_id)))
+        modding_rows = read_json(ti.xcom_pull(task_ids="transform_modding_rows"))
 
         hook = PostgresHook(postgres_conn_id)
         with closing(hook.get_conn()) as conn, conn.cursor() as cur:
@@ -192,153 +266,67 @@ with DAG(
             cur.execute(sql_queries.SELECT_ITEMS)
             existing_normalized_names_by_id = dict(cur.fetchall())
             item_rows = assign_unique_normalized_names(
-                item_rows, existing_normalized_names_by_id
+                rows["items"], existing_normalized_names_by_id
             )
 
             # 하위 테이블 전체 비우기 (items 제외)
             cur.execute(sql_queries.TRUNCATE_ITEM_PENALTIES)
-            # items
-            execute_values(
-                cur,
-                sql_queries.INSERT_ITEMS,
-                item_rows,
-            )
-
-            # ammo_efficiency
-            if ammo_efficiency_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_AMMO_EFFICIENCY,
-                    ammo_efficiency_rows,
-                )
-
-            # item_penalties
-            if penalties_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_ITEM_PENALTIES,
-                    penalties_rows,
-                )
-
-            # weapon_items
-            if weapon_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_WEAPON_ITEMS,
-                    weapon_rows,
-                )
-
-            # weapon_allowed_ammo
-            if allowed_ammo_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_WEAPON_ALLOWED_AMMO,
-                    allowed_ammo_rows,
-                )
-
-            # ammo_items
-            if ammo_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_AMMO_ITEMS,
-                    ammo_rows,
-                )
-
-            # melee_items
-            if melee_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_MELEE_ITEMS,
-                    melee_rows,
-                )
-
-            # throwable_items
-            if throwable_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_THROWABLE_ITEMS,
-                    throwable_rows,
-                )
-
-            # storage_items
-            if storage_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_STORAGE_ITEMS,
-                    storage_rows,
-                )
-
-            # storage_grids
-            if grid_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_STORAGE_GRIDS,
-                    grid_rows,
-                )
-
-            # protection_items
-            if protection_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_PROTECTION_ITEMS,
-                    protection_rows,
-                )
-
-            # consumable_items
-            if consumable_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_CONSUMABLE_ITEMS,
-                    consumable_rows,
-                )
-
-            # consumable_cures
-            if cure_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_CONSUMABLE_CURES,
-                    cure_rows,
-                )
-
-            # consumable_stim_effects
-            if stim_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_CONSUMABLE_STIM_EFFECTS,
-                    stim_rows,
-                )
-
-            # usage_items
-            if usage_rows:
-                execute_values(
-                    cur,
-                    sql_queries.INSERT_USAGE_ITEMS,
-                    usage_rows,
-                )
+            execute_values(cur, sql_queries.INSERT_ITEMS, item_rows)
+            for query, table in (
+                (sql_queries.INSERT_AMMO_EFFICIENCY, "ammo_efficiency"),
+                (sql_queries.INSERT_ITEM_PENALTIES, "item_penalties"),
+                (sql_queries.INSERT_WEAPON_ITEMS, "weapon_items"),
+                (sql_queries.INSERT_WEAPON_ALLOWED_AMMO, "weapon_allowed_ammo"),
+                (sql_queries.INSERT_AMMO_ITEMS, "ammo_items"),
+                (sql_queries.INSERT_MELEE_ITEMS, "melee_items"),
+                (sql_queries.INSERT_THROWABLE_ITEMS, "throwable_items"),
+                (sql_queries.INSERT_STORAGE_ITEMS, "storage_items"),
+                (sql_queries.INSERT_STORAGE_GRIDS, "storage_grids"),
+                (sql_queries.INSERT_PROTECTION_ITEMS, "protection_items"),
+                (sql_queries.INSERT_CONSUMABLE_ITEMS, "consumable_items"),
+                (sql_queries.INSERT_CONSUMABLE_CURES, "consumable_cures"),
+                (sql_queries.INSERT_CONSUMABLE_STIM_EFFECTS, "consumable_stim_effects"),
+                (sql_queries.INSERT_USAGE_ITEMS, "usage_items"),
+            ):
+                if rows[table]:
+                    execute_values(cur, query, rows[table])
 
             sync_modding_rows(cur, modding_rows)
             print("[item-modding] synchronized rows:", {table: len(rows) for table, rows in modding_rows.items()})
             # Keep historical items for quest/trade references; remove obsolete weapon details only.
             cur.execute("DELETE FROM weapon_items WHERE NOT (item_id = ANY(%s::text[]))",
-                        ([row[0] for row in weapon_rows],))
+                        ([row[0] for row in rows["weapon_items"]],))
             conn.commit()
 
     def remove_json_files():
-        files = [en_path, names_path, snapshot_path]
-
-        for path in files:
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-                    print(f"Deleted: {path}")
-                else:
-                    print(f"File not found: {path}")
-            except Exception as e:
-                print(f"Error deleting {path}: {e}")
+        try:
+            rmtree(item_run_directory())
+        except FileNotFoundError:
+            pass
 
     fetch_item_task = PythonOperator(
         task_id="fetch_item",
         python_callable=fetch_item,
+    )
+
+    transform_item_core_rows_task = PythonOperator(
+        task_id="transform_item_core_rows",
+        python_callable=transform_item_core_rows,
+    )
+
+    transform_equipment_rows_task = PythonOperator(
+        task_id="transform_equipment_rows",
+        python_callable=transform_equipment_rows,
+    )
+
+    transform_storage_and_consumable_rows_task = PythonOperator(
+        task_id="transform_storage_and_consumable_rows",
+        python_callable=transform_storage_and_consumable_rows,
+    )
+
+    transform_modding_rows_task = PythonOperator(
+        task_id="transform_modding_rows",
+        python_callable=transform_modding_rows,
     )
 
     upsert_item_task = PythonOperator(
@@ -361,7 +349,15 @@ with DAG(
         wait_for_completion=False,
     )
 
-    fetch_item_task >> upsert_item_task >> remove_json_files_task
+    transforms = [
+        transform_item_core_rows_task,
+        transform_equipment_rows_task,
+        transform_storage_and_consumable_rows_task,
+        transform_modding_rows_task,
+    ]
+    fetch_item_task >> transforms >> upsert_item_task
+    transforms >> remove_json_files_task
+    upsert_item_task >> remove_json_files_task
     upsert_item_task >> publish_modding_task
 
 add_failure_watcher(dag)
